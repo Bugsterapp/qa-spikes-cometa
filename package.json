@@ -1,0 +1,65 @@
+{
+  "name": "cometa",
+  "version": "0.0.0",
+  "private": true,
+  "engines": {
+    "npm": ">=8"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "packages/utils/*"
+  ],
+  "lint-staged": {
+    "(apps|packages)/**/*.{js,ts,jsx,tsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.json": [
+      "prettier --write"
+    ],
+    "./packages/ui/**/*.{js,jsx,ts,tsx}": "eslint --fix"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "build:dashboard": "turbo run build --filter=dashboard",
+    "build:portal": "turbo run build --filter=guardian",
+    "clean": "turbo run clean",
+    "dev": "turbo run dev",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "dev:dashboard": "turbo run dev --filter=dashboard",
+    "dev:guardian": "turbo run dev --filter=guardian",
+    "preinstall": "./scripts/generate-api-client.sh",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^17.4.0",
+    "@commitlint/config-conventional": "^17.4.0",
+    "@playwright/test": "^1.39.0",
+    "@tailwindcss/forms": "^0.5.3",
+    "@types/node": "^20.9.0",
+    "autoprefixer": "^10.4.14",
+    "commitizen": "^4.2.6",
+    "cz-conventional-changelog": "^3.3.0",
+    "eslint": "^7.32.0",
+    "eslint-config-custom": "*",
+    "husky": "^8.0.3",
+    "lint-staged": "^13.1.0",
+    "postcss": "^8.4.21",
+    "prettier": "^2.5.1",
+    "tailwindcss": "^3.3.1",
+    "tailwindcss-animate": "^1.0.5",
+    "turbo": "^1.10.16"
+  },
+  "packageManager": "npm@8.12.1",
+  "dependencies": {
+    "@manypkg/cli": "^0.21.0"
+  }
+}

@@ -1,0 +1,80 @@
+export const comerces = [
+  {
+    logo: '/images/round-logos/seven-eleven-round-logo.svg',
+    name: '7 Eleven',
+    maxAmountAllowed: 5000,
+    agreement: 'SERVICIOPAYCASH',
+  },
+  {
+    logo: '/images/round-logos/banorte-round-logo.svg',
+    name: 'Banorte',
+    maxAmountAllowed: 20000,
+    agreement: 'CONVENIO3724',
+  },
+  {
+    logo: '/images/round-logos/bbva-round-logo.svg',
+    name: 'Bancomer',
+    maxAmountAllowed: 20000,
+    agreement: 'CIE1420712',
+  },
+  {
+    logo: '/images/round-logos/bodega-aurrera-round-logo.svg',
+    name: 'Bodega Aurrerá',
+    maxAmountAllowed: 10000,
+    agreement: 'SERVICIO198',
+  },
+  {
+    logo: '/images/round-logos/calimax-round-logo.svg',
+    name: 'Calimax',
+    maxAmountAllowed: 20000,
+    agreement: 'SERVICIOPAYCASH',
+  },
+  {
+    logo: '/images/round-logos/circle-k-round-logo.svg',
+    name: 'Circle K',
+    maxAmountAllowed: 5000,
+    agreement: 'SERVICIOPAYCASH',
+  },
+  {
+    logo: '/images/round-logos/comercial-mexicana-round-logo.svg',
+    name: 'Comercial Mexicana',
+    maxAmountAllowed: 10000,
+    agreement: 'SERVICIOPAYCASH',
+  },
+  {
+    logo: '/images/round-logos/extra-round-logo.svg',
+    name: 'Extra',
+    maxAmountAllowed: 5000,
+    agreement: 'SERVICIOPAYCASH',
+  },
+  {
+    logo: '/images/round-logos/farmacias-roma-round-logo.svg',
+    name: 'Farmacias Roma',
+    maxAmountAllowed: 5000,
+    agreement: 'SERVICIOPAYCASH',
+  },
+  {
+    logo: '/images/round-logos/sams-club-round-logo.svg',
+    name: 'Sam´s Club',
+    maxAmountAllowed: 10000,
+    agreement: 'SERVICIO198',
+  },
+  {
+    logo: '/images/round-logos/soriana-round-logo.svg',
+    name: 'Soriana',
+    maxAmountAllowed: 10000,
+    agreement: 'SERVICIOPAYCASH',
+  },
+  {
+    logo: '/images/round-logos/superama-round-logo.svg',
+    name: 'Superama',
+    maxAmountAllowed: 10000,
+    agreement: 'SERVICIO198',
+  },
+  {
+    logo: '/images/round-logos/wallmart-round-logo.svg',
+    name: 'Wallmart',
+    maxAmountAllowed: 10000,
+    agreement: 'SERVICIO198',
+  },
+];

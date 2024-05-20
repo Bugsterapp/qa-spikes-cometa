@@ -1,0 +1,7 @@
+export enum TypeSpecialDiscount {
+  INTEREST_FORG = 'INTEREST_FORG',
+  PERCENT = 'PERCENT',
+  AMOUNT = 'AMOUNT',
+  FIXED = 'FIXED',
+  BRILLAMONT = 'BRILLAMONT',
+}

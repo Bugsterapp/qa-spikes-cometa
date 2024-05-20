@@ -1,0 +1,75 @@
+import { Locator, Page } from '@playwright/test';
+
+export class PaymentsPage {
+  readonly page: Page;
+  readonly pagosRecibidosTxt: Locator;
+  readonly partialPaymentChk: Locator;
+  readonly filterBtn: Locator;
+  readonly applyFilterBtn: Locator;
+  readonly cleanAllFiltersBtn: Locator;
+  readonly headerCellOrderId: Locator;
+  readonly headerCellpaymentDate: Locator;
+  readonly headerCellStudent: Locator;
+  readonly headerCellOrder: Locator;
+  readonly levelFilterSelector: Locator;
+  readonly optionPrimaria: Locator;
+  readonly optionLevel: Locator;
+  readonly conceptFilterBy: Locator;
+  readonly colegiaturaPrimariaFilterOption: Locator;
+  readonly cleanFilterBtn: Locator;
+  readonly footerTotalAmountTxt: Locator;
+  readonly paymentMethodFilterBy: Locator;
+  readonly ticketFilterOption: Locator;
+  readonly bankTransferFilterOption: Locator;
+  readonly inscripcionFilterOption: Locator;
+  readonly levelFilterBy: Locator;
+  readonly sectionFilterBy: Locator;
+  readonly preparatorioFilterOption: Locator;
+  readonly cuartoAFilterOption: Locator;
+  readonly sextoAFilterOption: Locator;
+  readonly receiptStateFilterBy: Locator;
+  readonly cancelledReceiptFilterOption: Locator;
+  readonly filterEmptyStateTxt: Locator;
+  readonly conceptTypeInscriptionFilterOption: Locator;
+  readonly conceptTypeMonthlySchollarshipFilterOption: Locator;
+  readonly conceptTypeFilterBy: Locator;
+  readonly searchByPayerInp: Locator;
+  readonly emitedReceiptFilterOption: Locator;
+
+  constructor(page: Page) {
+    this.pagosRecibidosTxt = page.getByRole('main').getByText('Pagos recibidos');
+    this.page = page;
+    this.partialPaymentChk = page.getByLabel('Pago parcial');
+    this.filterBtn = page.getByTestId('filterBtn');
+    this.cleanAllFiltersBtn = page.getByRole('button', { name: 'Limpiar todo' });
+    this.headerCellOrderId = page.getByRole('cell', { name: 'ID de orden' });
+    this.headerCellpaymentDate = page.getByRole('cell', { name: 'Fecha de pago' });
+    this.headerCellOrder = page.getByRole('cell', { name: 'Orden', exact: true });
+    this.headerCellStudent = page.getByRole('cell', { name: 'Estudiante' });
+    this.levelFilterSelector = page.getByRole('button', { name: 'Nivel' });
+    this.optionLevel = page.getByText('Secundaria');
+    this.optionPrimaria = page.getByLabel('Primaria').first();
+    this.conceptTypeFilterBy = page.getByTestId('Tipo de concepto-filterBy');
+    this.conceptTypeInscriptionFilterOption = page.getByTestId('Inscripción-filterOption');
+    this.conceptTypeMonthlySchollarshipFilterOption = page.getByTestId('Colegiatura / Mensualidad-filterOption');
+    this.conceptFilterBy = page.getByTestId('Concepto-filterBy');
+    this.colegiaturaPrimariaFilterOption = page.getByTestId('Colegiatura primaria-filterOption');
+    this.inscripcionFilterOption = page.getByTestId('Inscripción-filterOption');
+    this.applyFilterBtn = page.getByTestId('apply-button');
+    this.cleanFilterBtn = page.getByTestId('clean-button');
+    this.footerTotalAmountTxt = page.getByTestId('footerTotalAmount-text');
+    this.paymentMethodFilterBy = page.getByTestId('Medio de pago-filterBy');
+    this.ticketFilterOption = page.getByTestId('En efectivo (Ticket impreso)-filterOption');
+    this.bankTransferFilterOption = page.getByTestId('Transferencia bancaria-filterOption');
+    this.levelFilterBy = page.getByTestId('Nivel-filterBy');
+    this.preparatorioFilterOption = page.getByTestId('Preparatoria-filterOption');
+    this.sextoAFilterOption = page.getByTestId('6 A-filterOption');
+    this.cuartoAFilterOption = page.getByTestId('4 A-filterOption');
+    this.receiptStateFilterBy = page.getByTestId('Estado de factura-filterBy');
+    this.cancelledReceiptFilterOption = page.getByTestId('Cancelada-filterOption');
+    this.emitedReceiptFilterOption = page.getByTestId('Emitida-filterOption');
+    this.filterEmptyStateTxt = page.getByTestId('emptyState-text');
+    this.searchByPayerInp = page.getByPlaceholder('Buscar por nombre');
+    this.sectionFilterBy = page.getByTestId('Sección-filterBy');
+  }
+}

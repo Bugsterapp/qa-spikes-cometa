@@ -1,0 +1,18 @@
+$primary: #4a5cff;
+$secondary: #14208c;
+$light: #ffffff;
+$dark: #000000;
+$background: #f6f5fa;
+$dividerLight: rgba(173, 187, 204, 0.3);
+$brownLight: #8b8b8b;
+$neutralBlue: #2f2966;
+:export {
+	primary: $primary;
+	secondary: $secondary;
+	light: $light;
+	dark: $dark;
+	background: $background;
+	dividerLight: $dividerLight;
+	brownLight: $brownLight;
+	neutralBlue: $neutralBlue;
+}

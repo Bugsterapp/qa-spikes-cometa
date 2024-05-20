@@ -1,0 +1,30 @@
+{
+  "extends": "tsconfig-custom/nextjs.json",
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "src",
+    "next-env.d.ts",
+    "cypress",
+    "types",
+    "tailwind.config.js",
+    "next.config.js",
+    "**/*.cjs",
+    "**/*.mjs"
+  ],
+  "exclude": ["node_modules"],
+  "compilerOptions": {
+    "downlevelIteration": true,
+    "incremental": true,
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      /* Support absolute /imports/* with a leading '/' */
+      "/*": ["./*"],
+      "*": ["*"],
+      "react": ["./node_modules/@types/react"],
+      "react-dom": ["./node_modules/@types/react-dom"]
+    }
+  }
+}

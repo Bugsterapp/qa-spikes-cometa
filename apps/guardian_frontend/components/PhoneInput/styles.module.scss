@@ -1,0 +1,19 @@
+.flag-dropdown-recss:global(.flag-dropdown),.flag-dropdown-recss:global(.flag-dropdown.open) {
+        @apply rounded-l-[14px] h-[67px] bg-[#F3F5F9];
+
+        &:global(.open) {
+            @apply rounded-l-[14px];
+        }
+
+    & :global(.selected-flag) {
+        @apply h-full w-[75px] px-4 py-5 rounded-l-[14px] flex items-center justify-center;
+    }
+
+    & :global(.flag) {
+        @apply scale-125;
+    }
+}
+
+.phone-input:global(.form-control) {
+    @apply pl-20 rounded-[14px] h-[67px] py-5;
+}

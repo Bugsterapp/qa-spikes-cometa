@@ -1,0 +1,265 @@
+/* wake me up when @mui ends 👇 */
+/* 
+we should be able to remove this in the future
+ */
+.MuiInputBase-input {
+  outline: none !important;
+  box-shadow: none !important;
+  border-width: 0px !important;
+  height: 25px;
+  padding: 8px !important;
+}
+
+:root {
+  --color-danger: 253, 98, 98;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+input[type='password'] {
+  padding: 0px;
+}
+/* .apexcharts-bar-series.apexcharts-plot-series  .apexcharts-series path {
+  clip-path: inset(0% 0% -11% 0% round 18px);
+} */
+input:-webkit-autofill,
+input:-webkit-autofill:focus {
+  transition: background-color 0s 600000s, color 0s 600000s;
+}
+@keyframes onAutoFillStart {
+  from {
+  }
+  to {
+  }
+}
+
+input:-webkit-autofill {
+  animation-name: onAutoFillStart;
+}
+@layer components {
+  .drawer-duration {
+    transition-property: transform;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+  }
+  .drawer-translate-x-full {
+    transform: translateX(100%);
+  }
+  .drawer-translate-x-0 {
+    transform: translateX(0px);
+  }
+}
+.apexcharts-legend-series {
+  display: flex;
+  align-items: center;
+}
+.MuiTableCell-root {
+  box-shadow: initial !important;
+  border-radius: 0px !important;
+}
+
+.border-radius-none {
+  border-radius: 0px !important;
+}
+
+*:not(.scrollbar)::-webkit-scrollbar {
+  width: 6px;
+  height: 5px;
+  background-color: transparent;
+}
+
+*:not(.scrollbar)::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background-image: -webkit-gradient(
+    linear,
+    left bottom,
+    left top,
+    color-stop(0.24, rgb(194, 194, 194)),
+    color-stop(0.52, rgb(199, 199, 199)),
+    color-stop(0.86, rgb(186, 186, 186))
+  );
+}
+table td:last-child {
+  width: 100%;
+}
+@media print {
+  @page {
+    margin: 0;
+  }
+  body {
+    margin: 1.6cm;
+  }
+}
+
+.background-element {
+  opacity: 0;
+  transform: translateY(100%);
+}
+.background-element[data-state='open'] {
+  transform: translateY(0%);
+  opacity: 1;
+}
+.transition-z-index {
+  transition: z-index 0.3s ease;
+}
+[data-state='show'] {
+  opacity: 1;
+}
+
+[data-state='hide'] {
+  opacity: 0;
+}
+
+.grid-area {
+  grid-area: 1/1;
+}
+
+/* error icon */
+.FHGIIeCe_2 {
+  stroke-dasharray: 95 97;
+  stroke-dashoffset: 96;
+  animation: FHGIIeCe_draw 500ms linear 0ms forwards;
+  animation-play-state: paused;
+}
+.FHGIIeCe_3 {
+  stroke-dasharray: 18 20;
+  stroke-dashoffset: 19;
+  animation: FHGIIeCe_draw 300ms linear 300ms forwards;
+  animation-play-state: paused;
+}
+.FHGIIeCe_4 {
+  stroke-dasharray: 18 20;
+  stroke-dashoffset: 19;
+  animation: FHGIIeCe_draw 300ms linear 300ms forwards;
+  animation-play-state: paused;
+}
+@keyframes FHGIIeCe_draw {
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* success icon */
+.fPvpbRVO_0 {
+  stroke-dasharray: 20 22;
+  stroke-dashoffset: 21;
+  animation: fPvpbRVO_draw 500ms linear 300ms forwards;
+  animation-play-state: paused;
+}
+.fPvpbRVO_1 {
+  stroke-dasharray: 87 89;
+  stroke-dashoffset: 88;
+  animation: fPvpbRVO_draw 500ms linear 0ms forwards;
+  animation-play-state: paused;
+}
+[data-state='running'] {
+  animation-play-state: running;
+}
+
+@keyframes fPvpbRVO_draw {
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-background-color {
+  animation: animate-backgound-color 0.7s ease-in-out 500 alternate;
+}
+
+@keyframes animate-backgound-color {
+  0% {
+    background-color: #ffffff;
+  }
+  100% {
+    background-color: #f2f8f5;
+  }
+}
+
+.MuiPickersPopper-root {
+  z-index: 99999 !important;
+}
+
+input:checked + div svg {
+  @apply block;
+}
+
+.scrollbar::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+  @apply bg-gray-200;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+  width: 12px;
+  height: 12px;
+  display: block;
+  background-clip: padding-box;
+  border-radius: 50px;
+  background-color: rgba(0, 0, 0, 0.161);
+}
+
+.scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(205, 207, 208);
+  @apply transition-colors;
+}
+
+.scrollbar::-webkit-scrollbar-corner {
+  width: 20px;
+  height: 20px;
+}
+
+*[data-radix-select-viewport]::-webkit-scrollbar:vertical {
+  display: block;
+}
+
+.scrollbar::-webkit-scrollbar-button:single-button {
+  background-size: 60%;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: block;
+  border-radius: 100%;
+  width: 12px;
+  background-color: #00000029;
+  height: 12px;
+  opacity: 0;
+}
+
+.scrollbar::-webkit-scrollbar-button:single-button:hover {
+  background-color: rgb(205, 207, 208);
+  @apply transition-colors;
+}
+
+.scrollbar::-webkit-scrollbar-button:single-button:vertical:decrement {
+  background-image: url('/assets/icons/scrollbar/arrow-up.svg');
+}
+
+.scrollbar::-webkit-scrollbar-button:single-button:vertical:increment {
+  background-image: url('/assets/icons/scrollbar/arrow-down.svg');
+  background-position: 50% 60%;
+}
+
+.scrollbar::-webkit-scrollbar-button:single-button:horizontal {
+  background-size: 45%;
+}
+
+.scrollbar::-webkit-scrollbar-button:single-button:horizontal:increment {
+  background-image: url('/assets/icons/scrollbar/arrow-right.svg');
+  background-position: 60% 50%;
+}
+.scrollbar::-webkit-scrollbar-button:single-button:horizontal:decrement {
+  background-image: url('/assets/icons/scrollbar/arrow-left.svg');
+  background-position: 40% 50%;
+}
+
+.grid-area-1 {
+  grid-area: 1/1;
+}
+
+/* Target the span inside button when it's rendered */
+button[role="combobox"] > span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

@@ -1,0 +1,16 @@
+{
+  "extends": "tsconfig-custom/nextjs.json",
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
+  "exclude": ["node_modules", "build", "turbo"],
+  "typeRoots": ["./types"],
+  "compilerOptions": {
+    "downlevelIteration": true,
+    "incremental": true,
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["./*"],
+      "/*": ["./*"]
+    }
+  }
+}

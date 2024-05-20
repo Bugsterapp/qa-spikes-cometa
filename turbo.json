@@ -1,0 +1,58 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "pipeline": {
+    "build": {
+      "outputs": [".next/**"],
+      "env": [
+        "NEXT_PUBLIC_API_HOST",
+        "NEXT_PUBLIC_WHATSAPP_NUM",
+        "NEXT_PUBLIC_SEGMENT_ACTIVE",
+        "HOST_API_KEY",
+        "NEXT_PUBLIC_API_SECRET",
+        "NEXT_PUBLIC_CLIENT_API_BASE_URL",
+        "NEXT_PUBLIC_HJSV",
+        "NEXT_PUBLIC_HJID",
+        "NEXT_PUBLIC_SENTRY_DSN",
+        "NEXT_PUBLIC_SERVER_API_BASE_URL",
+        "NEXT_PUBLIC_MAX_AGE_TOKEN",
+        "NEXTAUTH_URL",
+        "NODE_ENV",
+        "NEXT_PUBLIC_SEGMENT_WRITE_KEY",
+        "NEXT_PUBLIC_MERCADO_PAGO_TOKEN",
+        "NEXT_PUBLIC_MERCADO_PAGO_LOCALE",
+        "NEXT_PUBLIC_EMAIL_CONTACT",
+        "NEXT_PUBLIC_FRONTEND_BASE_URL",
+        "NEXTAUTH_SECRET",
+        "SENTRY_DSN",
+        "NEXT_PUBLIC_FULLSTORY_ORG_ID",
+        "NEXT_PUBLIC_SENTRY_ORG_SLUG",
+        "NEXT_PUBLIC_KUSHKI_MERCHANT_ID",
+        "NEXT_PUBLIC_KUSHKI_TEST",
+        "VERCEL",
+        "VERCEL_URL",
+        "PORT",
+        "CI",
+        "VERCEL_ENV",
+        "MODE",
+        "NEXT_PUBLIC_FLAGS_ENV_KEY",
+        "DASHBOARD_BASE_URL"
+      ]
+    },
+    "dev": {
+      "cache": false
+    },
+    "tsc": {
+      "outputs": []
+    },
+    "lint": {
+      "outputs": []
+    },
+    "guardian#dev": {
+      "dependsOn": ["@cometa/trpc#dev"]
+    },
+    "dashboard#dev": {
+      "dependsOn": ["@cometa/trpc#dev"],
+      "cache": false
+    }
+  }
+}
