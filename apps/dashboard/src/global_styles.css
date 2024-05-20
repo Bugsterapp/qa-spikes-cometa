@@ -1,0 +1,629 @@
+/* wake me up when @mui ends 👇 */
+/* 
+we should be able to remove this in the future
+ */
+
+.MuiInputBase-input {
+  outline: none !important;
+  box-shadow: none !important;
+  border-width: 0px !important;
+  height: 25px;
+  padding: 8px !important;
+}
+
+:root {
+  --color-danger: 253, 98, 98;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+input[type='password'] {
+  padding: 0px;
+}
+html {
+  scrollbar-gutter: stable;
+}
+.scrollbar-stable {
+  scrollbar-gutter: stable;
+}
+/* styles.css */
+.acc-icon {
+  transition: transform 300ms;
+}
+.acc-trigger[data-state='open'] > .acc-icon {
+  transform: rotate(180deg);
+}
+/* .apexcharts-bar-series.apexcharts-plot-series  .apexcharts-series path {
+  clip-path: inset(0% 0% -11% 0% round 18px);
+} */
+input:-webkit-autofill,
+input:-webkit-autofill:focus {
+  transition:
+    background-color 0s 600000s,
+    color 0s 600000s;
+}
+@keyframes onAutoFillStart {
+  from {
+  }
+  to {
+  }
+}
+@font-face {
+  font-family: 'Lota Grotesque Bold It';
+  src:
+    url('/grotesque-font/LotaGrotesque-BoldIt.woff2') format('woff2'),
+    url('/grotesque-font/LotaGrotesque-BoldIt.woff') format('woff');
+  font-weight: bold;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lota Grotesque';
+  src:
+    url('/grotesque-font/LotaGrotesque-Black.woff2') format('woff2'),
+    url('/grotesque-font/LotaGrotesque-Black.woff') format('woff');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lota Grotesque Black It';
+  src:
+    url('/grotesque-font/LotaGrotesque-BlackIt.woff2') format('woff2'),
+    url('/grotesque-font/LotaGrotesque-BlackIt.woff') format('woff');
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lota Grotesque';
+  src:
+    url('/grotesque-font/LotaGrotesque-Bold.woff2') format('woff2'),
+    url('/grotesque-font/LotaGrotesque-Bold.woff') format('woff');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lota Grotesque Extra';
+  src:
+    url('/grotesque-font/LotaGrotesque-ExtraLight.woff2') format('woff2'),
+    url('/grotesque-font/LotaGrotesque-ExtraLight.woff') format('woff');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lota Grotesque Extra Light It';
+  src:
+    url('/grotesque-font/LotaGrotesque-ExtraLightIt.woff2') format('woff2'),
+    url('/grotesque-font/LotaGrotesque-ExtraLightIt.woff') format('woff');
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lota Grotesque Semi Bold It';
+  src:
+    url('/grotesque-font/LotaGrotesque-SemiBoldIt.woff2') format('woff2'),
+    url('/grotesque-font/LotaGrotesque-SemiBoldIt.woff') format('woff');
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lota Grotesque';
+  src:
+    url('/grotesque-font/LotaGrotesque-Light.woff2') format('woff2'),
+    url('/grotesque-font/LotaGrotesque-Light.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lota Grotesque';
+  src:
+    url('/grotesque-font/LotaGrotesque-Regular.woff2') format('woff2'),
+    url('/grotesque-font/LotaGrotesque-Regular.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lota Grotesque It';
+  src:
+    url('/grotesque-font/LotaGrotesque-RegularIt.woff2') format('woff2'),
+    url('/grotesque-font/LotaGrotesque-RegularIt.woff') format('woff');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lota Grotesque Light It';
+  src:
+    url('/grotesque-font/LotaGrotesque-LightIt.woff2') format('woff2'),
+    url('/grotesque-font/LotaGrotesque-LightIt.woff') format('woff');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lota Grotesque Semi';
+  src:
+    url('/grotesque-font/LotaGrotesque-SemiBold.woff2') format('woff2'),
+    url('/grotesque-font/LotaGrotesque-SemiBold.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lota Grotesque';
+  src:
+    url('/grotesque-font/LotaGrotesque-Thin.woff2') format('woff2'),
+    url('/grotesque-font/LotaGrotesque-Thin.woff') format('woff');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lota Grotesque Thin It';
+  src:
+    url('/grotesque-font/LotaGrotesque-ThinIt.woff2') format('woff2'),
+    url('/grotesque-font/LotaGrotesque-ThinIt.woff') format('woff');
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+}
+
+input:-webkit-autofill {
+  animation-name: onAutoFillStart;
+}
+@layer components {
+  .drawer-duration {
+    transition-property: transform;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+  }
+  .drawer-translate-x-full {
+    transform: translateX(100%);
+  }
+  .drawer-translate-x-0 {
+    transform: translateX(0px);
+  }
+}
+.apexcharts-legend-series {
+  display: flex;
+  align-items: center;
+}
+.MuiTableCell-root {
+  box-shadow: initial !important;
+  border-radius: 0px !important;
+}
+
+.border-radius-none {
+  border-radius: 0px !important;
+}
+
+*:not(.scrollbar)::-webkit-scrollbar {
+  width: 6px;
+  height: 5px;
+  background-color: transparent;
+}
+
+*:not(.scrollbar)::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background-image: -webkit-gradient(
+    linear,
+    left bottom,
+    left top,
+    color-stop(0.24, rgb(194, 194, 194)),
+    color-stop(0.52, rgb(199, 199, 199)),
+    color-stop(0.86, rgb(186, 186, 186))
+  );
+}
+table td:last-child {
+  width: 100%;
+}
+@media print {
+  @page {
+    margin: 0;
+  }
+  body {
+    margin: 1.6cm;
+  }
+}
+
+.background-element {
+  opacity: 0;
+  transform: translateY(100%);
+}
+.background-element[data-state='open'] {
+  transform: translateY(0%);
+  opacity: 1;
+}
+.transition-z-index {
+  transition: z-index 0.3s ease;
+}
+[data-state='show'] {
+  opacity: 1;
+}
+
+[data-state='hide'] {
+  opacity: 0;
+}
+
+.grid-area {
+  grid-area: 1/1;
+}
+
+/* error icon */
+.FHGIIeCe_2 {
+  stroke-dasharray: 95 97;
+  stroke-dashoffset: 96;
+  animation: FHGIIeCe_draw 500ms linear 0ms forwards;
+  animation-play-state: paused;
+}
+.FHGIIeCe_3 {
+  stroke-dasharray: 18 20;
+  stroke-dashoffset: 19;
+  animation: FHGIIeCe_draw 300ms linear 300ms forwards;
+  animation-play-state: paused;
+}
+.FHGIIeCe_4 {
+  stroke-dasharray: 18 20;
+  stroke-dashoffset: 19;
+  animation: FHGIIeCe_draw 300ms linear 300ms forwards;
+  animation-play-state: paused;
+}
+@keyframes FHGIIeCe_draw {
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* success icon */
+.fPvpbRVO_0 {
+  stroke-dasharray: 20 22;
+  stroke-dashoffset: 21;
+  animation: fPvpbRVO_draw 500ms linear 300ms forwards;
+  animation-play-state: paused;
+}
+.fPvpbRVO_1 {
+  stroke-dasharray: 87 89;
+  stroke-dashoffset: 88;
+  animation: fPvpbRVO_draw 500ms linear 0ms forwards;
+  animation-play-state: paused;
+}
+[data-state='running'] {
+  animation-play-state: running;
+}
+
+@keyframes fPvpbRVO_draw {
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-background-color {
+  animation: animate-backgound-color 0.7s ease-in-out 500 alternate;
+}
+
+@keyframes animate-backgound-color {
+  0% {
+    background-color: #ffffff;
+  }
+  100% {
+    background-color: #f2f8f5;
+  }
+}
+
+.MuiPickersPopper-root {
+  z-index: 99999 !important;
+}
+
+input:checked + div svg {
+  @apply block;
+}
+
+.scrollbar::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+  @apply bg-gray-200;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+  width: 12px;
+  height: 12px;
+  display: block;
+  background-clip: padding-box;
+  border-radius: 50px;
+  background-color: rgba(0, 0, 0, 0.161);
+}
+
+.scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(205, 207, 208);
+  @apply transition-colors;
+}
+
+.scrollbar::-webkit-scrollbar-corner {
+  width: 20px;
+  height: 20px;
+}
+
+*[data-radix-select-viewport]::-webkit-scrollbar:vertical {
+  display: block;
+}
+
+.scrollbar::-webkit-scrollbar-button:single-button {
+  background-size: 60%;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: block;
+  border-radius: 100%;
+  width: 12px;
+  background-color: #00000029;
+  height: 12px;
+  opacity: 0;
+}
+
+.scrollbar::-webkit-scrollbar-button:single-button:hover {
+  background-color: rgb(205, 207, 208);
+  @apply transition-colors;
+}
+
+.scrollbar::-webkit-scrollbar-button:single-button:vertical:decrement {
+  background-image: url('/assets/icons/scrollbar/arrow-up.svg');
+}
+
+.scrollbar::-webkit-scrollbar-button:single-button:vertical:increment {
+  background-image: url('/assets/icons/scrollbar/arrow-down.svg');
+  background-position: 50% 60%;
+}
+
+.scrollbar::-webkit-scrollbar-button:single-button:horizontal {
+  background-size: 45%;
+}
+
+.scrollbar::-webkit-scrollbar-button:single-button:horizontal:increment {
+  background-image: url('/assets/icons/scrollbar/arrow-right.svg');
+  background-position: 60% 50%;
+}
+.scrollbar::-webkit-scrollbar-button:single-button:horizontal:decrement {
+  background-image: url('/assets/icons/scrollbar/arrow-left.svg');
+  background-position: 40% 50%;
+}
+
+.grid-area-1 {
+  grid-area: 1/1;
+}
+
+/* Target the span inside button when it's rendered */
+button[role='combobox'] > span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Remove focus ring for dashboard-input component with Tailwind's focus:ring class */
+input[role='dashboard-input']:focus {
+  --tw-ring-opacity: 0;
+  --tw-ring-color: transparent;
+  box-shadow: none;
+}
+/* .rc-tree {
+  margin: 0;
+  border: 1px solid transparent;
+}
+.rc-tree-treenode {
+  margin: 0;
+  padding: 0;
+  line-height: 24px;
+  white-space: nowrap;
+  list-style: none;
+  outline: 0;
+}
+.rc-tree .rc-tree-node-content-wrapper {
+  display: flex;
+  width: 100%;
+  max-width: 500px;
+  align-items: center;
+  height: 72px;
+  margin-left: 16px;
+  padding: 1px 3px 0 0;
+  text-decoration: none;
+  cursor: pointer;
+}
+.rc-tree-treenode ul {
+  margin: 0;
+  padding: 0 0 0 18px;
+}
+.rc-tree .rc-tree-title {
+  width: 100%;
+}
+
+.rc-tree [role='treeitem'] {
+  padding-left: 16px;
+}
+.rc-tree span.rc-tree-switcher {
+  align-self: center;
+  padding-left: 16px;
+  padding-bottom: 10px;
+}
+.rc-tree-child-tree {
+  display: block;
+} */
+.rc-tree {
+  margin: 0;
+  border: 1px solid transparent;
+}
+
+/* .rc-tree-focused:not(.rc-tree-active-focused) {
+  border-color: cyan;
+} */
+
+.rc-tree-treenode {
+  margin: 0;
+  padding: 0;
+  line-height: 24px;
+  white-space: nowrap;
+  list-style: none;
+  outline: 0;
+}
+
+.rc-tree-treenode ul {
+  margin: 0;
+  padding: 0 0 0 18px;
+}
+
+.rc-tree .rc-tree-node-content-wrapper {
+  display: flex;
+  width: 100%;
+  max-width: 500px;
+  align-items: center;
+  height: 72px;
+  padding: 1px 3px 0 0;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.rc-tree span.rc-tree-switcher {
+  align-self: center;
+  padding-left: 16px;
+  padding-bottom: 10px;
+}
+
+.rc-tree-treenode span.rc-tree-switcher-noop {
+  cursor: auto;
+}
+
+.rc-tree-treenode span.rc-tree-switcher_open {
+  background-position: -93px -56px;
+}
+
+.rc-tree-treenode span.rc-tree-switcher_close {
+  background-position: -75px -56px;
+}
+
+.rc-tree-treenode span.rc-tree-checkbox {
+  width: 13px;
+  height: 13px;
+  margin: 0 3px;
+  background-position: 0 0;
+}
+/*
+.rc-tree-treenode span.rc-tree-checkbox-checked {
+  background-position: -14px 0;
+}
+
+.rc-tree-treenode span.rc-tree-checkbox-indeterminate {
+  background-position: -14px -28px;
+}
+
+.rc-tree-treenode span.rc-tree-checkbox-disabled {
+  background-position: 0 -56px;
+}
+
+.rc-tree-treenode span.rc-tree-checkbox-checked.rc-tree-checkbox-disabled {
+  background-position: -14px -56px;
+}
+
+.rc-tree-treenode span.rc-tree-checkbox-indeterminate.rc-tree-checkbox-disabled {
+  position: relative;
+  background: #ccc;
+  border-radius: 3px;
+}
+
+.rc-tree-treenode span.rc-tree-checkbox-indeterminate.rc-tree-checkbox-disabled::after {
+  position: absolute;
+  top: 5px;
+  left: 3px;
+  width: 5px;
+  height: 0;
+  border: 2px solid #fff;
+  border-top: 0;
+  border-left: 0;
+  transform: scale(1);
+  content: ' ';
+}
+
+.rc-tree:not(.rc-tree-show-line) .rc-tree-treenode .rc-tree-switcher-noop {
+  background: none;
+}
+
+.rc-tree.rc-tree-show-line .rc-tree-treenode:not(:last-child) > ul {
+  background: url('data:image/gif;base64,R0lGODlhCQACAIAAAMzMzP///yH5BAEAAAEALAAAAAAJAAIAAAIEjI9pUAA7') 0 0 repeat-y;
+}
+.rc-tree.rc-tree-show-line .rc-tree-treenode:not(:last-child) > .rc-tree-switcher-noop {
+  background-position: -56px -18px;
+}
+
+.rc-tree.rc-tree-show-line .rc-tree-treenode:last-child > .rc-tree-switcher-noop {
+  background-position: -56px -36px;
+}
+
+.rc-tree-child-tree {
+  display: none;
+}
+
+.rc-tree-child-tree-open {
+  display: block;
+}
+
+.rc-tree-treenode-disabled > span:not(.rc-tree-switcher),
+.rc-tree-treenode-disabled > a,
+.rc-tree-treenode-disabled > a span {
+  color: #767676;
+  cursor: not-allowed;
+}
+
+.rc-tree-treenode-active {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.rc-tree-node-selected {
+  background-color: #ffe6b0;
+  box-shadow: 0 0 0 1px #ffb951;
+  opacity: 0.8;
+}
+
+.rc-tree-icon__open {
+  margin-right: 2px;
+  vertical-align: top;
+  background-position: -110px -16px;
+}
+
+.rc-tree-icon__close {
+  margin-right: 2px;
+  vertical-align: top;
+  background-position: -110px 0;
+} */
+
+.rc-tree-title {
+  width: 100%;
+}
+
+.rc-tree-indent {
+  display: inline-block;
+  height: 0;
+  vertical-align: bottom;
+}
+
+.rc-tree-indent-unit {
+  display: inline-block;
+  width: 40px;
+}

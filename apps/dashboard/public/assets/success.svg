@@ -1,0 +1,43 @@
+<svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg" style="">
+  <path
+    d="M9.13672 15L13.2289 20.0016C13.4356 20.2542 13.825 20.2443 14.0185 19.9814L20.999 10.5"
+    stroke="#00AB55"
+    stroke-width="3"
+    stroke-linecap="round"
+    class="fPvpbRVO_0"
+  ></path>
+  <path
+    d="M28.75 15C28.75 22.5939 22.5939 28.75 15 28.75C7.40608 28.75 1.25 22.5939 1.25 15C1.25 7.40608 7.40608 1.25 15 1.25C22.5939 1.25 28.75 7.40608 28.75 15Z"
+    stroke="#00AB55"
+    stroke-width="2.5"
+    class="fPvpbRVO_1"
+  ></path>
+  <style data-made-with="vivus-instant">
+    .fPvpbRVO_0 {
+      stroke-dasharray: 20 22;
+      stroke-dashoffset: 21;
+      animation: fPvpbRVO_draw 1000ms linear 0ms forwards;
+    }
+    .fPvpbRVO_1 {
+      stroke-dasharray: 87 89;
+      stroke-dashoffset: 88;
+      animation: fPvpbRVO_draw 1000ms linear 0ms forwards;
+    }
+    @keyframes fPvpbRVO_draw {
+      100% {
+        stroke-dashoffset: 0;
+      }
+    }
+    @keyframes fPvpbRVO_fade {
+      0% {
+        stroke-opacity: 1;
+      }
+      92.3076923076923% {
+        stroke-opacity: 1;
+      }
+      100% {
+        stroke-opacity: 0;
+      }
+    }
+  </style>
+</svg>

@@ -1,0 +1,5526 @@
+[
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Aguascalientes Centro"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Colinas del Rio"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Olivares Santana"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Las Brisas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Ramon Romo Franco"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Cayetano"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Colinas de San Ignacio"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Fundición"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Fundición II"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Los Sauces"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Línea de Fuego"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Buenos Aires"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Circunvalación Norte"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Las Arboledas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas de San Francisco"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas de La Universidad"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Sol"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Gremial"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Industrial"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Altavista"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Curtidores"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Concordia"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Miravalle"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Panorama"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Residencial Guadalupe"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Colinas del Poniente"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Bugambilias"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Del Carmen"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Fe"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "México"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Primavera"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Pablo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Guadalupe"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Heliodoro Garcia"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Gómez"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Moderno"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Valle del Rio San Pedro"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Guadalupe Posada"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Marcos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Marcos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Marcos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Modelo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Residencial del Valle I"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Residencial del Valle II"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Herradura"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Club Campestre"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jardines del Campestre"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Los Vergeles"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Ciudad Universitaria"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Rancho San Antonio"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Talamantes Ponce"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Granjas del Campestre"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Puerto las Hadas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Valle del Campestre"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas de Montenegro"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Las Cavas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Enramada"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Trojes de Oriente"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Valle de las Trojes"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas de San Nicolás"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Telmo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Paloma"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Barrio de Santiago"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villa de las Trojes"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Valle de Santa Teresa"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Troje"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Trojes de Alonso"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Telmo Residencial"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Santa Fe"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Aguascalientes 2000"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Las Trojes"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Misión del Campanario"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Trojes de Cristal"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Trojes del Sol"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Residencial Santa Clara"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Misión de Santiago"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Andora Residencial"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Cadaqués Residencial"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Valle del Campanario"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Las Misiones"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Los Jarales"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Cerrada El Molino"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Valle Real"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Terzetto"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Cerrada de La Misión"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Cerrada del Valle"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Cerrada de la Mezquitera"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lomas del Campestre 2a Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas del Campestre"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Los Calicantos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jardines de la Concepción"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Los Bosques"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Rinconada los Bosques"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Perla Norte"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Arroyo El Molino"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Galerías"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Residencial Altaria"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villa Teresa"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Cartagena 1947"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas de La Convención"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lomas de La Asunción"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villa de Nuestra Señora de La Asunción Sector Encino"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villa de Nuestra Señora de La Asunción Sector Alameda"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San José de Pozo Bravo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villa de Nuestra Señora de La Asunción Sector San Marcos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villa de Nuestra Señora de La Asunción Sector Estación"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Las Plazas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Rosedal"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Natura"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Montebello Della Stanza"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villa Notre Dame"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Privada Guadalupe"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Rinconada Pozo Bravo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Pozo Bravo Sur"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villa Loma Dorada"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jardines de Montebello"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas del Río"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Puertecito"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Rinconada del Puertecito"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Constitución"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Libertad"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Pozo Bravo Norte"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Soberana Convención Revolucionaria"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villa Montaña"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas de Don Antonio"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Los Ángeles"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Capittala"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Recinto de la Macarena"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Soledad"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Los Naranjos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villa de Nuestra Señora de La Asunción Sector Guadalupe"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Bosques del Prado Norte"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Sartenejo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lomas del Campestre 1a Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Bosques del Prado Sur"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Roble"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Fátima"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Independencia de México"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Nueva Rinconada"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Primo Verdad"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San José del Arenal"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Unidad Ganadera"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Xavier"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Residencial del Real"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Puerta Navarra"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Residencial Campestre Club de Golf"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Palma Real"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Muralia"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Agropecuario"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Centro Distribuidor de Básicos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Rinconada"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Plateado"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Residencial Pulgas Pandas Norte"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Residencial Pulgas Pandas Sur"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas del Vergel"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Cerrada San Miguel"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Las Hadas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Morelos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Andrea"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Los Arcos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Industrial"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Buenavista"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "C.T.M."
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Estrella"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Macias Arellano"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Trento"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Nueva Andalucia Coto Residencial"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lomas del Cobano"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Higuerilla"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Parras"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Cobano"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Hacienda el Cobano"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Trojes del Cobano"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas del Cobano"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Alianza Ferrocarrilera"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Bosques del Prado Oriente"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Francisco Guel Jimenez"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Las Viñas INFONAVIT"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Santa Anita 4a Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Santa Anita"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Santa Anita 2a Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Maguey"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Las Cumbres"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lic Benito Juárez"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Nazario Ortiz Garza"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Rodolfo Landeros Gallegos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "S.T.E.M.A."
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Zona Militar"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villa Bonita"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lic Benito Palomino Dena"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Anexo Benito Palomino Dena (Cumbres II)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Florida l"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Florida ll"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Claustros Loma Dorada"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Cumbres III"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lomas de Bellavista"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lomas de las Fuentes"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Colinas de Oriente"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Vista de las Cumbres"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Los Laureles"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Mirador de las Culturas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Rocío"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas de la Loma"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Los Pericos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Paseos del Sol"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Miradores de Santa Elena"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas de las Fuentes"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Hojarasca"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Ejido las Cumbres"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "J Refugio Esparza Reyes"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Rinconadas las Cumbres"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lomas de Oriente"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "C.N.O.P. Oriente"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Las Cumbres"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Luis Ortega Douglas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Pensadores Mexicanos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Pintores Mexicanos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Progreso"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Santa Regina"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Cerro Alto"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Santa Margarita"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Del Trabajo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Ferronales"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Luis Gómez Zepeda (ferronales)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lomas de Santa Anita"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Alameda"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Rinconada de La Alameda"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Bosques de La Alameda"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Nueva Alameda"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Héroes"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Hacienda"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Mancha"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Ojocaliente"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Ojocaliente INEGI"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Solidaridad 1a Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Sol Naciente"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villa de las Norias"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Camino Real"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Ribera del Sol"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Ambrosía"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "José Guadalupe Peralta Gámez"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Haciendas de Aguascalientes"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villerías"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Vistas de Oriente"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Real de Haciendas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Valle de los Cactus"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Colinas de San Patricio"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Balcones de Oriente"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Terra Nova"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "José Guadalupe Posada"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Rocío"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Valle del Bicentenario"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Paseo de los Cactus"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Balcones del Valle"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Real del Sol"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Ex Hacienda Ojocaliente"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Ejido Ojocaliente"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Misión Alameda"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Riego"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Fidel Velázquez"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Municipio Libre"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas del Mediterráneo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Ex Hacienda La Cantera"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "José Vasconcelos Calderón"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Porta Canteras"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Veteranos de la Revolución"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Fuentes del Lago"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Quelite"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Olinda"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Bellavista"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Loma Bonita"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Nueva Castilla"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Xenia Residencial"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Vergel de la Cantera"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas de La Cantera"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lic Manuel Gómez Morin"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Residencial San Nicolás"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Educación Álamos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Nueva España"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lic. José López Portillo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Barranquilla"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Barandales de San José"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Canteras de San Javier"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Capital City"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Rinconada San José"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Canteras de San José"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Circunvalación Poniente"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "España"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Barranca de Guadalupe"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Pirules INFONAVIT"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jardines de los Pirules"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Residencial los Pirules"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Canteras de Santa Imelda"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Francisco Villa"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jardines del Lago"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Tahona Residencial"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Martin de La Cantera"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Canteras de San Agustin"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Santa Imelda"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Los Eucaliptos 2a. Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Los Eucaliptos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Agustín"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Edén"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Parque Industrial el Vergel"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Misión Juan Pablo II"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Las Flores"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Vivienda Popular"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Las Torres"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Las Américas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Obraje"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Santa Elena"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Agricultura"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Dorado 1a Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Dorado 2a Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Valle Dorado"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villa Jardín"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jardines de Santa Elena"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Hermanos Carreón"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Montebello"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Santa Elena 2a Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Fuente"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Encino"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Laurel"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Luna"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Salud"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Los Virreyes"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Llanito"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Residencial el Encino"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Triana"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Residencial Cosío"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Triana"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Fernando INFONAVIT"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jardines de Triana"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Gámez"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jesús Gómez Portugal"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Héroes de Aguascalientes"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jardines de La Cruz"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Huerta"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Luis"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas de Kristal"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Bona Gens"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "INFONAVIT Los Volcanes"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "FOVISSSTE Ojocaliente I"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Ojocaliente FOVISSSTE II"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Ojocaliente las Torres"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Rinconada de La Cruz"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas de Ojocaliente"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Parque y Presa del Cedazo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lázaro Cárdenas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Estación"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Purísima"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "IV Centenario"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jesús Terán Peredo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Vivienda Militar"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Ojo de Agua"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Sidusa"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Rinconada El Cedazo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villa las Palmas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Bajío de las Palmas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lomas del Gachupín"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Cedazo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Ángel"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villa Taurina"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Agua Clara"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Balcones de Ojocaliente"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Cielo Claro"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lomas del Chapulín"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Ojo de Agua de Palmitas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Salto de Ojocaliente"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Solidaridad 2a Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Solidaridad 3a Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Tierra Buena"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Rinconada San Antonio I"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Cima del Chapulín"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Cobano de Palmitas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Jorge"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Lomita"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Morelos INFONAVIT"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Vista del Sol 2a Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Vista del Sol 3a Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Ojo de Agua INFONAVIT"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jardines del Sol"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Cruz"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Misión de Santa Fe"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Vista del Sol 1a Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "S.T.E.M.A."
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jardines de La Convención"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Ojo de Agua FOVISSSTE 1a Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lic Primo Verdad INEGI"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Fuentes de La Asunción"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jardines de La Luz"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Mesonero"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Bulevar"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Caminero"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jardines de Aguascalientes"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jardines de La Asunción"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Las Canoas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lindavista"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "México"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Los Cedros"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jardines de las Bugambilias"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jardines del Parque"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jardines de Alejandría"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Pirámides"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Residencial del Parque"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Rinconada del Parque"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jardines de las Fuentes"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Casasolida"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Central de Abastos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jardines del Sur"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Martinez Dominguez"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Prados de Villasunción"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Prados del Sur"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Francisco del Arenal"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Pedro"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Torres de San Francisco"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Trojes del Sur"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Australis"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Conjunto San Francisco"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Parque Industrial Siglo XXI"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Parque Industrial Siglo XXI (Ampliación)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Casita"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Estancia"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "INFONAVIT Potreros del Oeste"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas de Santa Rosa"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas del Oeste"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Vistas del Sur"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Rinconada del Sur"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas del Encino"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Versalles 1a Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Versalles 2a Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Bosque Real"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Rancho Santa Mónica"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Vicente Guerrero"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas del Pilar 1a Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Barlovento"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Abadía"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Mangata"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas San Antonio"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villa Capri"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Providencia"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Rinconada Santa Mónica"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Paseos de Santa Mónica"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Insurgentes"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Bulevares 1a. Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Bulevares 2a. Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Pilar Blanco INFONAVIT"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Ciudad Industrial"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Plaza Vestir"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Vista Alegre"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Parque Industrial ALTEC"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Centro SCT Aguascalientes"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Rústicos Calpulli"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Reserva San Matías"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas de Bonaterra"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Francisco de los Arteaga"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Residencial San Javier"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villa Sur"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Casa Blanca"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jardines de Casablanca"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jardines de Casanueva"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Emiliano Zapata"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Morelos I"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Morelos 2a Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Solidaridad 4a Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Residencial Hacienda San Martín"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Viñedos del Sur"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Reserva Villa Sur"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villas de Ajedrez"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lomas de Vistabella"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Sebastián"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lomas del Sur"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lomas de Nueva York"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Laureles del Sur"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lomas del Mirador"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Misión de Santa Lucía"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lomas de Vistabella 2a. Sección"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lotes de Arellano"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Condominio La terraza"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Valle del Cedazo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Paseos de San Antonio"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Hacienda San Marcos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lomas del Ajedrez"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Mujeres Ilustres"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Periodistas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villa del Chapulín"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Los Dolores"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Fundadores"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lomas de San Jorge"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Reencuentro"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villalta"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lunaria"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Panamericano"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "San Francisco de los Romos Centro"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "El Tirón (El Progreso)"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Hidalgo"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "La Aurora"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "La Guadalupana"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "La Perla"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Los Cedros"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "María"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Revolución"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "San Francisco"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "San José Buenavista"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Cerrada San Francisco"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Fracción de la Trinidad II"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "La Escondida (El Salero)"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Monserrat"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "San José del Barranco"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "San Juan"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "28 de Abril"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Santa Bárbara"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "El Cardonal"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Santa Fe"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "El Barranco"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "El Gigante"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "El Refugio"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Santa Elena (Elena)"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "La Gloria"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "La Paz"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "La Providencia"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "La Trinidad"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "La Unión"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Las Carmelitas"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Los Lirios"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Sociedad Plan de los Sabinos"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "San Ángel"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "San Pedro Victoria de Arriba"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Santa Anita"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Zacatenco"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Mary"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Villa de Guadalupe"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "San Pablo"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Los Corrales (Los Corrales Blancos)"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "El Chamizal"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Los Negritos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Coyotes"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Viñedos Valle Redondo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Loma de los Negritos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Viñedos San Felipe"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Cuauhtémoc (Las Palomas)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Hacienda Nueva"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Cariñán"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Santa Cruz de la Presa"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lomas del Picacho"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "CERESO (Para Varones y Mujeres)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Estación Cañada Honda"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "General José María Morelos y Pavón (Cañada Honda)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Las Cañadas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Santa María de Gallardo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Jaltomate"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Loretta"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Parque Industrial Tecnopolo 2 (PITP2)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Aurora"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Bosque Sereno"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Cavalia"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Quinta los Olivos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Misión de San Jerónimo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Privada Los Olivos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Residencial Punta del Cielo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Portón San Ignacio"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Valle de San Ignacio (El Filso)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Ignacio"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Trinidad"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Tamarindos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Xaramá Entorno Residencial"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Puesta del Sol"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Soledad"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Rioja"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Rinconada de San Ignacio"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Ex-Hacienda de San Ignacio"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Perla"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Ignacio II"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Ignacio III"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Los Fresnos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Terranza"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Pocitos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Parque Industrial Tecnopolo Pocitos"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Privanza Andaluz"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Residencial Las Quintas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Querencia"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Rincón Andaluz"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Plazuela"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Torres Residencial Campestre Santamaría"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Punta Campestre"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Contadero"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Joya"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Río Viejo"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "Crucero Ojo de Agua de Crucitas"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "Palo Alto"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "De Triana"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "Palo Alto Centro"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "Pobre"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "De Afuera"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "De Abajo"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "El Progreso"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "El Salto"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "El Saucito"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "El Cotón"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "El Milagro"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "Las Flores (El Cotón)"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "Licenciado Jesús Terán (El Muerto)"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "San Francisco de los Viveros"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "Sandovales (San Miguel de los Sandovales)"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "San Francisco de los Pedroza"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "El Barreno (Ampliación San Francisco)"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "El Mocho"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "San Gerónimo"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "San José (San Antonio de Montoya)"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "El Novillo"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "La Luz"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "El Puertecito"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "Ojo de Agua de Crucitas"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "El Terremoto"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "Francisco Sarabia (La Reforma)"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "Los Conos"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "Montoya"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "Santa Rosa (El Huizache)"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "El Retoño"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "La Tinaja"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "El Rosario"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "El Copetillo"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "El Tildío"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "La Unión (La Paz)"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "Rancho Nuevo"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "El Chonguillo (El Chonguito)"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "El Copetillo (El Moquete)"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "Tanque el Coyote (El Coyote)"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "Mirasoles"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "San José (San José de los Rodríguez)"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "El Centenario"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "Santa Rita"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "La Primavera"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "Lomas del Refugio (La Loma)"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "Santa Elena"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "El Llano [CERESO]"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "Granja Temixco"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "El Paraíso (Santa Rita)"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "Santa Rita Uno (Santa Rita)"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "San Lorenzo"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "Santa Clara (Las Mieleras)"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "San Agustín de los Díaz"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "La Lucita"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "La Calavera"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "San Antonio de la Rosa"
+	},
+	{
+		"municipio": "El Llano",
+		"colonia": "San Ramón"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Parque Industrial de Logística Automotriz (PILA)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Arellano"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Buenavista de Peñuelas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Peñuelas (El Cienegal)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Cedazo (Cedazo de San Antonio)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Salto de los Salado"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Francisco"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Gerardo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Santa Gertrudis"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San José"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villa Licenciado Jesús Terán (Calvillito)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Montoro (Mesa del Salto)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Los Caños"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Dolores"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Turicate"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Antonio de Peñuelas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Aguascalientes (Lic. Jesús Terán Peredo)"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Los Capricornios (La Biznaga)"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Loretito (Charco del Toro)"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Macario J Gómez"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Medio Kilo"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "La Concepción"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Viñedos River"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Parque Industrial San Francisco"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Paseos de la Providencia"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Urbi Villa del Vergel"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Borrotes"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Estación Chicalote"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Amapolas del Río"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "El Tepetate"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Rancho Nuevo"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Monteverde"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Valle de Aguascalientes"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Reserva Quetzales"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Rancho Seco"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Castelo San Francisco"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Puertecito de la Virgen"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Parque Industrial Valle de Aguascalientes"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Ex-Viñedos Guadalupe"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Villas de San Felipe"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "La Casita"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "La Ribera"
+	},
+	{
+		"municipio": "San Francisco de los Romo",
+		"colonia": "Sendero de los Quetzales"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Antonio de los Pedroza"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San José de la Ordeña"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Nicolás de Arriba"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Nicolás de en Medio"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Herrada"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Colorado (El Soyatal)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Conejal"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "2 de Octubre"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Che Guevara"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Tanque el Trigo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Norias de Ojocaliente"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Malacate"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Puerto de Nieto"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Santa Cruz de la Presa (La Tlacuacha)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Ciudad de los Niños"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Cotorra"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Cabecita 3 Marías"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Niágara"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Ex-Hacienda de Agostaderito"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Granjas Fátima"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Villa Campestre San José del Monte"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Ocote"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Huerta (La Cruz)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Tanque de los Jiménez"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Campestre Bosques de Las Lomas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Centro de Arriba (El Taray)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Pedro Cieneguilla"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Cieneguilla (La Lumbrera)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Cieneguilla"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Hotelito"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Norias del Paso Hondo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Norias del Paso Hondo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Paso Hondo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "La Rinconada (La Escondida)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Duraznillo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Los Cuervos (Los Ojos de Agua)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "San Bartolo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Los Durón"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Soledad de Abajo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Matamoros"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Campestre el Potrerillo"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Parque Industrial Gigante de los Arellano"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Gigante (Arellano)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Norias de Cedazo (Cedazo Norias de Montoro)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Montoro"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Universidad Autónoma de Aguascalientes  Campus Sur"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Parque Industrial FINSA Aguascalientes"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Lomas de Arellano"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Tanque de Guadalupe"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Cañada Grande de Cotorina"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Cotorina (Coyotes)"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "El Refugio de Peñuelas"
+	},
+	{
+		"municipio": "Aguascalientes",
+		"colonia": "Ex-Hacienda de Peñuelas"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Rincón de Romos Centro"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Norte"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Santa Elena"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Desarrollo Especial La Pedrera"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Subdivisión La Piedrera"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Villa Seguridad"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Valle del Real"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "José Luis Macias"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Estancia de Chora"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Embajadores"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "El Chaveño"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "De Guadalupe"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "La Paz"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Rinconada de las Piedras"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Rinconada Alameda"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "De Chora"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Santa Cruz"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Lázaro Cárdenas"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Fraternidad"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Cerro del Gato"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Independencia"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Magisterial"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Magisterial II"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Santa Anita"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "El Potrero"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "La Mezquitera"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Desarrollo Especial"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Villas de Jesús"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "San José"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Presidentes de México"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Solidaridad"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Miguel Hidalgo"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Popular"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Pablo Escaleras"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "El Saucillo"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Presa de San Elías (José Muñoz)"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "El Bajío"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Mar Negro"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Potrero El Tarasco"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "San Judas Tadeo (Santa Fe)"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Candelaria"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Puerta del Muerto (El 15)"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "California"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Bajío del Yerbaníz"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Tanque Blanco"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "San Jacinto"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "San Juan de la Natura"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "El Valle de las Delicias"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "16 de Septiembre"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Los Morales"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "San Isidro el Labrador"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "La Misión"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "18 de Marzo"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Las Norias"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Lupita"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "El Salitrillo"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "El Barzón"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "El Milagro"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Constitución"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Héctor Hugo Olivares"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Lindavista"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Pabellón de Hidalgo Centro"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Estancia de Mosqueira"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "El Rosario"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Morelos"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Las Camas"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Potrerillos"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Túnel de Potrerillo"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "El Panal"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Fresnillo"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "La Boquilla"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "Peña Blanca"
+	},
+	{
+		"municipio": "Rincón de Romos",
+		"colonia": "El Ajiladero"
+	},
+	{
+		"municipio": "Cosío",
+		"colonia": "Cosío Centro"
+	},
+	{
+		"municipio": "Cosío",
+		"colonia": "Luis Donaldo Colosio"
+	},
+	{
+		"municipio": "Cosío",
+		"colonia": "Villas del Potrerito"
+	},
+	{
+		"municipio": "Cosío",
+		"colonia": "Popular"
+	},
+	{
+		"municipio": "Cosío",
+		"colonia": "Santa Cruz"
+	},
+	{
+		"municipio": "Cosío",
+		"colonia": "Mexiquito"
+	},
+	{
+		"municipio": "Cosío",
+		"colonia": "Coplamar"
+	},
+	{
+		"municipio": "Cosío",
+		"colonia": "Vista Hermosa"
+	},
+	{
+		"municipio": "Cosío",
+		"colonia": "Soledad de Abajo [Estación de Adames]"
+	},
+	{
+		"municipio": "Cosío",
+		"colonia": "Zacatequillas"
+	},
+	{
+		"municipio": "Cosío",
+		"colonia": "Soledad de Arriba"
+	},
+	{
+		"municipio": "Cosío",
+		"colonia": "El Durazno"
+	},
+	{
+		"municipio": "Cosío",
+		"colonia": "La Punta"
+	},
+	{
+		"municipio": "Cosío",
+		"colonia": "La Esperanza (El Salerito)"
+	},
+	{
+		"municipio": "Cosío",
+		"colonia": "El Durazno"
+	},
+	{
+		"municipio": "Cosío",
+		"colonia": "Los Nava"
+	},
+	{
+		"municipio": "Cosío",
+		"colonia": "El Salero"
+	},
+	{
+		"municipio": "Cosío",
+		"colonia": "El Refugio de Agua Zarca"
+	},
+	{
+		"municipio": "Cosío",
+		"colonia": "El Refugio de Providencia (Providencia)"
+	},
+	{
+		"municipio": "Cosío",
+		"colonia": "Guadalupito"
+	},
+	{
+		"municipio": "Cosío",
+		"colonia": "Santa María de la Paz"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "San José de Gracia"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "El Jocoqui"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "Cieneguita"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "El Toril"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "Santa Elena de la Cruz (Capadero)"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "Las Amarillas"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "Túnel de Potrerillo"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "Tortugas"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "Potrerillo"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "Ciénega de Alcorcha"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "Boca del Túnel de Potrerillo"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "La Congoja"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "El Cepo"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "Antrialgo"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "Sierra Hermosa (Los Alamitos)"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "Paredes"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "San Antonio de los Ríos"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "Guajolotes (Huijolotes)"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "Santa Rosa de Lima"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "Rancho Viejo"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "Potrero de los López"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "Paso del Sauz"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "El Tecongo"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "Estancia de San Marcos"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "El Taray"
+	},
+	{
+		"municipio": "San José de Gracia",
+		"colonia": "Club Náutico San José"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "Tepezalá Centro"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "Cholula"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "San Rafael"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "Felipe González González"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "Del Socorro"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "Luis Ortega Douglas"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "Los Arcos"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "El Chayote"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "El Barranco"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "Los Alamitos"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "Luz de San Antonio (La Luz)"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "Ampliación los Hornos (el Lagunazo)"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "El Progreso (La Tira)"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "El Porvenir"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "El Carmen"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "San Antonio"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "Mesillas"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "Ojo de Agua de los Montes"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "La Victoria"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "El Águila"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "Los Tres Reyes"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "El Gigante"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "Puerto de la Concepción"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "Carboneras"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "El Refugio"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "Arroyo Hondo"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "Berrendos"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "El Tepozán"
+	},
+	{
+		"municipio": "Tepezalá",
+		"colonia": "Caldera"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "El Refugio"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "El Gigante"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Nueva"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Emiliano Zapata"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "El Pedernal Segundo"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "San Agustín de los Puentes"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "El Pilar"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Los Contreras"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "El Garabato"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Campestre San Carlos"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Santiago"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "El Canal"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "El Pedregal"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "El Milagro"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Puerta del Milagro"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "San Luis de Letras"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Miguel Alemán [Secadora]"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Ampliación Ejido Garabato"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Pabellón de Arteaga Centro"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "FOVISSSTE"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Jardines de Pabellón"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Subdivisión Haciendas de Pabellón"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Barrio Industrial"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Francisco Villa"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Villas de Pabellón"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Trojes de San Pedro"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Carboneras"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Palo Alto"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "5 de Mayo"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Cosmos"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Popular"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Plutarco Elías Calles"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Progreso Sur"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Bosques de Pabellón"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Progreso Norte"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Vergel del Valle"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Valle del Vivero"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Subdivisión Villa de Guadalupe"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Valle del Vivero II"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Las Ánimas"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Santa Isabel"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Las Ánimas"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "El Mezquite (Ojo de Agua del Mezquite)"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "El Mezquite"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "El Mezquite"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Los Lira"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Ojo Zarco"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Ojo Zarco"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Ojo Zarco (La Loma)"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "El Rayo"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "Gámez Orozco (Puerta de Carboneras)"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "San Pedro"
+	},
+	{
+		"municipio": "Pabellón de Arteaga",
+		"colonia": "El Cerrito"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Guadalupe"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Loma Bonita"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Agua Nueva"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Álamos"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "La Sierra"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Arboledas"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "El Tule"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Villa Juárez Centro"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "La Loma"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "El Rascón"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Viudas de Poniente"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Charco Azul"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "El Llavero"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Amarillas de Esparza"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Jilotepec"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "La Dichosa"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "San Vicente"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Asientos Centro"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Santa Cruz"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "De Peñitas"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Los Tepetates"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Del CECYTE"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "De Guadalupe"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "INFONAVIT"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Del Tepozán"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Juventud"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Real Minero"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Guadalupe de Atlas"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Bimbaletes Aguascalientes (El Álamo)"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Bimbaletes Atlas (Tanque de la Vieja)"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Crisóstomos"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Estación San Gil"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "La Divina Providencia"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Alvarado"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Licenciado Adolfo López Mateos"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Sociedad los Posada"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Sector de Producción Número 3"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Sector de Producción Número 2"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Plutarco Elías Calles"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Ciénega Grande"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Noria del Borrego (Norias)"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Jarillas"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Gómez Portugal"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Pino Suárez (Rancho Viejo)"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Clavellinas"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Molinos"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Los Encinos"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Lázaro Cárdenas"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "La Gloria"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Santuario del Tepozán"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "La Soledad"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "San Pedro"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "El Polvo"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Caldera"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Licenciado Adolfo López Mateos"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Charco Prieto (El Palomar)"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "El Fénix"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "San Antonio de los Martínez"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Gorriones"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Ojo de Agua de Rosales"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Tepetatillo"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "San José del Río"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "El Águila [Rancho]"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Emancipación (Borunda)"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Tanque Viejo"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Las Adjuntas"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "La Tinajuela"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "San Rafael de Ocampo"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "San José del Tulillo"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "San Isidro"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "El Chonguillo"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Francisco Villa"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "La Esperanza"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Ojo de Agua de los Sauces"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Pilotos"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Tanque de Guadalupe"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Las Joyas"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "El Epazote"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Las Fraguas"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "El Salitre"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "El Bajío de los Campos"
+	},
+	{
+		"municipio": "Asientos",
+		"colonia": "Las Negritas"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Calvillo Centro"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Mirador"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Independencia"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "López Mateos"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Las Paseras"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Vista Hermosa"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Campo Militar 14 CINE"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Guayabo"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Sección Benito Juárez"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Sección Cerritos"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Sección Loma de Fundadores"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Vista Hermosa 2a. Sección"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Lomas de Huejúcar"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "San Nicolás"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "San Rafael"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Rincón de Baltazares"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "José Landeros"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Ejidal"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Liberal"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Rincón de Baltazares"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Valle de Santiago"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Arroyo de Los Caballos"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Del Carmen"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Azteca"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Morelos"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Cerrito Alto"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Emiliano Zapata"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Las Flores"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Martínez"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Valle de Huejúcar"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Los Angeles"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Chicago"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Terrero de la Labor"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Palo Alto"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Sauz de la Labor"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Zapote de la Labor"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Las Cuevas de la Labor"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Las Rubias"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Piedras Chinas"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "La Pochota"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Jagüey"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Mirador"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "San Tadeo"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Jardines de San Isidro (Colonia Limón)"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Solidaridad"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Capulín"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Los Lazos"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Montoro"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Colomos"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Chiquihuitero (San Isidro)"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "La Panadera"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Las Víboras (Viborillas)"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Llano (El Llano de San Rafael)"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Villas del Laurel"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Maguey"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Sauz"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Río Gil"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Potrero de los López"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Las Huertas"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "La Pila"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "La Alberca"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "La Españita"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Los Baños"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Los Esparza"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "La Placita"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "La Casa Grande"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Azoteyita"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Catana"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Cuervero (Cuerveros)"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Junta de los Ríos"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Malpaso"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Ojocaliente"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Potrero de los López"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Río Gil de Arriba"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "La Fortuna"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Los Arcos"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Magisterial"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Los Mirasoles"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Potrerito"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Las Joyas"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Chimaltitán"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "San José de los Laureles"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Mesa de los Pozos (La Laguna)"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Crucero las Pilas"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "La Calixtina"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Las Moras"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Mesa Grande"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Refugio (Las Praderas)"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Tepezalilla de Abajo"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Pozo de los Artistas"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Los Adobes"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Arroyo Ojocalientillo"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Parque Industrial Calvillo"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Tepetate de Arriba"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Tepetate de Abajo"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Los Alisos"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Ojo de Agua"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Garruño"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Taray"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Barranca del Roble"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Güencho"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Jaltiche de Arriba"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Mesa del Roble"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Cerro Blanco"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Salitre"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Las Ánimas"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Las Pilas"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Michoacanejo"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Norias Cuatas"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Salitrillo"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Jaltiche de Abajo"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "La Fragua"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "La Media Luna"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "La Rinconada"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Las Tinajas"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Caracol"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Terrero del Refugio"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Presa de los Serna"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Papantón"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Rodeo"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "La Teresa"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Los Patos"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Mezquitillos"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Peña Blanca"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "San José"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Santos"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Vaquerías"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Barranca de Portales"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Tigre"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Miguel Hidalgo (El Huarache)"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Ocote [Banco de Tierra]"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Tepalcate"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "La Joya"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Las Trojes"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Tanque de los Serna"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "La Labor"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "La Primavera"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Presa Ordeña Vieja"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Temazcal"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Paredes"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "La Hiedra"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Ventanillas"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Salitrillo"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Jaralito"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "El Tepozán"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Manguillas"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "La Ciénega"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Presa de los Bajíos"
+	},
+	{
+		"municipio": "Calvillo",
+		"colonia": "Puerta de Fragua (Presa la Codorniz)"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Santo Domingo"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Puerta Norte"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Residencial Misión de San José"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Residencial Campestre Ingles"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Camino Real"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Corral de Barrancos"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Maravillas"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Los Olivos"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Rinconada Maravillas"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Residencial Villa Campestre"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Valle Escondido"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Las Pérgolas"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "La Nogalera"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "El Maguey"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Las Jaulas"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "La Loma de Valladolid"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "La Chaveña"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Villas de Montecassino"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Residencial Santa Paulina"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Margaritas"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "La Florida"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "El Barreno"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Los Ramírez"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Los Vázquez"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Miravalle"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Paso Blanco"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Los Arenales"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "La Lomita de Paso Blanco (Las Canoas)"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Los Sauces"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Viñedos Casa Leal"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Santa Elena"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Viñedos Frutilandia"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Paseos de Aguascalientes"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Arboledas de Paso Blanco"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Centro Distribuidor de Básicos Viñedos San Marcos"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Paseos del Country"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Residencial Campo Real"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Jardines de Campo Real"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Mayorazgo San Cristóbal"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Belmondo"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Residencial Marcellana"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Rinconada Cuauhtémoc"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Catania Spazio"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Punta Norte"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Los Gavilanes"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Nura"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Santa Isabel Tola"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Bosques de los Ciprés"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Bosques del Paraíso I"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Bosques del Paraíso II"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Augusta"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Bosques del Paraíso VI"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Bosques del Paraíso III"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Bosques del Paraíso IV"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Vivanta"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Zibá"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Tepetates"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Trojes de San Cristóbal"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Quintas de Monticello"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Viña Antigua"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Villas del Molino"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Porta Real"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Residencial Cedros"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Rancho San Miguel Residencial"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Alcázar Residencial"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Reserva San Cristóbal"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "La Arborada"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Privanza de Gratamira"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Tierraverde (Habitat Gran Clase)"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Andares"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "INFONAVIT Margaritas"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Villas del Sol"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Valle de Margaritas"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Saturnino Herran"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Los Vázquez"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Santa Fe Tecnopark"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Alea Park"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Jesús Gómez Portugal (Margaritas)"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "El Zapato"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Paseos Gómez Portugal"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "La Guayana (Rancho Seco)"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Paso de Argenta"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "San Antonio de los Horcones"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Brownsville"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Valladolid"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "El Refugio"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "El Aurero"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Villas de Guadalupe (La Malobra)"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "El Cenizo"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "La Granjita (Los Palillos)"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Parque Industrial Chichimeco"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "El Chichimeco"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Paseos de las Haciendas"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Cartuja Residencial"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Pedernal Segundo"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Jesús María Centro"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Bellavista"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "La Troje"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "El Calvario"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "La Escalera"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Rinconada Jesús María"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Real Campestre"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "La Villa Residencial"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Los Álamos"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "La Misión"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Flores Magón"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "La Cardona"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "La Cuesta"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Los Arroyitos"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "San Miguelito"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Rinconada San Miguelito"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Ruiseñores"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Residencial Jesús María"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Cielo Claro"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Agua Clara"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Jacarandas"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Deportiva"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Rancho San Pedro"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Palma Dorada"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Arroyo del Bosque"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Misantla"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Villas Tec"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "La Loma de Maravillas"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Agua Zarca"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Benigno Chávez"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Lomas de Jesús María"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Vistas del Sáuz"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Puerta Grande"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Rincón del Pilar"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "La Palma"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Quintas Miguel Jerónimo"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Las Palmas"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Porta Arvena"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Arboledas"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Chicahuales"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Lomas del Valle"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Martínez Andrade"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Solidaridad"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Vista Hermosa"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Manantiales del Pinar"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "La Loma"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "La Piedra"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Lomas de los Vergeles"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Rinconada Bugambilias"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Misión de Santa María"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Yalta Campestre"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Residencial Tres Arroyos"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Mirabrujas"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Tulipanes Residencial"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Pozo la Palma (La Viznaga)"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Ayuntamiento"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "La Cañada"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Ampliación La Cañada"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Ojos de Agua"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Luis Donaldo Colosio"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Ejidal"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "El Torito"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Las Palmas"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Plan Benito Juárez"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "El Mezquital"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "El Chaveño"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Buenavista"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Solar de Jonacatique"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Unión de Ladrilleros"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "San Lorenzo"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Buenos Aires"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Los Muñoz"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Milpillas de Abajo"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Ex-hacienda de Milpillas"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Gracias a Dios"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "El Zapote"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Agronómica (Las Tres Almas)"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Cañada el Rodeo"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "El Conejo (Puerta del Llano)"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "La Mesa del Contadero (El Contadero)"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "San Rafael"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Piedras Negras"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Lomas de San Isidro"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Pedernal Primero"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "El Rincón de la Virgen (El Rincón)"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Tapias Viejas"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Puente de Villalpando (El Puente)"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Puentes Cuates"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Real del Molino"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Mezquital del Country"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "El Llano"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Trojes del Pedregal"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Residencial Trojes del Norte"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Residencial Trojes del Norte II"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Residencial Antiguo Country"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Villa Natty Residencial"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Andrea"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Providencia"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "General Ignacio Zaragoza (Venadero)"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Buenavista"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Cieneguitas"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Villas de Montegrande"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "La Tomatina"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Agua Zarca"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Jesús María"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "El Refugio de los Arquitos"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Los Arquitos"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "El Chacho"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "La Primavera"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Ruscello"
+	},
+	{
+		"municipio": "Jesús María",
+		"colonia": "Q Campestre Residencial"
+	}
+]

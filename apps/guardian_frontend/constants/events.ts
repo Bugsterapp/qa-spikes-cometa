@@ -1,0 +1,15 @@
+export enum Events {
+  pay_with_card = 'portal: Pay With Card Selected',
+  pay_with_bank_transfer = 'portal: Pay With Bank Transfer Selected',
+  pay_with_cash = 'portal: Pay With Cash Selected',
+  rfc_edit_opened = 'portal: RFC Edit Opened',
+  rfc_assignment_changed = 'portal: RFC Assignment Changed',
+  re_send_link = 'Login: re-send link to email',
+  login_step_2 = 'Login: step 2',
+  payment_deleted = 'Pago en proceso Eliminado',
+  payment_success = 'Pago Completado',
+  payment_failed_retry = 'Volver a intentar pago',
+  payment_failed_change_method = 'Pago Fallido Cambiar método de pago',
+  expired_link = 'portal: Page view - expired link',
+  bank_transfer_initiated_kushki = 'portal: Bank Transfer Initiated - Kushki',
+}
