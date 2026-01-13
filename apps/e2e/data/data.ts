@@ -12,7 +12,7 @@ export const dataConfig: DataConfig = {
   local: {
     DASHBOARD_URL: 'http://localhost:3001/',
     PORTAL_URL: 'http://localhost:3000/',
-    ADMIN_URL: 'https://api-cometa.dev.getcometa.com/',
+    ADMIN_URL: 'http://localhost:8000/',
   },
   dev: {
     DASHBOARD_URL: 'https://dashboard-dev.getcometa.com/',
@@ -20,30 +20,35 @@ export const dataConfig: DataConfig = {
     ADMIN_URL: 'https://api-cometa.dev.getcometa.com/',
   },
   demo: {
+    DASHBOARD_URL: 'https://dashboard.demo.getcometa.com/',
+    PORTAL_URL: 'https://portal.demo.getcometa.com/',
+    ADMIN_URL: 'https://api-demo.dev.getcometa.com/',
+  },
+  oldDemo: {
     DASHBOARD_URL: 'https://demo.dashboard.getcometa.com/',
     PORTAL_URL: 'https://demo.portal.getcometa.com/',
     ADMIN_URL: 'https://api-cometa-demo.prd.getcometa.com/',
   },
-  stage: {
-    DASHBOARD_URL: 'https://dashboard-stg.getcometa.com/',
-    PORTAL_URL: 'https://portal-stg.getcometa.com/',
-    ADMIN_URL: 'https://api-cometa.stg.getcometa.com/',
+  qa: {
+    DASHBOARD_URL: 'https://dashboard.qa.getcometa.com/',
+    PORTAL_URL: 'https://portal.qa.getcometa.com/',
+    ADMIN_URL: 'https://api-qa.dev.getcometa.com/',
+  },
+  onDemand: {
+    DASHBOARD_URL: 'https://dashboard-git-feat-pad-2439-test-bancometa.vercel.app/',
+    PORTAL_URL: 'https://portal-git-feat-pad-2439-test-bancometa.vercel.app/',
+    ADMIN_URL: 'https://api-pad-2439.dev.getcometa.com/',
   },
 };
 
 export const user1 = {
-  email: 'automation@getcometa.com',
+  email: 'automata@getcome.com',
   password: 'barriletecosmico',
 };
 
-export const user2 = {
-  email: 'automationtres@getcometa.com',
-  password: 'barriletecosmico',
-};
-
-export const userStagin = {
-  email: 'gabriel@getcometa.com',
-  password: 'carotomy',
+export const localHostUser = {
+  email: 'importantamichael@example.net',
+  password: '123456',
 };
 
 export const conceptos = {

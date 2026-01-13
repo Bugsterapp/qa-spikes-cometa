@@ -1,1 +1,0 @@
-export const RATED_CSAT_PAYMENT = 'RATED_CSAT_PAYMENT';

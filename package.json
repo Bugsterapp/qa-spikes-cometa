@@ -2,14 +2,29 @@
   "name": "cometa",
   "version": "0.0.0",
   "private": true,
-  "engines": {
-    "npm": ">=8"
-  },
   "workspaces": [
     "apps/*",
     "packages/*",
     "packages/utils/*"
   ],
+  "scripts": {
+    "auth": "if test \"$VERCEL\" != \"1\"; then bash ./scripts/vercel-auth.sh ; fi",
+    "build": "turbo run build",
+    "build:dashboard": "turbo run build --filter=dashboard",
+    "build:portal": "turbo run build --filter=guardian",
+    "clean": "turbo run clean",
+    "dev": "turbo run dev",
+    "dev:dashboard": "cross-env APP=dashboard turbo run dev --filter=dashboard --filter=@cometa/trpc",
+    "dev:guardian": "APP=portal turbo run dev --filter=guardian --filter=@cometa/trpc",
+    "dev:recreo": "turbo run dev --filter=recreo-sb",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "preinstall": "./scripts/generate-api-client.sh",
+    "lint": "turbo run lint",
+    "prepare": "husky install && npm run auth",
+    "pull_envs": "sh ./scripts/pull-envs.sh",
+    "test": "turbo run test",
+    "generate:api": "APP=dashboard npm run preinstall"
+  },
   "lint-staged": {
     "(apps|packages)/**/*.{js,ts,jsx,tsx}": [
       "prettier --write",
@@ -25,31 +40,29 @@
       "path": "./node_modules/cz-conventional-changelog"
     }
   },
-  "scripts": {
-    "build": "turbo run build",
-    "build:dashboard": "turbo run build --filter=dashboard",
-    "build:portal": "turbo run build --filter=guardian",
-    "clean": "turbo run clean",
-    "dev": "turbo run dev",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "lint": "turbo run lint",
-    "test": "turbo run test",
-    "dev:dashboard": "APP=dashboard turbo run dev --filter=dashboard",
-    "dev:guardian": "APP=portal turbo run dev --filter=guardian",
-    "preinstall": "./scripts/generate-api-client.sh",
-    "prepare": "husky install"
+  "dependencies": {
+    "@flaticon/flaticon-uicons": "^3.3.1",
+    "@manypkg/cli": "^0.21.0",
+    "@optimizely/optimizely-sdk": "^5.3.4",
+    "jsonwebtoken": "^9.0.2",
+    "preinstall": "^0.0.1-security",
+    "usehooks-ts": "^2.15.1"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.4.0",
     "@commitlint/config-conventional": "^17.4.0",
-    "@playwright/test": "^1.41.2",
+    "@faker-js/faker": "^8.4.1",
+    "@playwright/test": "^1.49.1",
     "@tailwindcss/forms": "^0.5.3",
+    "@tailwindcss/typography": "^0.5.16",
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^20.9.0",
     "autoprefixer": "^10.4.14",
     "commitizen": "^4.2.6",
+    "cross-env": "^7.0.3",
     "cz-conventional-changelog": "^3.3.0",
     "eslint": "^7.32.0",
-    "eslint-config-custom": "*",
+    "eslint-config-custom": "^0.0.0",
     "exceljs": "^4.4.0",
     "husky": "^8.0.3",
     "lint-staged": "^13.1.0",
@@ -57,13 +70,11 @@
     "prettier": "^2.5.1",
     "tailwindcss": "^3.3.1",
     "tailwindcss-animate": "^1.0.5",
-    "turbo": "^1.12.4"
+    "turbo": "^1.12.4",
+    "vercel": "^48.4.0"
   },
   "packageManager": "npm@8.12.1",
-  "dependencies": {
-    "@faker-js/faker": "^8.4.1",
-    "@manypkg/cli": "^0.21.0",
-    "use-state-persist": "^0.3.1",
-    "usehooks-ts": "^2.15.1"
+  "engines": {
+    "npm": ">=8"
   }
 }
