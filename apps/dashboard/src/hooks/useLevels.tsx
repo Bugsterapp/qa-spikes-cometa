@@ -1,14 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
-import ApiClient from '../services/ApiClient';
+import { api } from '../utils/api';
 
-const useLevels = (token: string | undefined, selectedSchool: string | undefined) => {
-  const fetchLevels = async () => {
-    const levestQuery = await ApiClient.getLevels(token, selectedSchool);
-    return levestQuery?.data;
-  };
-  return useQuery(['schoolLevels', { selectedSchool }], () => fetchLevels(), {
-    enabled: !!selectedSchool,
+const useLevels = (token: string | undefined, selectedSchool: string | undefined) =>
+  api.levels.getLevels.useQuery({
+    schoolId: selectedSchool || '',
   });
-};
 
 export default useLevels;

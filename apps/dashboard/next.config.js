@@ -12,6 +12,9 @@ const moduleExports = {
       process.env.MODE === 'maintenance'
         ? { source: '/((?!maintenance).*)', destination: '/maintenance', permanent: false }
         : null,
+      // HACK: Added this page to avoid clients problem that tries to access to this page
+      // that was moved. Maybe remove in a while.
+      { source: '/pay/manual', destination: '/payments/manual', permanent: false },
     ].filter(Boolean);
   },
   webpack(config) {
@@ -29,7 +32,14 @@ const moduleExports = {
   experimental: {
     esmExternals: false,
   },
-  transpilePackages: ['@cometa/hooks', '@cometa/utils', '@cometa/trpc', '@cometa/contexts', 'react-hotjar'],
+  transpilePackages: [
+    '@cometa/hooks',
+    '@cometa/utils',
+    '@cometa/trpc',
+    '@cometa/contexts',
+    '@cometa/dynamic-forms',
+    'react-hotjar',
+  ],
 };
 
 const sentryWebpackPluginOptions = {
@@ -44,6 +54,10 @@ const sentryWebpackPluginOptions = {
   // https://github.com/getsentry/sentry-webpack-plugin#options.
 };
 
+const sentryOptions = {
+  // Upload additional client files (increases upload size)
+  widenClientFileUpload: true,
+};
 // Make sure adding Sentry options is the last code to run before exporting, to
 // ensure that your source maps include changes from all other Webpack plugins
-module.exports = withSentryConfig(moduleExports, sentryWebpackPluginOptions);
+module.exports = withSentryConfig(moduleExports, sentryWebpackPluginOptions, sentryOptions);

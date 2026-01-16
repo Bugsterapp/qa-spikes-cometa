@@ -1,22 +1,25 @@
-import { createColumnHelper } from '@tanstack/react-table';
-import { GlobalSearch } from '/src/components/atoms/GlobalSearch';
-import { formatPrice } from '/src/utils/general';
-import React, { useState } from 'react';
-import { useSelectedSchool, useSelectedSchoolId } from '/src/guards/AuthGuard';
-import { useRouter } from 'next/router';
-import { api } from '/src/utils/api';
 import { OptionalConceptOrders } from '@cometa/trpc/src/types';
+import { keepPreviousData } from '@tanstack/react-query';
+import { createColumnHelper } from '@tanstack/react-table';
+import { useRouter } from 'next/router';
+import React, { useState } from 'react';
+
+import { GlobalSearch } from '/src/components/atoms/GlobalSearch';
 import { Tooltip } from '/src/components/atoms/Tooltip';
-import SidebarVariants from '../../../SidebarVariants';
-import { useTab } from '/src/components/atoms/Tabs';
-import { GenericRowCheckBoxButton } from '../StudentAssignedTable';
+import SidebarVariants from '/src/components/SidebarVariants';
 import { FloatingActionOverlay, TableVirtualized } from '/src/components/TableInfinityScroll';
-import useToggle from '/src/hooks/useToggle';
-import { cn } from '/src/utils/cn';
+import { convertToOrdering } from '/src/components/Table';
+import { useTab } from '/src/components/ui/Tabs';
+import { useSelectedSchoolId } from '/src/guards/AuthGuard';
 import useAlert from '/src/hooks/useAlert';
-import { useFlags } from '/flags/client';
-import { useSession } from 'next-auth/react';
+import { useFlagWithVariableMatching } from '/src/components/flags/FlagsProvider';
+import useToggle from '/src/hooks/useToggle';
+import { api } from '/src/utils/api';
+import { cn } from '/src/utils/cn';
+import { formatPrice } from '/src/utils/general';
+
 import { EditPriceModal } from '../ConceptOrdersTable';
+import { GenericRowCheckBoxButton } from '../StudentAssignedTable';
 
 export const StudentConceptsVariantsTable = () => {
   const selectedSchoolId = useSelectedSchoolId();
@@ -27,6 +30,7 @@ export const StudentConceptsVariantsTable = () => {
   const [openSideBar, setOpenSideBar] = useState<boolean>(false);
   const [selectedRow, setSelectedRow] = useState<OptionalConceptOrders['id']>();
   const [key, setKey] = useState(0);
+  const [variantsSorting, setVariantsSorting] = useState<string>();
   const {
     data: ordersWithVariantsAndStock,
     isLoading: isLoadingOptionalOrders,
@@ -36,12 +40,13 @@ export const StudentConceptsVariantsTable = () => {
       conceptId: conceptId as string,
       schoolId: selectedSchoolId ?? '',
       query: {
-        search: search,
+        multiple_search: search,
+        ordering: variantsSorting ? [variantsSorting] : undefined,
       },
     },
     {
       enabled: !!conceptId,
-      keepPreviousData: true,
+      placeholderData: keepPreviousData,
     }
   );
 
@@ -114,12 +119,10 @@ export const StudentConceptsVariantsTable = () => {
   };
 
   const columnHelper = createColumnHelper<OptionalConceptOrders>();
-  const { data: session } = useSession();
-  const selectedSchool = useSelectedSchool();
-  const { flags } = useFlags({ traits: { email: session?.user.email, schoolName: selectedSchool?.name } });
+  const { isEnabled: showEditPrices } = useFlagWithVariableMatching('hk_show_edit_prices');
 
   const columns = [
-    ...(flags?.show_edit_prices
+    ...(showEditPrices
       ? [
           {
             id: 'select',
@@ -177,10 +180,13 @@ export const StudentConceptsVariantsTable = () => {
       ),
       header: () => <span className="font-semibold">Unidades vendidas</span>,
       size: 170,
+      enableSorting: true,
     }),
     columnHelper.accessor('price', {
       cell: (info) => <div className="w-[100px] text-right">{formatPrice(info.getValue())}</div>,
       header: () => <span className="font-semibold w-[100px] text-right">Precio</span>,
+      enableSorting: true,
+      meta: { numeric: true },
     }),
     columnHelper.accessor('stock', {
       cell: (info) => (
@@ -193,7 +199,13 @@ export const StudentConceptsVariantsTable = () => {
             : 'Ilimitado'}
         </div>
       ),
-      header: () => <span className="font-semibold w-[100px] text-right pr-10">Stock</span>,
+      header: () => (
+        <span id="stock-column" className="font-semibold w-[100px] text-right pr-10">
+          Stock
+        </span>
+      ),
+      enableSorting: true,
+      meta: { numeric: true },
     }),
   ];
   const wrapperRef = React.useRef<HTMLDivElement>(null);
@@ -207,7 +219,7 @@ export const StudentConceptsVariantsTable = () => {
 
   return (
     <div className="bg-white">
-      <div className="flex py-6 items-start px-10 sticky top-[220px] z-20 bg-white flex-col -translate-y-3.5">
+      <div className="flex py-6 items-start px-10 sticky top-[135px] z-20 bg-white flex-col">
         <div className="flex items-center">
           <GlobalSearch
             search={search}
@@ -237,7 +249,7 @@ export const StudentConceptsVariantsTable = () => {
           onSubmit={handleEditPrices}
           open={toggle}
           setOpen={setToggle}
-          isLoading={editPricesMutation.isLoading}
+          isLoading={editPricesMutation.isPending}
           anOrderHasAPayment={anOrderHasAPayment}
         />
         <TableVirtualized
@@ -262,6 +274,10 @@ export const StudentConceptsVariantsTable = () => {
           }}
           hideSum
           showEmptyStateImage
+          onSortingChange={(sorting) => {
+            const text = convertToOrdering(sorting);
+            setVariantsSorting(text);
+          }}
         />
 
         <SidebarVariants

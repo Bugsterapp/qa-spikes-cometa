@@ -38,7 +38,7 @@ const NRadioGroup = ({ options, value, label, className, onChange, disabled }: N
             {({ checked }) => (
               <label className={`flex items-center gap-2.5 ${disabled ? 'cursor-default' : 'cursor-pointer'}`}>
                 {radioIcon(checked, Boolean(disabled))}
-                <span className="text-sm font-normal text-secondary" data-testid={`${option}-radio`}>
+                <span className="text-sm font-normal text-foreground" data-testid={`${option}-radio`}>
                   {option}
                 </span>
               </label>

@@ -3,7 +3,7 @@ import Dialog from '/src/components/atoms/Dialog';
 import Button from './organisms/dashboard/Button';
 import SidebarHeader from './molecules/dashboard/SidebarHeader';
 import Sheet from './atoms/Sheet';
-import { TabsWrapper as Tabs } from '/src/components/atoms/Tabs';
+import { TabsWrapper as Tabs } from './ui/Tabs';
 import { UpdateQuantityRequestActionEnum, OptionalConceptOrders, StockListHistory } from '@cometa/trpc/src/types';
 import { Switch } from '/src/components/atoms/Switch';
 import IcDiagonalArrowRightUp from '/public/assets/icons/ic_diagonal_arrow_right_up.svg';
@@ -100,7 +100,7 @@ export default function SidebarVariants({
   const toEditQuantityForm = useForm<IFormData>({
     resolver: zodResolver(action === UpdateQuantityRequestActionEnum.SUM ? schemaSum : schemaSubtract),
     defaultValues: {
-      quantity: null,
+      quantity: undefined,
       observations: '',
     },
   });
@@ -162,7 +162,7 @@ export default function SidebarVariants({
   };
   const {
     data: stockHistory,
-    isLoading,
+    isPending: isLoading,
     isFetching,
     hasNextPage,
     fetchNextPage,
@@ -175,7 +175,7 @@ export default function SidebarVariants({
     },
     {
       getNextPageParam: (lastPage) => extractPageFromURL(lastPage?.next as string) ?? undefined,
-      getPreviousPageParam: (firstPage) => firstPage ?? undefined,
+      getPreviousPageParam: (firstPage) => extractPageFromURL(firstPage?.previous as string) ?? undefined,
       enabled: !!selectedRowData?.stock?.id && !!selectedSchoolId,
     }
   );
@@ -225,7 +225,7 @@ export default function SidebarVariants({
                 tab={tab}
                 handleChangeTab={handleChangeTab}
                 defaultValue="details"
-                tabsListClassName="px-10 "
+                tabsListClassName="px-10"
                 showShadow={isScrolling}
               />
             ) : (
@@ -234,9 +234,9 @@ export default function SidebarVariants({
           </div>
           <div
             className={cn('h-[2px] bg-green transition-all duration-300  ease-linear animate-pulse', {
-              'w-full': changeLimiteMutation.isLoading,
+              'w-full': changeLimiteMutation.isPending,
               'bg-red-300 duration-700': changeLimiteMutation.isError,
-              'translate-x-full opacity-0 w-0 duration-300': !changeLimiteMutation.isLoading,
+              'translate-x-full opacity-0 w-0 duration-300': !changeLimiteMutation.isPending,
             })}
           />
           {selectedRow && tab === 'details' ? (
@@ -276,8 +276,8 @@ export default function SidebarVariants({
                             className="w-6 ml-2 mr-4"
                           >
                             <path
-                              fill-rule="evenodd"
-                              clip-rule="evenodd"
+                              fillRule="evenodd"
+                              clipRule="evenodd"
                               d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 9.34784 20.9464 6.8043 19.0711 4.92893C17.1957 3.05357 14.6522 2 12 2ZM13 16C13 16.5523 12.5523 17 12 17C11.4477 17 11 16.5523 11 16V11C11 10.4477 11.4477 10 12 10C12.5523 10 13 10.4477 13 11V16ZM11 8C11 8.55228 11.4477 9 12 9C12.5523 9 13 8.55228 13 8C13 7.44772 12.5523 7 12 7C11.4477 7 11 7.44772 11 8Z"
                               fill="#919EAB"
                             />
@@ -292,7 +292,7 @@ export default function SidebarVariants({
                           <Switch
                             id="waive-surcharge"
                             checked={!isLimited}
-                            disabled={changeLimiteMutation.isLoading || !permissions.can_edit_stock}
+                            disabled={changeLimiteMutation.isPending || !permissions.can_edit_stock}
                             onCheckedChange={handleChangeSwitch}
                             className={cn('align-middle disabled:cursor-wait', {
                               'disabled:cursor-not-allowed': !permissions.can_edit_stock,
@@ -302,7 +302,7 @@ export default function SidebarVariants({
                       </div>
                       <p className="text-xs text-[#919EAB]">Stock disponible</p>
                     </div>
-                    {!changeLimiteMutation.isLoading && isLimited ? (
+                    {!changeLimiteMutation.isPending && isLimited ? (
                       <div className="flex items-center justify-between">
                         <p className="text-lg text-[#1C1C1D]">
                           {selectedRowData?.stock !== null
@@ -370,7 +370,7 @@ export default function SidebarVariants({
         key={`${selectedRow}-${action}`}
         toEditQuantityForm={toEditQuantityForm}
         onSubmitForm={onSubmitForm}
-        isMutating={updateQuantityMutation.isLoading}
+        isMutating={updateQuantityMutation.isPending}
       />
     </div>
   );

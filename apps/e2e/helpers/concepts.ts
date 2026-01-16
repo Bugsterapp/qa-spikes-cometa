@@ -1,24 +1,27 @@
 /* eslint-disable no-console */
-import { Page, expect } from '@playwright/test';
-import { LoginPage } from '../pages/loginPage';
-import { ConceptsPage } from '../pages/conceptsPage';
-import { NewConceptSteps } from '../pages/newConceptSteps';
-import axios, { AxiosRequestConfig } from 'axios';
-import { delay, getAdminToken } from './commons';
 import {
   Api,
+  ConceptTypesEnum,
   CreateConceptWithAttributes,
   OrderWithAttributes,
   PaginatedOrderList,
-  Type68EEnum,
+  PatchedChangeLimitRequest,
+  PatchedUpdateQuantityRequest,
+  UpdateQuantityRequestActionEnum,
 } from '@cometa/trpc/src/types';
-import { dataConfig } from '../data/data';
+import { Page, expect } from '@playwright/test';
+import axios, { AxiosRequestConfig } from 'axios';
 import { v4 as uuidv4 } from 'uuid';
+import { dataConfig } from '../data/data';
+import { ConceptsPage } from '../pages/dashboard/conceptsPage';
+import { LoginPage } from '../pages/dashboard/loginPage';
+import { NewConceptSteps } from '../pages/dashboard/newConceptSteps';
+import { delay, getAdminToken } from './commons';
 
 type Environment = 'local' | 'stage' | 'dev';
 
 // eslint-disable-next-line turbo/no-undeclared-env-vars
-const envVar = process.env.ENV as Environment;
+const envVar = process.env.ENV_PLAYWRIGHT as Environment;
 const url = dataConfig[envVar].ADMIN_URL || 'https://api-cometa.dev.getcometa.com/';
 
 export async function createConcept(
@@ -40,8 +43,9 @@ export async function createConcept(
 
     const payload = {
       entity: entity || '74d0b544-5b71-42cb-bedf-6ca3564c8b7b',
-      type: 'MONTHLY_FEE',
+      type: ConceptTypesEnum.MONTHLY_FEE,
       school_cycle: school_cycle || '65be80c9-2ca8-4131-b633-065ff6e6bdae',
+      setup_periodic_restrictions: true,
       name: conceptName,
       subscription: true,
       optional: false,
@@ -128,7 +132,8 @@ export async function createMandatoryConceptByApi(
   entity: string,
   school_cycle: string,
   bank_account: string,
-  schoolID: string
+  schoolID: string,
+  setup_periodic_restrictions = false
 ) {
   const token = await getAdminToken();
   try {
@@ -140,7 +145,7 @@ export async function createMandatoryConceptByApi(
 
     const payload = {
       entity,
-      type: 'MONTHLY_FEE',
+      type: ConceptTypesEnum.MONTHLY_FEE,
       school_cycle,
       name: conceptName,
       subscription: true,
@@ -157,6 +162,7 @@ export async function createMandatoryConceptByApi(
       tax_unit: 'ACT',
       institutional_id: null,
       is_billable: true,
+      setup_periodic_restrictions,
       orders: [
         {
           id: '7_2023',
@@ -254,6 +260,15 @@ export async function createOtherConceptByApi(
           },
         ],
       },
+      {
+        order_price: '1000',
+        attributes: [
+          {
+            name: 'infito',
+            type: 'talla',
+          },
+        ],
+      },
     ];
     price = '0';
   }
@@ -261,7 +276,7 @@ export async function createOtherConceptByApi(
   const data: CreateConceptWithAttributes = {
     id: uuidv4(),
     entity,
-    type: 'OTHER' as Type68EEnum,
+    type: 'OTHER' as ConceptTypesEnum,
     school_cycle,
     name: `${conceptName}`,
     bank_account,
@@ -284,8 +299,6 @@ export async function createOtherConceptByApi(
   });
   return response.data;
 }
-
-//    const apiUrl = `${url}api/v1/dashboard/students/${studentId}/assignments/`;
 
 export async function addOtherConceptOrdersToStudent(studentId: string, concept: string, orders: any) {
   const token = await getAdminToken();
@@ -392,7 +405,6 @@ export async function addOptionalOrdersToStudent(studentId: string, concept: str
     };
 
     const response = await axios(requestOptions);
-    console.log(JSON.stringify(response.data));
     return response.data.id;
   } catch (error) {
     if (error instanceof Error) {
@@ -414,12 +426,14 @@ export async function createMonthlyPaymentsConcept(
 ) {
   await loginPage.conceptsBtn.click();
   await conceptsPage.newConceptBtn.click();
+  await newConceptSteps.fiscalEntityList.click();
+  await page.getByLabel('KERNEL INDUSTRIA JUGUETERA (').click();
   await newConceptSteps.conteptTypeList.click({ timeout: 5000 });
   notMonthly
     ? await newConceptSteps.monthlyReinscriptionOpt.click({ timeout: 10000 })
     : await newConceptSteps.monthlySchollarshipOpt.click({ timeout: 10000 });
   await newConceptSteps.schoolCicleList.click();
-  await newConceptSteps.twentyFourCicle.click();
+  await newConceptSteps.currentCycle.click();
   await newConceptSteps.conceptNameInp.click();
   await newConceptSteps.conceptNameInp.fill(conceptName);
   await page.waitForResponse(/\/api\/trpc\/schools\.schoolsConceptsList\?batch.+/);
@@ -435,12 +449,13 @@ export async function createMonthlyPaymentsConcept(
   }
   await newConceptSteps.submitBtn.click();
   await newConceptSteps.monthToChargeList.click();
-  await page.getByRole('option', { name: 'Agosto 2023' }).getByRole('checkbox').click();
-  await page.getByRole('option', { name: 'Octubre 2023' }).getByRole('checkbox').click();
-  await page.getByRole('option', { name: 'Septiembre 2023' }).getByRole('checkbox').click();
-  await page.getByRole('option', { name: 'Noviembre 2023' }).getByRole('checkbox').click();
-  await page.getByRole('option', { name: 'Noviembre 2023' }).getByRole('checkbox').click();
+  await page.getByRole('option', { name: 'Agosto 2024' }).getByRole('checkbox').click();
+  await page.getByRole('option', { name: 'Octubre 2024' }).getByRole('checkbox').click();
+  await page.getByRole('option', { name: 'Septiembre 2024' }).getByRole('checkbox').click();
+  await page.getByRole('option', { name: 'Noviembre 2024' }).getByRole('checkbox').click();
+  await page.getByRole('option', { name: 'Noviembre 2024' }).getByRole('checkbox').click();
   await page.getByText('Meses a cobrar').first().click();
+  // Continuar con el resto del proceso
   await page.getByRole('textbox').click();
   await page.getByRole('textbox').fill(`MXN ${conceptPrice}`);
   await page.locator('input[name="price"]').click();
@@ -467,15 +482,20 @@ export async function createMonthlyPaymentsConcept(
   await page.getByRole('button', { name: 'Guardar' }).click();
   await page.locator('.flex.w-full.flex-col').last().hover({ timeout: 3000 });
   await page.getByRole('button', { name: 'Siguiente' }).click();
-  await page.locator('#tax_sales_true').click();
-  await page.getByPlaceholder('Selecciona una clave de producto').click();
-  await page.locator('.py-2.px-3.shadow-sm.flex.flex-col').first().click();
+  //se llaman igual los radio buttons tanto para factura como iva
+  await page.locator('#tax_sales_true').first().click();
+  await newConceptSteps.taxSalesFalseRadio.click();
+  await page.getByPlaceholder('Busca por código o por nombre').click();
+  await page.getByPlaceholder('Busca por código o por nombre').fill('10152007');
+  await page.getByRole('option', { name: 'Semillas o yemas de algarrobo' }).click();
   await page.getByPlaceholder('Selecciona un tipo de unidad').click();
-  await page.getByText('ACT', { exact: true }).click();
+  await page.getByText('E48', { exact: true }).click();
   await page.locator('#rvoe_opt_true').click();
   await page.getByRole('textbox').click();
   await page.getByRole('textbox').fill('123');
   await page.getByRole('button', { name: 'Crear concepto' }).click();
+
+  // Wait for API response
   const response = await loginPage.page.waitForResponse(/\/api\/trpc\/schools\.schoolsConceptsCreate\?.+/);
   const jsonResponse = await response.json();
   const id = jsonResponse[0]?.result?.data?.json?.id;
@@ -509,7 +529,13 @@ export async function createOtherConcept(
   }
   await loginPage.page.getByText('¿A qué cuenta bancaria se deberán depositar los pagos?').scrollIntoViewIfNeeded();
   await newConceptSteps.submitBtn.click();
+  // Wait for panel transition
+  await newConceptSteps.page.waitForTimeout(1000);
+
   await newConceptSteps.backBtn.click();
+  // Wait for panel transition
+  await newConceptSteps.page.waitForTimeout(1000);
+
   await loginPage.page
     .getByText('¿A qué cuenta bancaria se deberán depositar los pagos?')
     .first()
@@ -517,19 +543,28 @@ export async function createOtherConcept(
   await newConceptSteps.optionalRadioBtn.click();
   await delay(2000);
   await newConceptSteps.submitBtn.click();
+  // Wait for panel transition
+  await newConceptSteps.page.waitForTimeout(1000);
+
   await newConceptSteps.noAttributesRadioBtn.check();
   await newConceptSteps.priceInp.click();
   await newConceptSteps.priceInp.fill(`MXN ${conceptPrice}`);
   await newConceptSteps.submitBtn.click();
-  await newConceptSteps.taxSalesTrueRadio.click();
-  await loginPage.page.getByPlaceholder('Selecciona una clave de producto').click({ timeout: 10000 });
-  await loginPage.page.locator('.py-2.px-3.shadow-sm.flex.flex-col').first().click();
-  await loginPage.page.getByPlaceholder('Selecciona un tipo de unidad').click();
-  await loginPage.page.getByText('ACT', { exact: true }).click();
-  await newConceptSteps.rvoeOptTrueRadio.click();
-  await loginPage.page.getByRole('textbox').click();
-  await loginPage.page.getByRole('textbox').fill('123');
-  await loginPage.page.getByRole('button', { name: 'Crear concepto' }).click();
+  // Wait for panel transition
+  await newConceptSteps.page.waitForTimeout(1000);
+
+  await newConceptSteps.page.locator('#tax_sales_true').first().click();
+  await newConceptSteps.page.getByPlaceholder('Busca por código o por nombre').click();
+  await newConceptSteps.page.getByPlaceholder('Busca por código o por nombre').fill('10152007');
+  await newConceptSteps.page.getByRole('option', { name: 'Semillas o yemas de algarrobo' }).click();
+  await newConceptSteps.page.getByPlaceholder('Selecciona un tipo de unidad').click();
+  await newConceptSteps.page.getByText('E48', { exact: true }).click();
+  await newConceptSteps.page.locator('#rvoe_opt_true').click();
+  await newConceptSteps.page.getByRole('textbox').click();
+  await newConceptSteps.page.getByRole('textbox').fill('123');
+  await newConceptSteps.page.getByRole('button', { name: 'Crear concepto' }).click();
+  // Wait for API response
+  await loginPage.page.waitForResponse(/\/api\/trpc\/schools\.schoolsConceptsWithAttributesCreate\?.+/);
   const response = await loginPage.page.waitForResponse(
     /\/api\/trpc\/schools\.schoolsConceptsWithAttributesCreate\?.+/
   );
@@ -565,7 +600,13 @@ export async function createOtherConceptWithAttributes(
   }
   await loginPage.page.getByText('¿A qué cuenta bancaria se deberán depositar los pagos?').scrollIntoViewIfNeeded();
   await newConceptSteps.submitBtn.click();
+  // Wait for panel transition
+  await newConceptSteps.page.waitForTimeout(1000);
+
   await newConceptSteps.backBtn.click();
+  // Wait for panel transition
+  await newConceptSteps.page.waitForTimeout(1000);
+
   await loginPage.page
     .getByText('¿A qué cuenta bancaria se deberán depositar los pagos?')
     .first()
@@ -573,6 +614,9 @@ export async function createOtherConceptWithAttributes(
   await newConceptSteps.optionalRadioBtn.click();
   await delay(2000);
   await newConceptSteps.submitBtn.click();
+  // Wait for panel transition
+  await newConceptSteps.page.waitForTimeout(1000);
+
   await newConceptSteps.yesAttributesRadioBtn.check();
   await newConceptSteps.page.locator('input[name="attribute\\.type"]').click();
   await newConceptSteps.page.locator('input[name="attribute\\.type"]').fill('talla');
@@ -582,6 +626,9 @@ export async function createOtherConceptWithAttributes(
   await newConceptSteps.page.getByRole('textbox').nth(2).click();
   await newConceptSteps.page.getByRole('textbox').nth(2).fill('xs');
   await newConceptSteps.page.getByRole('button', { name: 'Guardar' }).click();
+  // Wait for attribute to be added
+  await newConceptSteps.page.waitForTimeout(500);
+
   await newConceptSteps.page.getByRole('button', { name: 'Agregar más atributos' }).click();
   await newConceptSteps.page.locator('input[name="attribute\\.type"]').click();
   await newConceptSteps.page.locator('input[name="attribute\\.type"]').fill('tipo');
@@ -591,20 +638,34 @@ export async function createOtherConceptWithAttributes(
   await newConceptSteps.page.getByRole('textbox').nth(2).click();
   await newConceptSteps.page.getByRole('textbox').nth(2).fill('remera');
   await newConceptSteps.page.getByRole('button', { name: 'Guardar' }).click();
+  // Wait for attribute to be added
+  await newConceptSteps.page.waitForTimeout(500);
+
   await newConceptSteps.submitBtn.click();
+  // Wait for panel transition
+  await newConceptSteps.page.waitForTimeout(1000);
+
   await newConceptSteps.page.getByTestId('price-input').click();
   await newConceptSteps.priceInp.fill(`MXN ${conceptPrice}`);
   await newConceptSteps.page.getByRole('button', { name: 'Aplicar a todos' }).click();
+  await newConceptSteps.page.waitForTimeout(500);
+
   await newConceptSteps.page.getByTestId('next-button').click();
-  await newConceptSteps.taxSalesTrueRadio.click();
-  await loginPage.page.getByPlaceholder('Selecciona una clave de producto').click({ timeout: 10000 });
-  await loginPage.page.locator('.py-2.px-3.shadow-sm.flex.flex-col').first().click();
-  await loginPage.page.getByPlaceholder('Selecciona un tipo de unidad').click();
-  await loginPage.page.getByText('ACT', { exact: true }).click();
-  await newConceptSteps.rvoeOptTrueRadio.click();
-  await loginPage.page.getByRole('textbox').click();
-  await loginPage.page.getByRole('textbox').fill('123');
-  await loginPage.page.getByRole('button', { name: 'Crear concepto' }).click();
+  // Wait for panel transition
+  await newConceptSteps.page.waitForTimeout(1000);
+
+  await newConceptSteps.page.locator('#tax_sales_true').first().click();
+  await newConceptSteps.page.getByPlaceholder('Busca por código o por nombre').click();
+  await newConceptSteps.page.getByPlaceholder('Busca por código o por nombre').fill('10152007');
+  await newConceptSteps.page.getByRole('option', { name: 'Semillas o yemas de algarrobo' }).click();
+  await newConceptSteps.page.getByPlaceholder('Selecciona un tipo de unidad').click();
+  await newConceptSteps.page.getByText('E48', { exact: true }).click();
+  await newConceptSteps.page.locator('#rvoe_opt_true').click();
+  await newConceptSteps.page.getByRole('textbox').click();
+  await newConceptSteps.page.getByRole('textbox').fill('123');
+  await newConceptSteps.page.getByRole('button', { name: 'Crear concepto' }).click();
+  // Wait for API response
+  await loginPage.page.waitForResponse(/\/api\/trpc\/schools\.schoolsConceptsWithAttributesCreate\?.+/);
   const response = await loginPage.page.waitForResponse(
     /\/api\/trpc\/schools\.schoolsConceptsWithAttributesCreate\?.+/
   );
@@ -734,26 +795,7 @@ export async function destroyMonthlyFeeAssignmentByApi(studentId: string, assign
 const baseUrl = url.substring(0, url.length - 1);
 const ServiceClient = new Api({ baseUrl: baseUrl }).api;
 
-export async function getConceptListBySchoolId(
-  schoolId: string,
-  school_cycle: string,
-  type?:
-    | (
-        | 'BOOKS_AND_MATERIALS'
-        | 'CAFETERIA'
-        | 'EXAMS_AND_CERTIFICATES'
-        | 'EXTRACURRICULAR'
-        | 'INSCRIPTION'
-        | 'MONTHLY_FEE'
-        | 'OTHER'
-        | 'PRE_DEBT'
-        | 'REINSCRIPTION'
-        | 'SPORTS'
-        | 'TRANSPORT'
-        | 'UNIFORMS_AND_MERCH'
-      )[]
-    | undefined
-) {
+export async function getConceptListBySchoolId(schoolId: string, school_cycle: string, type?: ConceptTypesEnum[]) {
   const token = await getAdminToken();
   const data = await ServiceClient.apiV1DashboardSchoolsConceptsList(
     schoolId,
@@ -795,18 +837,22 @@ export async function hasPaidOrdersRequiredProxy(
   //orderId = '8166ef4f-75da-4c77-af83-3e5f66771971';
   try {
     // eslint-disable-next-line turbo/no-undeclared-env-vars
-    const envVar = process.env.ENV as Environment | undefined;
+    const envVar = process.env.ENV_PLAYWRIGHT as Environment | undefined;
     if (envVar && envVar in dataConfig) {
       if (dataConfig[envVar].ADMIN_URL) {
         const adminUrl = dataConfig[envVar].ADMIN_URL;
 
-        await page.goto(`${adminUrl}cometa_admin/payins/order/${orderId}/change/`);
+        if (envVar === 'local') {
+          await page.goto(`${adminUrl}admin/payins/order/${orderId}/change/`);
+        } else {
+          await page.goto(`${adminUrl}cometa_admin/payins/order/${orderId}/change/`);
+        }
       }
     }
     if (!logged) {
       await expect(page.getByLabel('Email address:')).toBeVisible();
-      await page.getByLabel('Email address:').fill('admin@getcometa.com');
-      await page.getByLabel('Password:').fill('spiritbreaker');
+      await page.getByLabel('Email address:').fill('automationadmin@getcometa.com');
+      await page.getByLabel('Password:').fill('barriletecosmico');
       await page.getByRole('button', { name: 'Log in' }).click();
     }
     const element = page.locator('//*[@id="id_paid_orders_required_proxy_to"]').first();
@@ -818,4 +864,55 @@ export async function hasPaidOrdersRequiredProxy(
     return false;
   }
   return false;
+}
+
+export async function apiSchoolsStockChangeLimitPartialUpdate(id: string, schoolId: string, is_limited: boolean) {
+  const token = await getAdminToken();
+  const data: PatchedChangeLimitRequest = {
+    is_limited,
+    observations: 'test automation',
+  };
+  const response = await ServiceClient.apiV1DashboardSchoolsStockChangeLimitPartialUpdate(id, schoolId, data, {
+    headers: {
+      Authorization: `Token ${token}`,
+    },
+  });
+  return response.data;
+}
+
+export async function apiGetSchoolsOptionalConceptsOrdersList(conceptId: string, schoolId: string) {
+  const token = await getAdminToken();
+
+  const response = await ServiceClient.apiV1DashboardSchoolsOptionalConceptsOrdersList(
+    conceptId,
+    schoolId,
+    {},
+    {
+      headers: {
+        Authorization: `Token ${token}`,
+      },
+    }
+  );
+  return response.data;
+}
+
+export async function apiSchoolsStockUpdateQuantityPartialUpdate(
+  conceptId: string,
+  schoolId: string,
+  quantity: number,
+  action: UpdateQuantityRequestActionEnum
+) {
+  const token = await getAdminToken();
+  const data: PatchedUpdateQuantityRequest = { action, quantity: quantity, observations: 'test automation' };
+  const response = await ServiceClient.apiV1DashboardSchoolsStockUpdateQuantityPartialUpdate(
+    conceptId,
+    schoolId,
+    data,
+    {
+      headers: {
+        Authorization: `Token ${token}`,
+      },
+    }
+  );
+  return response.data;
 }

@@ -1,26 +1,21 @@
-import { useRouter } from 'next/router';
-import { Button } from '@mui/material';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import { useUTMRouter as useRouter } from '~/components/UtmNavigation';
+import { cn } from '~/lib/cn';
 
-interface BackButtonProps extends React.ComponentProps<typeof Button> {
+interface BackButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   href?: string;
   onClick?: () => void;
 }
-const BackButton = ({ href, onClick, ...otherProps }: BackButtonProps) => {
+
+const BackButton = ({ href, onClick, className, ...otherProps }: BackButtonProps) => {
   const _router = useRouter();
+
   return (
-    <Button
-      {...otherProps}
-      sx={{
-        minWidth: 38,
-        height: 38,
-        boxShadow: 'none',
-        borderRadius: '50%',
-        padding: 0.75,
-      }}
-      color="white"
-      variant="contained"
-      disableElevation
+    <button
+      type="button"
+      className={cn(
+        'min-w-[38px] h-[38px] shadow-none rounded-full p-1.5 bg-white flex items-center justify-center',
+        className
+      )}
       onClick={() => {
         if (onClick) {
           onClick();
@@ -28,9 +23,12 @@ const BackButton = ({ href, onClick, ...otherProps }: BackButtonProps) => {
           _router.push(href);
         } else _router.back();
       }}
+      {...otherProps}
     >
-      <ChevronLeftIcon color="primary" />
-    </Button>
+      <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+      </svg>
+    </button>
   );
 };
 

@@ -1,0 +1,119 @@
+@import "./fonts.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+	padding: 0;
+	margin: 0;
+	background: #fbfcfd;
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+.d-flex {
+	display: flex;
+}
+
+[hidden] {
+	display: none;
+}
+
+.react-fireworks {
+	position: absolute;
+	z-index: 0;
+	width: 100vw;
+	height: 100vh;
+	bottom: 0;
+	left: 0;
+}
+
+#myScroll #myButton {
+	position: sticky;
+	top: 0;
+}
+
+/* this part is only for details */
+
+@layer components {
+	.embla {
+		overflow: hidden;
+		--slide-height: 19rem;
+		--slide-spacing: 1rem;
+		--slide-size: 100%;
+	}
+
+	.embla__container {
+		display: flex;
+		margin-left: calc(var(--slide-spacing) * -1);
+	}
+
+	.embla__slide {
+		flex: 0 0 var(--slide-size, "100%");
+		min-width: 0;
+		padding-left: var(--slide-spacing);
+	}
+}
+
+:root {
+	/* Cometa UI Tokens - Light Mode */
+	--background: 220 27% 98%;
+	--foreground: 225 26% 18%;
+
+	--card: 0 0% 100%;
+	--card-foreground: 225 26% 18%;
+
+	--popover: 0 0% 100%;
+	--popover-foreground: 225 26% 18%;
+
+	--primary: 263 100% 61%;
+	--primary-foreground: 0 0% 100%;
+	--primary-neutral: 225 26% 18%;
+
+	--secondary: 264 100% 96%;
+	--secondary-foreground: 263 100% 61%;
+	--secondary-neutral: 222 36% 95%;
+	--secondary-neutral-foreground: 225 26% 18%;
+
+	--muted: 220 27% 98%;
+	--muted-foreground: 226 12% 47%;
+
+	--accent: 222 36% 95%;
+	--accent-foreground: 225 26% 18%;
+
+	--destructive: 0 74% 63%;
+	--destructive-foreground: 0 86% 97%;
+
+	--border: 221 36% 86%;
+	--input: 221 36% 86%;
+	--ring: 226 21% 71%;
+
+	--radius: 0.625rem;
+
+	--chart-1: 130 66% 46%;
+	--chart-2: 209 100% 55%;
+	--chart-3: 330 99% 69%;
+	--chart-4: 25 100% 67%;
+	--chart-5: 45 100% 51%;
+
+	--sidebar-background: 220 27% 98%;
+	--sidebar-foreground: 226 12% 47%;
+	--sidebar-primary: 225 26% 18%;
+	--sidebar-primary-foreground: 220 27% 98%;
+	--sidebar-accent: 222 36% 95%;
+	--sidebar-accent-foreground: 225 26% 18%;
+	--sidebar-border: 221 36% 86%;
+	--sidebar-ring: 226 13% 55%;
+
+	--background-white: 0 0% 100%;
+	--overlay: 225 26% 18%;
+}

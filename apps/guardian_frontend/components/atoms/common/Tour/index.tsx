@@ -18,6 +18,14 @@ const Tour = (props: TourProps) => (
     disableScrollParentFix
     scrollToFirstStep={false}
     continuous
+    styles={
+      {
+        options: {
+          arrowColor: '#2B2D30',
+          overlayColor: 'rgba(43, 45, 48, 0.25)',
+        },
+      } as Styles
+    }
     {...props}
   />
 );

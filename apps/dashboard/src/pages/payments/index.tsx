@@ -1,77 +1,99 @@
-import Layout from '../../components/layouts';
-import { useSession } from 'next-auth/react';
+import { SchoolCycleEntity } from '@cometa/trpc/src/students/types-mapping';
+import type {
+  ColumnsResponse,
+  DashboardPayinFulfillment,
+  DashboardSchool,
+  ListDashboardInvoiceResponseDTO,
+  PaginatedDashboardPayinFulfillmentList,
+  PaginatedListDashboardInvoiceResponseDTOList,
+} from '@cometa/trpc/src/types';
+import { parseCurrency, toFloat } from '@cometa/utils';
 import * as Sentry from '@sentry/nextjs';
-import { useSelectedSchool, useSelectedSchoolId } from '/src/guards/AuthGuard';
-import FileIcon from '/public/assets/icons/download/file.svg';
-import XMLIcon from '/public/assets/icons/download/xml.svg';
-import TableIcon from '/public/assets/icons/download/table.svg';
-import PersonIcon from 'public/assets/images/person.svg';
-import { AnchorHTMLAttributes, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import ApiClient from '../../services/ApiClient';
-import { formatDateShort, formatDateWithUTCShort, paymentTypeLabel } from '../../utils/general';
-import { sendTrackEvent } from '../../utils/events';
 import { useMutation } from '@tanstack/react-query';
-import { Table } from '/src/components/TableInfinityScroll';
-import { createColumnHelper } from '@tanstack/react-table';
-import InvoiceChip from 'src/components/atoms/Chip';
-import { Tooltip } from 'src/components/atoms/Tooltip';
+import { ColumnDef, createColumnHelper } from '@tanstack/react-table';
+import type { GetServerSideProps } from 'next';
+import { useSession } from 'next-auth/react';
+import { type NextRouter, useRouter } from 'next/router';
+import { type AnchorHTMLAttributes, useEffect, useMemo, useRef, useState } from 'react';
+import type { UseFormReturn } from 'react-hook-form';
+import { ColumnCustomizerAction, type ColumnCustomizerColumn } from 'src/components/ColumnCustomizer';
+import { useFixedColumnsCustomizer } from 'src/components/ColumnCustomizer/hooks';
+import { RefundPaymentNotShowDetailDialog } from '../../components/payments/refund/RefundPaymentNotShowDetailDialog';
+import { YearlyInvoiceDownload } from '../../components/payments/YearlyInvoiceDownload';
 import IcDownload from '/public/assets/icons/ic_download.svg';
-import IcClose from '/public/assets/icons/ic_close.svg';
-
-import { OrderNameWithParcial } from '/src/components/molecules/dashboard/OrderNameWithParcial';
+import PersonIcon from '/public/assets/images/person.svg';
+import {
+  DownloadButton,
+  ETypeFile,
+  useAddToQueue,
+  useSetIsWorking,
+  useSetToError,
+  useSetToIdle,
+} from '/src/components/BackgroundDownload/BackgroundDownload';
+import DateRange, { transformDates } from '/src/components/DateRange';
+import { DownloadReport, DownloadReportOptions } from '/src/components/DownloadReport';
 import MultipleFilters, {
-  FormFilterData,
+  type FormFilterData,
   formFilterDataToParams,
   MultipleFiltersChips,
   normalizeFilters,
-  Params,
-  TooltipIcon,
-} from '../../components/MultipleFilters';
-import { UseFormReturn } from 'react-hook-form';
-import DateRange, { transformDates } from '/src/components/DateRange';
-import PlaceToPay from '/src/components/atoms/PlaceToPay';
-import useDebounce from '/src/hooks/useDebounce';
-import { HighlightMatch } from '/src/components/atoms/HighlightMatch';
-
-import { parseCurrency, toFloat } from '@cometa/utils';
-import { api } from '/src/utils/api';
-import {
-  ColumnsResponse,
-  DashboardPayinFulfillment,
-  PaginatedDashboardPayinFulfillmentList,
-} from '@cometa/trpc/src/types';
+  type Params,
+} from '/src/components/MultipleFilters';
+import { ShareTableAction } from '/src/components/ShareTable';
+import { convertToOrdering } from '/src/components/Table';
+import { Table, TableVirtualized } from '/src/components/TableInfinityScroll';
+import { LeadLabel } from '/src/components/admissions/labels';
+import InvoiceChip from '/src/components/atoms/Chip';
 import { Combobox } from '/src/components/atoms/Combobox';
-import {
-  useSetIsWorking,
-  useAddToQueue,
-  useSetToError,
-  useSetToIdle,
-  ETypeFile,
-  DownloadMenu,
-  DownloadButton,
-} from '/src/components/BackgroundDownload/BackgroundDownload';
 import { GlobalSearch } from '/src/components/atoms/GlobalSearch';
-import Header from '/src/components/molecules/dashboard/Header';
+import { HighlightMatch } from '/src/components/atoms/HighlightMatch';
+import MultipleSelectionComponent, { type Item } from '/src/components/atoms/MultipleSelection';
+import PlaceToPay from '/src/components/atoms/PlaceToPay';
+import { Tooltip } from '/src/components/atoms/Tooltip';
+import Layout from '/src/components/layouts';
+import { OrderNameWithParcial } from '/src/components/molecules/dashboard/OrderNameWithParcial';
+import OrderDetailSidepanel from '/src/components/order/OrderDetailSidepanel';
 import GuardianSelector from '/src/components/organisms/dashboard/GuardianSelector';
-import useSearchStudents from '/src/hooks/useSearchStudents';
-import useToggle from '/src/hooks/useToggle';
-import { cn } from '/src/utils/cn';
-import FulfillmentDetail from '/src/components/organisms/dashboard/FulfillmentDetail';
-import { useFlags } from '/flags/client';
+import { SchoolCycleSelector } from '/src/components/organisms/dashboard/SchoolCycleSelector';
+import InvoiceDetail from '/src/components/payments/invoice/InvoiceDetail';
+import SidePanelDetail from '/src/components/ui/SidepanelDetail';
+import { TabsWrapper } from '/src/components/ui/Tabs';
+import { Events } from '/src/constants/events';
+import { invoiceStatus, invoiceStatusI18N } from '/src/constants/invoice';
+import { useSelectedSchool, useSelectedSchoolId } from '/src/guards/AuthGuard';
+import useDebounce from '/src/hooks/useDebounce';
 import { useAdjustHeight } from '/src/hooks/useFullScreenHeight';
-import { extractPageFromURL } from '/src/utils/object-util';
-import useGetActiveSchoolCycleElement from '/src/hooks/useActiveSchoolCycle';
+import { useReportConfig } from '/src/hooks/useReportConfig';
+import useSearchStudents from '/src/hooks/useSearchStudents';
 import useSendPageViewedEvent from '/src/hooks/useSendPageViewedEvent';
+import useSendTrackEventWithUserName from '/src/hooks/useSendTrackEventWithUserName';
+import useToggle from '/src/hooks/useToggle';
+import ApiClient from '/src/services/ApiClient';
+import { api } from '/src/utils/api';
+import { cn } from '/src/utils/cn';
+import { formatDateShort, formatDateWithUTCShort, paymentTypeLabel } from '/src/utils/general';
+import { extractPageFromURL } from '/src/utils/object-util';
+
+enum TableType {
+  PAYMENTS = 'payments',
+  INVOICES = 'invoices',
+}
 
 PaymentsPage.getLayout = function getLayout(page: JSX.Element) {
   return (
-    <Layout dashboardVariant="stretch" title="Pagos recibidos">
+    <Layout dashboardVariant="stretch" title="Pagos y Facturas">
       {page}
     </Layout>
   );
 };
 
-function PaymentsPage() {
+export const getServerSideProps: GetServerSideProps = async (ctx) => ({
+  props: {
+    tab: ctx.query.tab ?? TableType.PAYMENTS,
+  },
+});
+
+function PaymentsPage({ tab }: { tab: string }) {
   const { data: session } = useSession();
   const selectedSchool = useSelectedSchool();
 
@@ -85,7 +107,7 @@ function PaymentsPage() {
       }}
     >
       <div>
-        <PaymentsTable />
+        <PaymentsTable tab={tab} />
       </div>
     </Sentry.ErrorBoundary>
   );
@@ -101,6 +123,7 @@ interface ChargeTableProps {
   hideSum?: boolean;
   studentId?: string;
   conceptId?: string;
+  tab: string;
 }
 
 const InvoiceFoil = ({ value, query }: { value?: string; query: string }) => {
@@ -138,6 +161,10 @@ const InvoiceFoil = ({ value, query }: { value?: string; query: string }) => {
 
 type GuaranteedResults = PaginatedDashboardPayinFulfillmentList & { results: DashboardPayinFulfillment[] };
 
+type GuaranteedResultsInvoices = PaginatedListDashboardInvoiceResponseDTOList & {
+  results: ListDashboardInvoiceResponseDTO[];
+};
+
 const GenerateColumns = (
   searchDebounced: string,
   selectedSchool: any,
@@ -168,6 +195,7 @@ const GenerateColumns = (
           )}
         </>
       ),
+      enableSorting: true,
     }),
     columnHelper.accessor('payin.paid_date', {
       cell: (info) => (
@@ -177,30 +205,23 @@ const GenerateColumns = (
       ),
       header: () => <div className="min-w-[110px] text-left">Fecha de pago</div>,
       size: 320,
-    }),
-    columnHelper.accessor('order', {
-      cell: (info) => <OrderNameWithParcial name={info.row.original.order} isParcial={info.row.original.is_partial} />,
-      header: () => <div className="min-w-[280px] text-left">Orden</div>,
-    }),
-    columnHelper.accessor('fulfillment.student_fullname', {
-      cell: (info) => <span className="font-semibold">{info.getValue()}</span>,
-      header: () => <span className="min-w-[250px] text-left">Estudiante</span>,
-    }),
-    columnHelper.accessor('payin.guardian_fullname', {
-      cell: (info) => <span className="font-semibold">{info.getValue()}</span>,
-      header: () => <div className="min-w-[200px] text-left">Pagador(Tutor)</div>,
-      size: 60,
-    }),
-    columnHelper.accessor('payin.collected_at', {
-      cell: (info) => <PlaceToPay at_school={info.getValue() === 'collected_at_school'} />,
-      header: () => <span className="min-w-[116px]">Lugar de pago</span>,
-    }),
-    columnHelper.accessor('payin.type', {
-      cell: (info) => paymentTypeLabel(info.getValue() as string),
-      header: () => <span className="min-w-[160px] text-left">Medio de pago</span>,
+      enableSorting: true,
     }),
     columnHelper.accessor('total_paid', {
-      cell: (info) => <span className="py-1">{parseCurrency(info.getValue(), 'MXN') || '-'}</span>,
+      cell: (info) => {
+        const hasRefund = !!info.row.original.refund;
+        const isParcialRefund = hasRefund && info.row.original.total_paid !== (info.row.original.refund?.amount || 0);
+        return (
+          <div className="flex flex-col">
+            <span className="py-1">{parseCurrency(info.getValue(), 'MXN') || '-'}</span>
+            {hasRefund ? (
+              <span className="text-xs font-normal leading-5">
+                {isParcialRefund ? 'Devuelto parcialmente' : 'Devuelto'}
+              </span>
+            ) : null}
+          </div>
+        );
+      },
       header: () => <span className="whitespace-nowrap min-w-[148px] text-right">Monto pagado</span>,
       meta: {
         numeric: true,
@@ -218,10 +239,9 @@ const GenerateColumns = (
         </>
       ),
     }),
-
-    columnHelper.accessor('invoice', {
+    columnHelper.accessor('invoice.status', {
       cell: (info) => {
-        const { status } = info.getValue() || {};
+        const status = info.getValue();
         const invoiceStatus = {
           success: 'success',
           pending: 'info',
@@ -234,7 +254,7 @@ const GenerateColumns = (
         if (!status)
           return (
             <Tooltip message="No se ha solicitado la emisión de una factura">
-              <InvoiceChip intent={invoiceStatus['not_requested']}>No Facturable</InvoiceChip>
+              <InvoiceChip intent={invoiceStatus.not_requested}>Sin factura</InvoiceChip>
             </Tooltip>
           );
 
@@ -258,7 +278,7 @@ const GenerateColumns = (
             tooltip: 'Se ha solicitado la cancelación de esta factura',
           },
           not_requested: {
-            status: 'No facturable',
+            status: 'Sin factura',
             tooltip: 'No se ha solicitado la emisión de una factura',
           },
           failed: {
@@ -278,11 +298,47 @@ const GenerateColumns = (
         );
       },
       header: () => <span className="min-w-[150px] text-start">Facturación</span>,
+      enableSorting: true,
+    }),
+    columnHelper.accessor('fulfillment.student_fullname', {
+      cell: (info) => (
+        <span className="flex gap-2 font-semibold">
+          {info.getValue()}
+          {info.row.original.fulfillment.student?.state ? (
+            <LeadLabel state={info.row.original.fulfillment.student?.state} />
+          ) : (
+            '-'
+          )}
+        </span>
+      ),
+      header: () => <span className="min-w-[250px] text-left">Estudiante</span>,
+    }),
+    columnHelper.accessor('payin.type', {
+      cell: (info) => paymentTypeLabel(info.getValue() as string),
+      header: () => <span className="min-w-[160px] text-left">Medio de pago</span>,
+    }),
+    columnHelper.accessor('payin.guardian_fullname', {
+      cell: (info) => <span className="font-semibold">{info.getValue()}</span>,
+      header: () => <div className="min-w-[200px] text-left">Pagador(Tutor)</div>,
+      size: 60,
+    }),
+    columnHelper.accessor('order', {
+      cell: (info) => <OrderNameWithParcial name={info.row.original.order} isParcial={info.row.original.is_partial} />,
+      header: () => <div className="min-w-[280px] text-left">Orden</div>,
+    }),
+    columnHelper.accessor('payin.collected_at', {
+      cell: (info) => <PlaceToPay at_school={info.getValue() === 'collected_at_school'} />,
+      header: () => <span className="min-w-[116px]">Lugar de pago</span>,
     }),
     columnHelper.accessor('invoice.fiscal_identifier', {
       cell: (info) => <InvoiceFoil value={info.getValue() || ''} query={searchDebounced} />,
       header: () => <span className="min-w-[103px]">Folio de factura</span>,
       size: 250,
+    }),
+    columnHelper.accessor('payin.correlative_id', {
+      cell: (info) => <HighlightMatch query={searchDebounced}>{info.getValue() || '-'}</HighlightMatch>,
+      header: () => <span className="min-w-[116px]">ID de pago</span>,
+      enableSorting: true,
     }),
     columnHelper.accessor('invoice', {
       id: 'invoice.billing_identifier',
@@ -320,10 +376,6 @@ const GenerateColumns = (
       header: () => null,
       size: 250,
     }),
-    columnHelper.accessor('payin.correlative_id', {
-      cell: (info) => <HighlightMatch query={searchDebounced}>{info.getValue() || '-'}</HighlightMatch>,
-      header: () => <span className="min-w-[116px]">ID de pago</span>,
-    }),
     columnHelper.accessor('payout.correlative_id', {
       cell: (info) => (
         <HighlightMatch query={searchDebounced}>
@@ -342,9 +394,8 @@ const GenerateColumns = (
       cell: (info) => {
         if (info.row.original.payin.collected_at === 'collected_at_school') {
           return <span className="font-semibold">{formatDateShort(info.getValue())}</span>;
-        } else {
-          return <span className="italic text-[#919EAB]">No aplica</span>;
         }
+        return <span className="italic text-[#919EAB]">No aplica</span>;
       },
       header: () => <div className="min-w-[115px] text-left">Fecha de registro</div>,
       size: 320,
@@ -363,9 +414,218 @@ const GenerateColumns = (
 
   return columns;
 };
-export function PaymentsTable({ hideHeader, hideSum, studentId = '' }: ChargeTableProps) {
+
+const GenerateColumnsInvoices = (router: NextRouter, searchDebounced: string, selectedSchool?: DashboardSchool) => {
+  const columnHelper = createColumnHelper<GuaranteedResultsInvoices['results'][number]>();
+
+  const statusI18N = invoiceStatusI18N(selectedSchool?.config_dashboard?.emit_invoice_time);
+
+  const handleOpenRelatedInvoice = (invoice_id: string) => {
+    router.push({ query: { ...router.query, invoice_detail_id: invoice_id } }, undefined, {
+      shallow: true,
+    });
+  };
+
+  const columns = [
+    columnHelper.accessor('client_identifier', {
+      cell: (info) => {
+        const clientIdentifier = info.row.original.client_identifier;
+        const invoiceType = info.row.original.invoice_type;
+        return (
+          <span className={cn('flex flex-col', { 'italic font-normal text-sm': !clientIdentifier })}>
+            <HighlightMatch query={searchDebounced}>{clientIdentifier ?? '-'}</HighlightMatch>
+            {invoiceType === 'credit_note' ? (
+              <span className="text-[#919EAB] text-xs mt-2">Nota de crédito</span>
+            ) : null}
+          </span>
+        );
+      },
+      size: 164,
+      header: 'Nº de folio',
+      enableSorting: true,
+    }),
+    columnHelper.accessor('status', {
+      cell: (info) => {
+        const status = info.row.original.status;
+        return (
+          <span className={!status ? 'italic font-normal text-sm' : ''}>
+            <InvoiceChip intent={invoiceStatus[status]}>{statusI18N[status].status}</InvoiceChip>
+          </span>
+        );
+      },
+      size: 160,
+      header: 'Estado',
+      enableSorting: true,
+    }),
+    columnHelper.accessor('fiscal_identifier', {
+      cell: (info) => {
+        const pdfUrl = info.row.original.pdf_url;
+        const fiscalIdentifier = info.row.original.fiscal_identifier;
+        const Element = pdfUrl ? 'a' : 'span';
+
+        if (fiscalIdentifier === null) {
+          return <></>;
+        }
+
+        const Props: AnchorHTMLAttributes<HTMLAnchorElement> = {
+          href: info.row.original.pdf_url,
+          target: '_blank',
+          rel: 'noreferrer noopener',
+          download: `${info.row.original.fiscal_identifier}.pdf`,
+          onClick: (e) => e.stopPropagation(),
+        };
+        return (
+          <span className="flex items-center gap-5">
+            <span className={cn('block truncate', { 'italic font-normal text-sm': !fiscalIdentifier })}>
+              <HighlightMatch query={searchDebounced}>
+                <Tooltip message={fiscalIdentifier}>
+                  <span className="block truncate max-w-[140px]">{fiscalIdentifier ?? '-'}</span>{' '}
+                </Tooltip>
+              </HighlightMatch>
+            </span>
+            <Element
+              {...(info.getValue() ? Props : undefined)}
+              className={cn('text-gray-400 text-center z-10', {
+                'text-blue-secondary': !!info.getValue(),
+              })}
+            >
+              <IcDownload fill="currentColor" />
+            </Element>
+          </span>
+        );
+      },
+      size: 220,
+      header: 'Folio fiscal',
+    }),
+    columnHelper.accessor('expedition_date', {
+      cell: (info) => {
+        const expeditionDate = info.row.original.expedition_date;
+        return (
+          <span className={!expeditionDate ? 'italic font-normal text-sm' : ''}>
+            <HighlightMatch query={searchDebounced}>{formatDateShort(expeditionDate) ?? '-'}</HighlightMatch>
+          </span>
+        );
+      },
+      size: 200,
+      header: 'Fecha de factura',
+      enableSorting: true,
+    }),
+    columnHelper.accessor('payment_amount', {
+      cell: (info) => {
+        const payment_amount = info.row.original.payment_amount;
+        return (
+          <span className={!payment_amount ? 'italic font-normal text-sm' : ''}>
+            <HighlightMatch query={searchDebounced}>{parseCurrency(payment_amount ?? '0', 'MXN')}</HighlightMatch>
+          </span>
+        );
+      },
+      size: 160,
+      header: 'Monto facturado',
+    }),
+    columnHelper.accessor('student_name', {
+      cell: (info) => {
+        const studentName = info.row.original.student_name;
+        const studentState = info.row.original.student_state;
+        return (
+          <span
+            className={cn('min-w-[260px] max-w-[260px] truncate flex gap-2', {
+              'italic font-normal text-sm': !studentName,
+            })}
+          >
+            <HighlightMatch query={searchDebounced}>{studentName ?? '-'}</HighlightMatch>
+            {studentState && <LeadLabel state={studentState} />}
+          </span>
+        );
+      },
+      size: 260,
+      header: 'Estudiante',
+    }),
+    columnHelper.accessor('order_name', {
+      cell: (info) => {
+        const order = info.row.original.order_name;
+        return (
+          <span className={cn('max-w-[280px] whitespace-break-spaces block', { 'italic font-normal text-sm': !order })}>
+            <HighlightMatch query={searchDebounced}>{order ?? '-'}</HighlightMatch>
+          </span>
+        );
+      },
+      size: 280,
+      header: 'Orden',
+    }),
+    columnHelper.accessor('billing_guardian_name', {
+      cell: (info) => {
+        const billingGuardian = info.row.original.billing_guardian_name;
+        const billingTaxId = info.row.original.billing_tax_id;
+        return (
+          <div className="flex flex-col">
+            <span className="text-xs truncate">{billingGuardian}</span>
+            <span className="text-[#919EAB] text-xs">{billingTaxId}</span>
+          </div>
+        );
+      },
+      size: 250,
+      header: 'Facturado a:',
+    }),
+    columnHelper.accessor('related_invoice', {
+      cell: (info) => {
+        const related_invoice_id = info.row.original.related_invoice?.id;
+        const related_fiscal_identifier = info.row.original.related_invoice?.fiscal_identifier;
+        return related_invoice_id ? (
+          <div className="block col-span-3 w-fit">
+            <SidePanelDetail
+              text={related_fiscal_identifier ?? '-'}
+              textClass="block truncate max-w-[170px]"
+              message="Ver detalle de orden"
+              className="text-sm font-semibold text-[#212B36] "
+              setOnClick={(e) => {
+                e.stopPropagation();
+                handleOpenRelatedInvoice(related_invoice_id ?? null);
+              }}
+            />
+          </div>
+        ) : (
+          <div>-</div>
+        );
+      },
+      size: 250,
+      header: 'Folio relacionado',
+    }),
+    columnHelper.accessor('order_id', {
+      cell: (info) => {
+        const order_id = info.row.original.order_id;
+        return (
+          <span className={!order_id ? 'italic font-normal text-sm' : ''}>
+            <HighlightMatch query={searchDebounced}>{order_id ?? '-'}</HighlightMatch>
+          </span>
+        );
+      },
+      size: 160,
+      header: 'ID de pago',
+      enableSorting: true,
+    }),
+    columnHelper.accessor('guardian_name', {
+      cell: (info) => {
+        const guardian_name = info.row.original.guardian_name;
+        return (
+          <span className={!guardian_name ? 'italic font-normal text-sm' : 'max-w-[250px] block truncate'}>
+            <HighlightMatch query={searchDebounced}>{guardian_name ?? '-'}</HighlightMatch>
+          </span>
+        );
+      },
+      size: 220,
+      header: 'Pagador',
+    }),
+  ];
+
+  return columns;
+};
+
+export function PaymentsTable({ hideHeader, hideSum, studentId = '', tab }: Readonly<ChargeTableProps>) {
+  const router = useRouter();
+  const { invoice_detail_id } = router.query;
   const { toggle: openTo, onOpen: onOpenTo, onClose: onCloseTo } = useToggle();
   const selectedSchool = useSelectedSchool();
+  const sendTrackEventWithUserName = useSendTrackEventWithUserName();
   const formRef = useRef() as React.MutableRefObject<UseFormReturn<FormFilterData>>;
   const [formFilterData, setFormFilterData] = useState<FormFilterData>({});
   const paramsFromForm = useMemo(() => formFilterDataToParams(formFilterData), [formFilterData]);
@@ -374,6 +634,17 @@ export function PaymentsTable({ hideHeader, hideSum, studentId = '' }: ChargeTab
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [selectedDates, onDatesChange] = useState<Date[]>([]);
 
+  const selectedSchoolId = useSelectedSchoolId();
+  const { data: schoolCycles } = api.schools.schoolsCycles.useQuery(
+    {
+      school_id: selectedSchoolId as string,
+    },
+    {
+      enabled: !!selectedSchoolId,
+    }
+  );
+  const [selectedSchoolCycle, setSelectedSchoolCycle] = useState<SchoolCycleEntity | null>(null);
+
   const [startDate, endDate] = transformDates(selectedDates);
   const [search, setSearch] = useState('');
   const searchDebounced = useDebounce(search, 1200);
@@ -381,11 +652,15 @@ export function PaymentsTable({ hideHeader, hideSum, studentId = '' }: ChargeTab
     multiple_search: searchDebounced,
   };
   const [ordenDetailId, setOrdenDetailId] = useState('');
+  const [selectedInvoiceStatus, setSelectedInvoiceStatus] = useState<Record<string, string[]>>();
+  const [paymentsSorting, setPaymentsSorting] = useState<string>();
+  const [invoicesSorting, setInvoicesSorting] = useState<string>();
+  const [showRefundDialog, setShowRefundDialog] = useState(false);
 
   const {
     data: fulfillmentTable,
     isFetching,
-    isLoading,
+    isPending: isLoading,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
@@ -397,13 +672,15 @@ export function PaymentsTable({ hideHeader, hideSum, studentId = '' }: ChargeTab
         start_date: startDate,
         guardians: selectedGuardian?.id ? [selectedGuardian?.id] : [],
         students: [selectedStudent?.id || studentId],
+        school_cycles: selectedSchoolCycle ? [selectedSchoolCycle.id as string] : undefined,
+        ordering: paymentsSorting ? [paymentsSorting] : undefined,
         ...paramsFromForm,
         ...params,
       },
     },
     {
       getNextPageParam: (lastPage) => extractPageFromURL(lastPage?.next as string) ?? undefined,
-      enabled: !!selectedSchool?.id,
+      enabled: !!selectedSchool?.id && tab !== 'invoices',
       refetchOnWindowFocus: false,
       staleTime: 1000 * 60,
     }
@@ -411,7 +688,7 @@ export function PaymentsTable({ hideHeader, hideSum, studentId = '' }: ChargeTab
 
   const handleSelectionGuardian = (selectedGuardian: any) => {
     setSelectedGuardian(selectedGuardian);
-    sendTrackEvent('dashboard: Filtro Pagos Recibidos', {
+    sendTrackEventWithUserName(Events.filtro_pagos_recibidos, {
       Type: 'Filtros',
       Source: 'Pagos recibidos',
       Filtros: ['guardian'],
@@ -419,7 +696,7 @@ export function PaymentsTable({ hideHeader, hideSum, studentId = '' }: ChargeTab
   };
   const handleSelectionStudent = (selectedStudent: any) => {
     setSelectedStudent(selectedStudent);
-    sendTrackEvent('dashboard: Filtro Pagos Recibidos', {
+    sendTrackEventWithUserName(Events.filtro_pagos_recibidos, {
       Type: 'Filtros',
       Source: 'Pagos recibidos',
       Filtros: ['student'],
@@ -429,9 +706,25 @@ export function PaymentsTable({ hideHeader, hideSum, studentId = '' }: ChargeTab
   const flatData = useMemo(() => fulfillmentTable?.pages?.flatMap((page) => page?.results ?? []), [fulfillmentTable]);
   const totalCount = useMemo(() => fulfillmentTable?.pages?.[0]?.count ?? 0, [fulfillmentTable]);
   const handleOpen = (row: any) => {
-    sendTrackEvent('dashboard: Pagos Recibidos order open', { source: document.title.split(' | ')[0] });
+    if (!!row.refund && !!row.fulfillment.deleted) {
+      setShowRefundDialog(true);
+      return;
+    }
+
+    sendTrackEventWithUserName(Events.pagos_recibidos_order_open, { source: document.title.split(' | ')[0] });
     setOrdenDetailId(String(row.fulfillment.id));
     onOpenTo();
+  };
+  const handleOpenInvoice = (row: any) => {
+    router.push({ query: { ...router.query, invoice_detail_id: String(row.id) } }, undefined, {
+      shallow: true,
+    });
+  };
+
+  const handleCloseInvoiceDetail = () => {
+    router.push({ query: { ...router.query, invoice_detail_id: undefined } }, undefined, {
+      shallow: true,
+    });
   };
   const [itemsCount, setItemsCount] = useState<{ watchKey: string; count: number }[]>([]);
 
@@ -452,7 +745,7 @@ export function PaymentsTable({ hideHeader, hideSum, studentId = '' }: ChargeTab
   const handleFilter = (data: FormFilterData, methods: UseFormReturn<FormFilterData>) => {
     formRef.current = methods;
     const filterEventsData = handleFilterDataForSegment(data);
-    sendTrackEvent('dashboard: Filtro Pagos Recibidos', {
+    sendTrackEventWithUserName(Events.filtro_pagos_recibidos, {
       Type: 'Filtros',
       Source: 'Pagos recibidos',
       Filtros: Array.isArray(filterEventsData) ? filterEventsData : [],
@@ -466,12 +759,78 @@ export function PaymentsTable({ hideHeader, hideSum, studentId = '' }: ChargeTab
   };
   const { wrapperRef, headerRef, maxHeight } = useAdjustHeight(550);
 
+  const {
+    data: invoices,
+    isPending: isLoadingInvoices,
+    hasNextPage: hasNextPageInvoice,
+    isFetchingNextPage: isFetchingNextPageInvoice,
+    fetchNextPage: fetchNextPageInvoice,
+  } = api.payments.listInvoices.useInfiniteQuery(
+    {
+      schoolId: selectedSchool?.id as string,
+      query: {
+        end_date: endDate,
+        start_date: startDate,
+        guardians: selectedGuardian?.id ? [selectedGuardian?.id] : [],
+        students: [selectedStudent?.id || studentId],
+        school_cycles: selectedSchoolCycle ? [selectedSchoolCycle.id as string] : undefined,
+        ordering: invoicesSorting ? [invoicesSorting] : undefined,
+        ...paramsFromForm,
+        ...params,
+        ...selectedInvoiceStatus,
+      },
+    },
+    {
+      getNextPageParam: (lastPage) => extractPageFromURL(lastPage?.next as string) ?? undefined,
+      enabled: !!selectedSchool?.id && tab === 'invoices',
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60,
+    }
+  );
+
+  const flatDataInvoices = useMemo(() => invoices?.pages?.flatMap((page) => page?.results ?? []) ?? [], [invoices]);
+
+  const columnsDataPayments = useMemo(
+    () => GenerateColumns(searchDebounced, selectedSchool, fulfillmentTable, totalCount, paramsFromForm),
+    [searchDebounced, selectedSchool, fulfillmentTable, totalCount, paramsFromForm]
+  );
+
+  const {
+    tableColumns: tableColumnsPayments,
+    visibleTableColumns: visibleTableColumnsPayments,
+    handleColumnsChange: handleColumnsChangePayments,
+    fixedColumnIds: fixedColumnIdsPayments,
+  } = usePaymentsColumnCustomizer({
+    tableName: tab === TableType.PAYMENTS ? TableType.PAYMENTS : TableType.INVOICES,
+    columns: columnsDataPayments,
+  });
+
+  const columnsDataInvoices = useMemo(
+    () => GenerateColumnsInvoices(router, searchDebounced, selectedSchool),
+    [router, searchDebounced, selectedSchool]
+  );
+  const {
+    tableColumns: tableColumnsInvoices,
+    visibleTableColumns: visibleTableColumnsInvoices,
+    handleColumnsChange: handleColumnsChangeInvoices,
+    fixedColumnIds: fixedColumnIdsInvoices,
+  } = useInvoicesColumnCustomizer({
+    tableName: tab === TableType.INVOICES ? TableType.INVOICES : TableType.PAYMENTS,
+    columns: columnsDataInvoices,
+  });
+
+  const tableColumns = tab === TableType.PAYMENTS ? tableColumnsPayments : tableColumnsInvoices;
+  const visibleTableColumns = tab === TableType.PAYMENTS ? visibleTableColumnsPayments : visibleTableColumnsInvoices;
+  const handleColumnsChange = tab === TableType.PAYMENTS ? handleColumnsChangePayments : handleColumnsChangeInvoices;
+  const fixedColumnIds = tab === TableType.PAYMENTS ? fixedColumnIdsPayments : fixedColumnIdsInvoices;
+
   return (
-    <div className="h-full flex flex-col max-h-[calc(100vh-80px)] min-h-[calc(100vh-70px)]" ref={wrapperRef}>
+    <div className="h-full flex flex-col max-h-[calc(100vh-80px)] min-h-[calc(100vh-70px)] font-lota" ref={wrapperRef}>
       {!hideHeader && (
         <div ref={headerRef} className="pb-4">
           <HeaderTable
-            title="Pagos recibidos"
+            tab={tab}
+            title="Pagos y Facturas"
             selectedGuardian={selectedGuardian}
             setSelectedGuardian={handleSelectionGuardian}
             selectedStudent={selectedStudent}
@@ -486,6 +845,14 @@ export function PaymentsTable({ hideHeader, hideSum, studentId = '' }: ChargeTab
             itemsCount={itemsCount}
             setSearch={setSearch}
             search={search}
+            setInvoiceStatus={setSelectedInvoiceStatus}
+            schoolCycle={selectedSchoolCycle ?? null}
+            setSchoolCycle={setSelectedSchoolCycle}
+            schoolCycles={schoolCycles ?? []}
+            tableColumns={tableColumns}
+            handleColumnsChange={handleColumnsChange}
+            fixedColumnIds={fixedColumnIds}
+            formFilterData={formFilterData}
           />
           <div className="pl-4">
             <MultipleFiltersChips
@@ -493,6 +860,7 @@ export function PaymentsTable({ hideHeader, hideSum, studentId = '' }: ChargeTab
               formFilterData={formFilterData}
               setItemsCount={setItemsCount}
               itemsCount={itemsCount}
+              tableName={tab === TableType.INVOICES ? TableType.INVOICES : TableType.PAYMENTS}
             />
           </div>
         </div>
@@ -503,26 +871,78 @@ export function PaymentsTable({ hideHeader, hideSum, studentId = '' }: ChargeTab
           isFetching && !isFetchingNextPage ? 'opacity-50 cursor-wait' : 'transition-opacity duration-300'
         }`}
       >
-        <Table
-          data={flatData || []}
-          columns={GenerateColumns(searchDebounced, selectedSchool, fulfillmentTable, totalCount, paramsFromForm)}
-          onRowClick={handleOpen}
-          totalCount={totalCount || 0}
-          fetchNextPage={fetchNextPage}
-          hasNextPage={hasNextPage || false}
-          isFetching={isFetching}
-          isLoading={isLoading}
-          hideSum={hideSum}
-          totalFetched={flatData?.length || 0}
-          maxHeight={maxHeight}
-          isFetchingNextPage={isFetchingNextPage}
-          emptyStateText={`${
-            search.length > 0 ? 'No hemos encontrado pagos con esos criterios de búsqueda' : 'No hay pagos recibidos'
-          }`}
-          showEmptyStateImage
-        />
-        <FulfillmentDetail onClose={onCloseTo} paymentId={ordenDetailId} open={openTo} />
+        {tab === TableType.PAYMENTS ? (
+          <>
+            <Table
+              data={flatData || []}
+              columns={visibleTableColumns}
+              onRowClick={handleOpen}
+              totalCount={totalCount || 0}
+              fetchNextPage={fetchNextPage}
+              hasNextPage={hasNextPage || false}
+              isFetching={isFetching}
+              isLoading={isLoading}
+              hideSum={hideSum}
+              totalFetched={flatData?.length ?? 0}
+              maxHeight={maxHeight}
+              isFetchingNextPage={isFetchingNextPage}
+              onSortingChange={(sorting) => {
+                const text = convertToOrdering(sorting);
+                setPaymentsSorting(text);
+              }}
+              emptyStateText={`${
+                search.length > 0
+                  ? 'No hemos encontrado pagos con esos criterios de búsqueda'
+                  : 'No hay pagos recibidos'
+              }`}
+              showEmptyStateImage
+            />
+            <OrderDetailSidepanel
+              key={ordenDetailId}
+              onClose={() => {
+                setOrdenDetailId('');
+                onCloseTo();
+              }}
+              fulfillmentId={ordenDetailId}
+              open={openTo}
+              typeOfOrder="PAYMENT"
+            />
+          </>
+        ) : (
+          <>
+            <div className="w-full">
+              <TableVirtualized
+                isLoading={isLoadingInvoices}
+                hasNextPage={Boolean(hasNextPageInvoice)}
+                fetchNextPage={fetchNextPageInvoice}
+                isFetchingNextPage={isFetchingNextPageInvoice}
+                data={flatDataInvoices}
+                columns={visibleTableColumnsInvoices}
+                onRowClick={handleOpenInvoice}
+                totalCount={invoices?.pages?.[0]?.count ?? 0}
+                totalFetched={flatDataInvoices?.length || 0}
+                maxHeight={maxHeight}
+                onSortingChange={(sorting) => {
+                  const text = convertToOrdering(sorting);
+                  setInvoicesSorting(text);
+                }}
+                emptyStateText={`${
+                  search.length > 0 ? 'No hemos encontrado facturas con esos criterios de búsqueda' : 'No hay facturas'
+                }`}
+                showEmptyStateImage
+                addMorePaddingFirstRow
+              />
+            </div>
+            <InvoiceDetail
+              onClose={handleCloseInvoiceDetail}
+              invoiceId={invoice_detail_id as string}
+              open={!!invoice_detail_id}
+            />
+          </>
+        )}
       </div>
+
+      <RefundPaymentNotShowDetailDialog open={showRefundDialog} onClose={() => setShowRefundDialog(false)} />
     </div>
   );
 }
@@ -542,6 +962,15 @@ interface HeaderTableProps {
   search: string;
   itemsCount: { watchKey: string; count: number }[];
   setSelectedItemsCount: (itemsCount: { watchKey: string; count: number }[]) => void;
+  tab: string;
+  setInvoiceStatus: (selectedInvoiceStatus: Record<string, string[]>) => void;
+  setSchoolCycle: (value: SchoolCycleEntity | null) => void;
+  schoolCycle: SchoolCycleEntity | null;
+  schoolCycles: SchoolCycleEntity[];
+  tableColumns: ColumnCustomizerColumn[];
+  handleColumnsChange: (columns: ColumnCustomizerColumn[]) => void;
+  fixedColumnIds?: string[];
+  formFilterData: FormFilterData;
 }
 
 export function HeaderTable({
@@ -560,19 +989,26 @@ export function HeaderTable({
   search,
   setSelectedItemsCount,
   itemsCount,
-}: HeaderTableProps) {
-  const { data: session } = useSession();
+  tab,
+  setInvoiceStatus,
+  setSchoolCycle,
+  schoolCycle,
+  schoolCycles,
+  tableColumns,
+  handleColumnsChange,
+  fixedColumnIds,
+  formFilterData,
+}: Readonly<HeaderTableProps>) {
   const selectedSchool = useSelectedSchool();
   const selectedSchoolId = useSelectedSchoolId();
+  const sendTrackEventWithUserName = useSendTrackEventWithUserName();
   const setIsWorking = useSetIsWorking();
   const addToQueue = useAddToQueue();
   const setIsError = useSetToError();
   const setToIdle = useSetToIdle();
+  const router = useRouter();
   const [searchStudent, setSearchStudent] = useState('');
   const debouncedQuery = String(useDebounce(searchStudent, 300));
-  const flags = useFlags({
-    traits: { school_id: selectedSchoolId, schoolName: selectedSchool?.name, email: session?.user?.email },
-  }).flags;
 
   const {
     toggle: openDownloadReportMenu,
@@ -586,32 +1022,39 @@ export function HeaderTable({
     onClose: onCloseDownloadReportMenuOptions,
     setToggle: setToggleDownloadReportMenuOptions,
   } = useToggle();
-  const { data: studentsOnSchool, isFetching } = useSearchStudents(
-    session?.token,
-    selectedSchoolId || '',
-    debouncedQuery
-  );
+  const { data: studentsOnSchool, isFetching } = useSearchStudents(selectedSchoolId ?? '', debouncedQuery);
 
-  const [selectedRows] = useReportConfig();
-  const getDelicuencyReport = async ({ config }: { config: boolean }) =>
-    ApiClient.generatePayinsFulfillmentsReport(session?.token || '', selectedSchoolId || '', {
+  const isInvoiceTab = tab === 'invoices';
+
+  const [selectedRows] = useReportConfig(tab);
+  const generateReport = async ({ config }: { config: boolean }) => {
+    filters = {
+      school_cycles: schoolCycle ? [schoolCycle.id] : undefined,
       ...filters,
       ...filterParams,
       students: selectedStudent?.id,
       guardians: selectedGuardian?.id,
-      v2: flags?.show_new_reports_payments,
       ...(config && selectedRows?.length > 0 ? { config: selectedRows } : {}),
-    });
+    };
+    if (tab === TableType.PAYMENTS) {
+      return ApiClient.generatePayinsFulfillmentsReport(selectedSchoolId || '', filters);
+    }
+    if (isInvoiceTab) {
+      return ApiClient.generateInvoicesReport(selectedSchoolId || '', filters);
+    }
+  };
 
   const downloadInvoices = async (extension: 'xml' | 'pdf') => {
-    sendTrackEvent('dashboard: Pagos recibidos Downloaded', {
+    sendTrackEventWithUserName(Events.pagos_recibidos_downloaded_lower, {
       Type: `Facturas ${extension.toUpperCase()}`,
       Source: 'Pagos recibidos',
     });
 
     setIsWorking();
 
-    return ApiClient.getOrderPayinFulfillmentReport(session?.token || '', selectedSchoolId, extension, {
+    const reportEndpoint = isInvoiceTab ? ApiClient.getInvoicesZip : ApiClient.getOrderPayinFulfillmentReport;
+    return reportEndpoint(selectedSchoolId, extension, {
+      school_cycles: schoolCycle ? [schoolCycle.id] : undefined,
       ...filters,
       ...filterParams,
       students: selectedStudent?.id,
@@ -627,7 +1070,7 @@ export function HeaderTable({
   };
 
   const mutation = useMutation({
-    mutationFn: ({ config }: { config: boolean }) => getDelicuencyReport({ config }),
+    mutationFn: ({ config }: { config: boolean }) => generateReport({ config }),
     async onSuccess(data) {
       addToQueue(data.id);
     },
@@ -638,171 +1081,123 @@ export function HeaderTable({
     },
   });
   const handleAdd = async () => {
-    sendTrackEvent('dashboard: Pagos Recibidos Downloaded', { Type: 'Tabla', Source: 'Pagos recibidos' });
+    sendTrackEventWithUserName(Events.pagos_recibidos_downloaded, { Type: 'Tabla', Source: 'Pagos recibidos' });
     await mutation.mutate({ config: false });
     setIsWorking();
   };
   const handleOpenDownloadReportMenu = () => {
     onOpenDownloadReportMenu();
   };
-  const { data: columnsData } = api.schools.schoolsPayinsFulfillmentsColumns.useQuery({
-    schoolId: selectedSchoolId as string,
-  });
 
-  const accountingReport = api.payments.generatePayinFulfillmentsReportWithSegments.useMutation({
-    async onSuccess(response) {
-      if (response?.data.id) {
-        addToQueue(response.data.id);
-      } else {
-        setIsError();
-        setTimeout(() => setToIdle(), 3000);
-      }
-    },
-    onError(err) {
-      setIsError();
-      Sentry.captureException(err);
-      setTimeout(() => setToIdle(), 3000);
-    },
-  });
+  const { data: paymentsColumnsData } = api.schools.schoolsPayinsFulfillmentsColumns.useQuery(
+    { schoolId: selectedSchoolId as string },
+    { staleTime: Number.POSITIVE_INFINITY, enabled: tab === TableType.PAYMENTS }
+  );
+  const { data: invoiceColumnsData } = api.payments.retrieveInvoiceReportColumns.useQuery(
+    { schoolId: selectedSchoolId as string },
+    { staleTime: Number.POSITIVE_INFINITY, enabled: isInvoiceTab }
+  );
+  const columnsData = isInvoiceTab ? invoiceColumnsData : paymentsColumnsData;
 
   useSendPageViewedEvent('Pagos Recibidos', selectedSchool);
   const handleDownloadReportPersonalized = async () => {
     await mutation.mutate({ config: true });
     setIsWorking();
-    sendTrackEvent('dashboard: Pagos Recibidos Downloaded', {
+    sendTrackEventWithUserName(Events.pagos_recibidos_downloaded, {
       Type: 'Tabla Personalizada',
       Source: 'Pagos recibidos',
       ColumnasSeleccionadas: Array.isArray(selectedRows) ? selectedRows : [],
     });
   };
-  const DownloadMenuItems = [
-    {
-      key: 'invoices-zip',
-      children: (
-        <>
-          <FileIcon className="w-4" />
-          <span>Descargar facturas PDF</span>
-        </>
-      ),
-      onClick: () => downloadInvoices('pdf'),
-    },
-    {
-      key: 'invoices-xml',
-      children: (
-        <>
-          <XMLIcon className="w-4" />
-          <span>Descargar facturas XML</span>
-        </>
-      ),
-      onClick: () => downloadInvoices('xml'),
-    },
-    {
-      key: 'table-report',
-      children: (
-        <>
-          <TableIcon className="w-5" />
-          <span>Descargar tabla</span>
-        </>
-      ),
-      onClick: () => handleAdd(),
-    },
 
-    flags?.show_accounting_download
-      ? {
-          key: 'table-accounting-report',
-          children: (
-            <>
-              <TableIcon className="w-5" />
-              <span>Descargar tabla - Contabilidad</span>
-            </>
-          ),
-          onClick: async () => {
-            await accountingReport.mutateAsync({
-              schoolId: selectedSchoolId as string,
-              query: {
-                ...filters,
-                ...filterParams,
-                students: selectedStudent?.id,
-                guardians: selectedGuardian?.id,
-              },
-            });
-            setIsWorking();
-          },
-        }
-      : null,
-  ].filter((item) => item !== null) as {
-    key: string;
-    children: JSX.Element;
-    onClick: () => Promise<unknown>;
-  }[];
+  const { data: filtersDataPayments } = api.payments.payinsFulfillmentFilters.useQuery(
+    {
+      schoolId: selectedSchoolId as string,
+    },
+    { enabled: tab !== 'invoices' }
+  );
 
-  const { data: filtersData } = api.payments.payinsFulfillmentFilters.useQuery({
-    schoolId: selectedSchoolId as string,
-  });
-  const schoolFulfillmentsFilters = useMemo(() => {
-    if (!filtersData) return undefined;
-    return normalizeFilters(filtersData);
-  }, [filtersData]);
+  const { data: filtersDataInvoices } = api.payments.invoicesFilters.useQuery(
+    {
+      schoolId: selectedSchoolId as string,
+    },
+    { enabled: tab === 'invoices' }
+  );
+
+  const tableFilters = useMemo(() => {
+    if (tab === 'payments' && filtersDataPayments) {
+      return normalizeFilters(filtersDataPayments);
+    }
+    if (tab === 'invoices' && filtersDataInvoices) {
+      return normalizeFilters(filtersDataInvoices);
+    }
+    return undefined;
+  }, [filtersDataPayments, tab, filtersDataInvoices]);
 
   const filterItems = [
     {
       header: 'Lugar de pago',
       watchKey: 'collected_at',
-      contents: schoolFulfillmentsFilters?.collected_at,
+      contents: tableFilters?.collected_at,
     },
     {
       header: 'Tipo de concepto',
       watchKey: 'concept_types',
-      contents: schoolFulfillmentsFilters?.concept_types,
+      contents: tableFilters?.concept_types,
     },
     {
       header: 'Concepto',
       watchKey: 'concepts',
-      contents: schoolFulfillmentsFilters?.concepts,
+      contents: tableFilters?.concepts,
     },
+    ...(tab === 'invoices'
+      ? [
+          {
+            header: 'Tipo de factura',
+            watchKey: 'invoice_types',
+            // @ts-ignore
+            contents: tableFilters?.invoice_types,
+          },
+        ]
+      : []),
     {
       header: 'Orden',
       watchKey: 'orders',
-      contents: schoolFulfillmentsFilters?.orders,
+      contents: tableFilters?.orders,
     },
     {
       header: 'Medio de pago',
       watchKey: 'types',
-      contents: schoolFulfillmentsFilters?.types,
+      contents: tableFilters?.types,
     },
     {
       header: 'Nivel',
       watchKey: 'levels',
-      contents: schoolFulfillmentsFilters?.levels,
+      contents: tableFilters?.levels,
     },
     {
       header: 'Sección',
       watchKey: 'sections',
-      contents: schoolFulfillmentsFilters?.sections,
+      contents: tableFilters?.sections,
     },
     {
       header: 'Facturado a',
       watchKey: 'billing_to',
-      contents: schoolFulfillmentsFilters?.billing_to,
+      contents: tableFilters?.billing_to,
     },
-    {
-      header: 'Estado de factura',
-      watchKey: 'invoice_statuses',
-      contents: schoolFulfillmentsFilters?.invoice_statuses?.filter((item) => item.id !== 'not_requested'),
-    },
-    {
-      header: (
-        <TooltipIcon message="Filtra los conceptos que pertenezcan al ciclo escolar de tu elección">
-          Ciclo escolar
-        </TooltipIcon>
-      ),
-      watchKey: 'school_cycles',
-      contents: schoolFulfillmentsFilters?.school_cycles.sort((a, b) => b.name.localeCompare(a.name)),
-    },
+    ...(tab === 'payments'
+      ? [
+          {
+            header: 'Estado de factura',
+            watchKey: 'invoice_statuses',
+            contents: tableFilters?.invoice_statuses?.filter((item) => item.id !== 'not_requested'),
+          },
+        ]
+      : []),
     {
       header: 'Registrado por',
       watchKey: 'registered_by',
-      contents: schoolFulfillmentsFilters?.registered_by,
+      contents: tableFilters?.registered_by,
     },
   ];
 
@@ -815,70 +1210,165 @@ export function HeaderTable({
       })),
     [studentsOnSchool]
   );
-  const schoolCycleChip = useGetActiveSchoolCycleElement;
+
+  const handleChangeTabs = (tab: string) => router.replace({ query: { ...router.query, tab: tab } });
+
+  const tabsData = [
+    {
+      label: 'Pagos',
+      value: 'payments',
+    },
+    {
+      label: 'Facturas',
+      value: 'invoices',
+    },
+  ];
+
+  const [selectedStatusItems, setSelectedStatusItems] = useState<Item<string | number>[]>([]);
+
+  const mappedInvoiceStatuses = selectedStatusItems.map((item) => ({
+    value: item.value,
+    label: item.label,
+  }));
+
   return (
-    <div className="px-10">
-      <Header title={title} />
-      <div className="flex items-center justify-between w-full">
-        <div className="flex flex-col w-full gap-4 md:gap-4">
-          <div className="flex items-center gap-4">
-            <MultipleFilters
-              filterItems={filterItems}
-              handleFilter={handleFilter}
-              onClearFilter={handleClearFilter}
-              itemsCount={itemsCount}
-              setItemsCount={setSelectedItemsCount}
-              postFixElement={schoolCycleChip}
-            />
-            <GlobalSearch
-              search={search}
-              setSearch={setSearch}
-              placeholder="Buscar por ID de orden, pagos, depósitos o facturas"
-            />
-          </div>
-          <div className="flex items-center justify-between w-full gap-4">
-            <div className="flex gap-4">
-              {studentsSearch && (
-                <Combobox
-                  value={searchStudent}
-                  onChange={setSearchStudent}
-                  items={studentsSearch}
-                  setSearch={setSearchStudent}
-                  keyLabel="name"
-                  handleSelection={(selectedStudent) => {
-                    setSelectedStudent(selectedStudent);
-                  }}
-                >
-                  <Combobox.Input icon={<PersonIcon />} placeholder="Buscar por alumno" />
-                  <Combobox.Options>
-                    {studentsSearch?.map((person: any, index: any) => (
-                      <Combobox.Option key={person.id} value={person} index={index}>
-                        <div className="flex flex-col items-start font-normal">
-                          <span className="text-base overflow-hidden text-ellipsis max-w-[220px] font-semibold truncate">
-                            {person.name}
-                          </span>
-                          <span className="text-xs max-w-[220px] font-light truncate">{person.enrollment_code}</span>
-                        </div>
-                      </Combobox.Option>
-                    ))}
-                    {studentsSearch?.length === 0 && !isFetching && (
-                      <div className="flex flex-col items-start gap-1 p-1 font-normal text-gray-600">
-                        <span className="text-base">No se encontraron resultados</span>
-                      </div>
-                    )}
-                  </Combobox.Options>
-                </Combobox>
-              )}
-              <GuardianSelector
-                selectedGuardian={selectedGuardian}
-                setSelectedGuardian={setSelectedGuardian}
-                guardianFilterText="Seleccionar el pagador"
+    <>
+      <section className="pb-6">
+        <div className="flex items-center justify-between pl-10 pr-10 mt-6">
+          <h3 className="pb-6 text-2xl font-bold">{title}</h3>
+          <YearlyInvoiceDownload />
+        </div>
+        <TabsWrapper
+          tabs={tabsData}
+          tab={tab}
+          handleChangeTab={handleChangeTabs}
+          defaultValue="payments"
+          tabsListClassName="pl-10"
+        />
+      </section>
+      <div className="px-10">
+        <div className="flex items-center justify-between w-full">
+          <div className="flex flex-col w-full gap-4 md:gap-4">
+            <div className="flex items-center gap-4">
+              <MultipleFilters
+                filterItems={filterItems}
+                handleFilter={handleFilter}
+                onClearFilter={handleClearFilter}
+                itemsCount={itemsCount}
+                setItemsCount={setSelectedItemsCount}
+                tableName={tab === 'invoices' ? 'invoices' : 'payments'}
               />
-              <DateRange selectedDates={selectedDates} onDatesChange={onDatesChange} />
+              {schoolCycles && schoolCycles.length > 0 ? (
+                <SchoolCycleSelector selected={schoolCycle} setFn={setSchoolCycle} cycles={schoolCycles || []} />
+              ) : null}
+              <GlobalSearch
+                tableName={tab === 'invoices' ? 'invoices' : 'payments'}
+                search={search}
+                setSearch={setSearch}
+                placeholder={
+                  tab === 'invoices'
+                    ? 'Buscar por ID de factura, órdenes o folio fiscal'
+                    : 'Buscar por ID de orden, pagos, depósitos o facturas'
+                }
+              />
             </div>
-            <div className="h-fit w-fit download-btn" data-testid="download-button">
-              {flags?.show_personalized_reports ? (
-                <>
+            <div className="flex items-center justify-between w-full gap-4">
+              <div className="flex gap-4">
+                {studentsSearch && (
+                  <Combobox
+                    value={searchStudent}
+                    onChange={setSearchStudent}
+                    items={studentsSearch}
+                    setSearch={setSearchStudent}
+                    keyLabel="name"
+                    handleSelection={(selectedStudent) => {
+                      setSelectedStudent(selectedStudent);
+                    }}
+                  >
+                    <Combobox.Input icon={<PersonIcon />} placeholder="Buscar por estudiante" />
+                    <Combobox.Options className="z-40">
+                      {studentsSearch?.map((person: any, index: any) => (
+                        <Combobox.Option key={person.id} value={person} index={index}>
+                          <div className="flex flex-col items-start font-normal">
+                            <span className="text-base overflow-hidden text-ellipsis max-w-[220px] font-semibold truncate">
+                              {person.name}
+                            </span>
+                            <span className="text-xs max-w-[220px] font-light truncate">{person.enrollment_code}</span>
+                          </div>
+                        </Combobox.Option>
+                      ))}
+                      {studentsSearch?.length === 0 && !isFetching && (
+                        <div className="flex flex-col items-start gap-1 p-1 font-normal text-gray-600">
+                          <span className="text-base">No se encontraron resultados</span>
+                        </div>
+                      )}
+                    </Combobox.Options>
+                  </Combobox>
+                )}
+                <GuardianSelector
+                  selectedGuardian={selectedGuardian}
+                  setSelectedGuardian={setSelectedGuardian}
+                  guardianFilterText="Seleccionar el pagador"
+                />
+                {tab === 'invoices' && (
+                  <MultipleSelectionComponent
+                    tableName="invoices"
+                    items={
+                      tableFilters?.invoice_statuses
+                        ?.filter((i) => i.id !== 'not_requested')
+                        .map((item) => ({
+                          value: item.id ?? '',
+                          label: item.name ?? '',
+                        })) || []
+                    }
+                    onChange={(value) => {
+                      setSelectedStatusItems(value);
+                      setInvoiceStatus({ invoice_statuses: value.map((v) => v.value as string) });
+                    }}
+                    label="Estado de facturas"
+                    allSelectedLabel="Todos los estados"
+                    labelName="estados de facturas"
+                    fullWidth
+                    showSelectAll={false}
+                    disableAll={tableFilters?.invoice_statuses?.length === 0}
+                    className="outline-none flex items-center min-w-220 max-w-[220px] 2xl:max-w-[368px] 2xl:min-w-[368px]"
+                    classNames="min-h-[54px] truncate"
+                  />
+                )}
+
+                <DateRange
+                  tableName={tab === 'invoices' ? 'invoices' : 'payments'}
+                  selectedDates={selectedDates}
+                  onDatesChange={onDatesChange}
+                />
+              </div>
+              <div className="flex justify-between gap-4 ml-auto w-fit">
+                <ShareTableAction
+                  tableName={tab === 'invoices' ? 'invoices' : 'payments'}
+                  relativeUrl={`payments?tab=${tab}`}
+                  filters={{
+                    search: search,
+                    selected_items: mappedInvoiceStatuses,
+                    filters: formFilterData,
+                    dates: selectedDates.map((date) => date.toISOString()),
+                  }}
+                  columns={{
+                    columns: tableColumns.map((col) => ({
+                      columnId: col.columnId,
+                      columnName: col.columnName,
+                      isVisible: col.isVisible,
+                      order: col.order,
+                      isFixed: col.isFixed,
+                    })),
+                  }}
+                />
+                <ColumnCustomizerAction
+                  columns={tableColumns}
+                  onColumnsChange={handleColumnsChange}
+                  fixedColumnIds={fixedColumnIds}
+                  tableName={tab === 'invoices' ? 'invoices' : 'payments'}
+                />
+                <div className="h-fit w-fit download-btn" data-testid="download-button">
                   <DownloadButton size="large" theme="blue" onClick={handleOpenDownloadReportMenu} />
                   <DownloadReport
                     open={openDownloadReportMenu}
@@ -886,6 +1376,11 @@ export function HeaderTable({
                     onOpen={onOpenDownloadReportMenu}
                     onClose={onCloseDownloadReportMenu}
                     openDownloadReportMenuOptions={setToggleDownloadReportMenuOptions}
+                    reportHeaderTitle={isInvoiceTab ? 'facturas' : 'pagos recibidos'}
+                    completeReportSubtitle={
+                      isInvoiceTab ? 'las facturas que has emitido' : 'los pagos que has recibido'
+                    }
+                    zipReportSubtitle={isInvoiceTab ? '' : 'de los pagos recibidos'}
                     handleDownloadReportComplete={() => {
                       handleAdd();
                       setToggleDownloadReportMenu(false);
@@ -898,6 +1393,7 @@ export function HeaderTable({
                       handleDownloadReportPersonalized();
                       setToggleDownloadReportMenu(false);
                     }}
+                    storeKey={tab}
                   />
                   <DownloadReportOptions
                     open={openDownloadReportMenuOptions}
@@ -905,358 +1401,53 @@ export function HeaderTable({
                     onClose={onCloseDownloadReportMenuOptions}
                     onOpen={onOpenDownloadReportMenuOptions}
                     columnsData={columnsData as unknown as ColumnsResponse['columns']}
+                    storeKey={tab}
                   />
-                </>
-              ) : (
-                <DownloadMenu items={DownloadMenuItems}>
-                  <DownloadButton size="large" theme="blue" />
-                </DownloadMenu>
-              )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-import Dialog from '../../components/atoms/Dialog';
-import Button from '../../components/organisms/dashboard/Button';
-
-type Props = {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  onOpen: () => void;
-  onClose: () => void;
-  isLoading?: boolean;
-  isMutating?: boolean;
-  openDownloadReportMenuOptions: React.Dispatch<any>;
-  handleDownloadReportComplete: () => void;
-  handleDownloadReportPersonalized: () => void;
-  handleDownloadInvoices: () => void;
-};
-
-export function DownloadReport({
-  open,
-  onClose,
-  onOpen,
-  isLoading,
-  handleDownloadReportComplete,
-  handleDownloadInvoices,
-  handleDownloadReportPersonalized,
-  openDownloadReportMenuOptions,
-}: Props) {
-  useEffect(() => {
-    if (open) {
-      onOpen();
-    }
-  }, [open]);
-  const [selectedRows] = useReportConfig();
-  return (
-    <>
-      <Dialog.Root
-        classNames="px-0 pt-4 pb-0 h-[465px] min-w-[500px]"
-        open={open}
-        onOpenChange={(newOpen) => {
-          if (!newOpen) {
-            onClose();
-          }
-        }}
-      >
-        {isLoading ? (
-          <div className="min-h-[180px] flex items-center justify-center">
-            <img src="/assets/loading.svg" alt="loading" className="mx-auto" />
-          </div>
-        ) : (
-          <>
-            <Dialog.Title>
-              <div className="px-6 flex justify-between">
-                <div className="flex flex-col">
-                  <h3 className="flex text-lg mb-1 font-bold">Descarga de pagos recibidos</h3>
-                  <span className="text-sm font-normal flex text-[#637381]">
-                    Elige entre los distintos reportes que puedes descargar.
-                  </span>
-                </div>
-                <Dialog.Close onClick={onClose} className="-translate-y-3">
-                  <IcClose fill="#637381" />
-                </Dialog.Close>
-              </div>
-            </Dialog.Title>
-            <div className="h-[1px] my-4 bg-[rgba(145,158,171,0.24)] mx-5" />
-            <div className="px-4">
-              <div className="bg-white rounded-lg h-[104px] px-[18px] py-4 mb-4 flex border border-[#DFE3E8] gap-6 items-center">
-                <div className="flex flex-col items-start gap-2 ">
-                  <h3 className="text-secondary font-semibold">Reporte personalizado</h3>
-                  <p className="text-xs text-gray-600 text-left">
-                    Configura un reporte a tu medida, guárdalo y lo tendrás disponible cada vez que lo necesites.
-                  </p>
-                </div>
-                {selectedRows?.length === 0 && (
-                  <Button
-                    className="mt-2 bg-white border border-blue-secondary-200 text-blue-secondary-200 font-bold rounded-lg py-1 text-sm h-9"
-                    variant="outline"
-                    onClick={openDownloadReportMenuOptions}
-                    id="report-config-button"
-                  >
-                    Configurar
-                  </Button>
-                )}
-                {selectedRows?.length > 0 && (
-                  <div className="flex">
-                    <Button
-                      className="mt-2 bg-white border border-blue-secondary-200 text-blue-secondary-200 font-bold rounded-r-none py-1 text-sm h-9 rounded-l-lg"
-                      variant="outline"
-                      onClick={handleDownloadReportPersonalized}
-                    >
-                      Descargar
-                    </Button>
-                    <Tooltip message="Configurar reporte personalizado">
-                      <Button
-                        className="mt-2 bg-white border border-blue-secondary-200 text-blue-secondary-200 font-bold rounded-l-none rounded-r-lg py-1 text-sm h-9 w-10 flex p-0"
-                        variant="outline"
-                        onClick={openDownloadReportMenuOptions}
-                      >
-                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path
-                            fill-rule="evenodd"
-                            clip-rule="evenodd"
-                            d="M15.0251 6.80829H15.9334C16.708 6.81288 17.3334 7.44207 17.3334 8.21663V9.83329C17.3294 10.5841 16.7338 11.1982 15.9834 11.225H15.0751C14.9658 11.2342 14.8717 11.3056 14.8334 11.4083C14.7726 11.5021 14.7726 11.6228 14.8334 11.7166L15.4417 12.325C15.7048 12.5862 15.8528 12.9417 15.8528 13.3125C15.8528 13.6832 15.7048 14.0387 15.4417 14.3L14.3251 15.4166C14.0668 15.6823 13.7123 15.8326 13.3417 15.8333C12.9696 15.8284 12.614 15.679 12.3501 15.4166L11.7167 14.775C11.623 14.7141 11.5022 14.7141 11.4084 14.775C11.2834 14.825 11.1917 14.9083 11.1917 15.025V15.9333C11.1872 16.7078 10.558 17.3333 9.78341 17.3333H8.20842C7.45433 17.3338 6.83535 16.7369 6.80841 15.9833V15.075C6.7992 14.9657 6.7278 14.8716 6.62508 14.8333C6.52096 14.7666 6.38754 14.7666 6.28341 14.8333L5.64175 15.45C5.38049 15.7131 5.02503 15.861 4.65425 15.861C4.28346 15.861 3.92801 15.7131 3.66675 15.45L2.55008 14.3166C2.2831 14.0558 2.13284 13.6982 2.13341 13.325C2.1383 12.9528 2.28772 12.5972 2.55008 12.3333L3.22508 11.7166C3.2859 11.6228 3.2859 11.5021 3.22508 11.4083C3.17508 11.2833 3.09175 11.1916 2.97508 11.1916H2.06675C1.2922 11.187 0.666734 10.5579 0.666748 9.78329V8.20829C0.666748 7.43509 1.29355 6.80829 2.06675 6.80829H2.92508C3.03432 6.79908 3.12844 6.72768 3.16675 6.62496C3.23346 6.52084 3.23346 6.38741 3.16675 6.28329L2.55008 5.66663C2.2792 5.40445 2.12627 5.0436 2.12627 4.66663C2.12627 4.28965 2.2792 3.9288 2.55008 3.66663L3.69175 2.54996C3.95 2.28425 4.30455 2.13402 4.67508 2.13329C5.04719 2.13818 5.40282 2.2876 5.66675 2.54996L6.28341 3.22496C6.3772 3.28578 6.49797 3.28578 6.59175 3.22496C6.71675 3.17496 6.80841 3.09163 6.80841 2.97496V2.06663C6.813 1.29208 7.44219 0.666612 8.21675 0.666626H9.83342C10.5903 0.689162 11.1921 1.30941 11.1917 2.06663V2.92496C11.201 3.0342 11.2724 3.12832 11.3751 3.16663C11.4792 3.23334 11.6126 3.23334 11.7167 3.16663L12.3584 2.54996C12.6197 2.28686 12.9751 2.13889 13.3459 2.13889C13.7167 2.13889 14.0722 2.28686 14.3334 2.54996L15.4501 3.69163C15.7163 3.95298 15.8664 4.31025 15.8667 4.68329C15.8679 5.05421 15.7174 5.40949 15.4501 5.66663L14.7751 6.28329C14.7143 6.37707 14.7143 6.49785 14.7751 6.59163C14.8251 6.71663 14.9084 6.80829 15.0251 6.80829ZM6.30543 10.1161C6.75688 11.206 7.8204 11.9166 9.00008 11.9166C10.6109 11.9166 11.9167 10.6108 11.9167 8.99996C11.9167 7.82028 11.2061 6.75676 10.1162 6.30531C9.02636 5.85387 7.77185 6.1034 6.93769 6.93756C6.10353 7.77173 5.85399 9.02624 6.30543 10.1161Z"
-                            fill="#3366FF"
-                          />
-                        </svg>
-                      </Button>
-                    </Tooltip>
-                  </div>
-                )}
-              </div>
-              <div className="bg-white rounded-lg h-[104px] px-[18px] py-4 mb-4 flex border border-[#DFE3E8] gap-6 items-center">
-                <div className="flex flex-col items-start gap-2">
-                  <h3 className="text-secondary font-semibold">Reporte completo</h3>
-                  <p className="text-xs text-gray-600 text-left">
-                    Descarga toda la información que tenemos sobre cada uno de los pagos que has recibido.
-                  </p>
-                </div>
-                <Button
-                  className="mt-2 bg-white border border-blue-secondary-200 text-blue-secondary-200 font-bold rounded-lg py-1 text-sm h-9"
-                  variant="outline"
-                  onClick={handleDownloadReportComplete}
-                >
-                  Descargar
-                </Button>
-              </div>
-              <div className="bg-white rounded-lg h-[104px] px-[18px] py-4 mb-4 flex border border-[#DFE3E8] gap-6 items-center">
-                <div className="flex flex-col items-start gap-2">
-                  <h3 className="text-secondary font-semibold">Facturas (XML y PDF)</h3>
-                  <p className="text-xs text-gray-600 text-left">
-                    Descarga todas las facturas emitidas de los pagos recibidos{' '}
-                  </p>
-                </div>
-                <Button
-                  className="mt-2 bg-white border border-blue-secondary-200 text-blue-secondary-200 font-bold rounded-lg py-1 text-sm h-9"
-                  variant="outline"
-                  onClick={handleDownloadInvoices}
-                >
-                  Descargar
-                </Button>
-              </div>
-            </div>
-          </>
-        )}
-      </Dialog.Root>
     </>
   );
 }
 
-type DownloadReportOptions = {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  onClose: () => void;
-  onOpen: () => void;
-  isLoading?: boolean;
-  columnsData: ColumnsResponse['columns'];
+const usePaymentsColumnCustomizer = ({ tableName, columns }: { tableName: string; columns: ColumnDef<any, any>[] }) => {
+  const fixedColumnIds = [
+    'fulfillment.correlative_id', // ID de orden
+    'payin.paid_date', // Fecha de pago
+    'total_paid', // Monto pagado
+    'invoice.status', // Facturación
+  ];
+
+  const hiddenColumnIds = [
+    'invoice.pdf_url', // PDF download icon column - should be shown in table but hidden in ColumnCustomizer
+  ];
+
+  return useFixedColumnsCustomizer({
+    tableName,
+    columns,
+    fixedColumnIds,
+    hiddenColumnIds,
+  });
 };
-export function DownloadReportOptions({ open, onClose, onOpen, isLoading, columnsData }: DownloadReportOptions) {
-  useEffect(() => {
-    if (open) {
-      onOpen();
-    }
-  }, [open]);
-  return (
-    <>
-      <Dialog.Root
-        classNames="min-w-[500px] px-0 pt-4 pb-1 h-[465px]"
-        open={open}
-        hideShadow
-        overlay={false}
-        onOpenChange={(newOpen) => {
-          if (!newOpen) {
-            onClose();
-          }
-        }}
-      >
-        {isLoading ? (
-          <div className="min-h-[180px] flex items-center justify-center">
-            <img src="/assets/loading.svg" alt="loading" className="mx-auto" />
-          </div>
-        ) : (
-          <div id="report-config-menu-options">
-            <Dialog.Title>
-              <div className="px-6 flex justify-between">
-                <div className="flex flex-col">
-                  <h3 className="flex text-lg mb-1 font-bold">Personaliza tu reporte</h3>
-                  <span className="text-sm font-normal flex text-[#637381]">
-                    Selecciona la información que quieres incluir en tu descargable.{' '}
-                  </span>
-                </div>
-                <Dialog.Close onClick={onClose} className="-translate-y-3">
-                  <IcClose fill="#637381" />
-                </Dialog.Close>
-              </div>
-            </Dialog.Title>
-            <div>
-              {columnsData ? (
-                <TableComponent data={columnsData} onClose={onClose} />
-              ) : (
-                <div className="relative flex flex-col justify-between min-h-[380px]">
-                  <div className="h-[293px] pr-1 pb-6">
-                    <div className="flex items-center bg-[#FBFCFD] sticky top-0 z-10 pl-3 h-[45px]">
-                      <div className="p-3.5">
-                        <Skeleton className="w-5 h-5" />
-                      </div>
-                      <Skeleton className="w-1/3 h-4 ml-2" />
-                    </div>
-                    <div className="overflow-y-scroll h-full scrollbar">
-                      {Array.from({ length: 10 }).map((_, index) => (
-                        <div key={index} className="flex items-center border-b border-gray-300 mx-3">
-                          <div className="p-3.5">
-                            <Skeleton className="w-5 h-5" />
-                          </div>
-                          <Skeleton className="w-3/4 h-4 ml-2" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="h-[64px] bg-white shadow-combinedShadow w-full rounded-b-2xl">
-                    <div className="px-3 flex justify-end items-center gap-3 flex-1 h-full">
-                      <Skeleton className="w-20 h-8" />
-                      <Skeleton className="w-36 h-8" />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </Dialog.Root>
-    </>
-  );
-}
 
-import { GenericRowCheckBoxButton } from '/src/components/organisms/dashboard/StudentAssignedTable';
-import Skeleton from '/src/components/molecules/dashboard/Skeleton';
-import { useReportConfig } from '/src/hooks/useReportConfig';
+const useInvoicesColumnCustomizer = ({ tableName, columns }: { tableName: string; columns: ColumnDef<any, any>[] }) => {
+  const fixedColumnIds = [
+    'client_identifier', // Nº de folio
+    'status', // Estado
+    'expedition_date', // Fecha de factura
+    'payment_amount', // Monto facturado
+    'fiscal_identifier', // Nº de factura + PDF download icon
+  ];
 
-const TableComponent: React.FC<{ data: ColumnsResponse['columns']; onClose: () => void }> = ({ data, onClose }) => {
-  const [selectedRowsPersisted, setSelectedRowsPersisted] = useReportConfig();
-  const [localSelectedRows, setLocalSelectedRows] = useState<string[]>(selectedRowsPersisted);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const hiddenColumnIds: string[] = [];
 
-  const dataAsArray = useMemo(() => Object.entries(data), [data]);
-
-  const selectAllChecked =
-    localSelectedRows.length === 0 ? false : localSelectedRows.length === dataAsArray.length ? true : 'indeterminate';
-
-  const handleSelectRow = useCallback(
-    (key: string) => {
-      setLocalSelectedRows((prevSelectedRows) => {
-        if (prevSelectedRows.includes(key)) {
-          return prevSelectedRows.filter((selectedRow) => selectedRow !== key);
-        } else {
-          return [...prevSelectedRows, key];
-        }
-      });
-    },
-    [setLocalSelectedRows]
-  );
-
-  const handleSelectAll = useCallback(() => {
-    if (localSelectedRows.length === dataAsArray.length) {
-      setLocalSelectedRows([]);
-    } else {
-      setLocalSelectedRows(dataAsArray.map(([key]) => key));
-    }
-  }, [dataAsArray, localSelectedRows, setLocalSelectedRows]);
-
-  const handleSave = useCallback(() => {
-    setSelectedRowsPersisted(localSelectedRows);
-    onClose();
-  }, [localSelectedRows, setSelectedRowsPersisted, onClose]);
-
-  const handleDiscard = useCallback(() => {
-    setLocalSelectedRows(selectedRowsPersisted);
-    onClose();
-  }, [selectedRowsPersisted, onClose]);
-
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const top = e.currentTarget.scrollTop;
-    setIsScrolled(top > 5);
-  }, []);
-
-  return (
-    <div className="relative flex flex-col justify-between min-h-[380px]">
-      <div className="h-[293px] pr-1 pb-6">
-        <div
-          className={cn(
-            'flex items-center bg-[#FBFCFD] sticky top-0 z-10 pl-4 h-[45px] transition-shadow duration-300',
-            {
-              'shadow-card': isScrolled,
-            }
-          )}
-          onScroll={handleScroll}
-        >
-          <div className="pr-2 py-2 pl-1">
-            <GenericRowCheckBoxButton checked={selectAllChecked} onClick={handleSelectAll} className="py-2 px-1" />
-          </div>
-          <div className="text-left text-[#637381] text-sm font-bold">Nombre de la columna</div>
-        </div>
-        <div className="overflow-y-scroll h-full scrollbar" onScroll={handleScroll}>
-          {dataAsArray.map(([key, value], index) => (
-            <div key={index} className="flex items-center border-b border-[rgba(145,158,171,0.24)] mx-4">
-              <div className="pr-2 py-2 cursor-pointer pl-1">
-                <GenericRowCheckBoxButton
-                  checked={localSelectedRows.includes(key)}
-                  className="py-1.5 px-1 cursor-pointer"
-                  onClick={() => handleSelectRow(key)}
-                />
-              </div>
-              <div className="text-left text-sm">{value}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="h-[64px] bg-white shadow-combinedShadow w-full rounded-b-2xl">
-        <div className="px-4 flex justify-end items-center gap-4 flex-1 h-full">
-          <button className="font-bold text-[#3366FF] text-sm" onClick={handleDiscard}>
-            Descartar
-          </button>
-          <Tooltip
-            message="Selecciona al menos una columna para continuar"
-            disableHover={localSelectedRows?.length > 0}
-          >
-            <Button
-              variant={localSelectedRows?.length === 0 ? 'ghost' : 'secondary'}
-              className={cn('h-[36px] w-[155px] disabled:cursor-not-allowed', {
-                'bg-[#E5E8EB] ': localSelectedRows?.length === 0,
-              })}
-              onClick={handleSave}
-              disabled={localSelectedRows?.length === 0}
-              id="report-config-save-button"
-            >
-              Guardar cambios
-            </Button>
-          </Tooltip>
-        </div>
-      </div>
-    </div>
-  );
+  return useFixedColumnsCustomizer({
+    tableName,
+    columns,
+    fixedColumnIds,
+    hiddenColumnIds,
+  });
 };

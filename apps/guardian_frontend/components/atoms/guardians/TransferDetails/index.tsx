@@ -1,4 +1,5 @@
-import { CopyToClipboard, RFC_KUSHKI } from '~/components/molecules/guardians/KushkiTransferInCard';
+import { CopyToClipboard } from '~/components/CopyToClipboard';
+import { RFC_KUSHKI } from '~/components/molecules/guardians/KushkiTransferInCard';
 
 interface TransferDetailsProps {
   duration: string;

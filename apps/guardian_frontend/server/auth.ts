@@ -11,15 +11,28 @@ const SECRET = process.env.NEXT_PUBLIC_API_SECRET ?? '';
 
 const sanitizeSchools = (schools: School[]) =>
   schools.map(
-    ({ config_dashboard, name, id, preferences, does_invoice, is_provider, gateway_credentials, config_portal }) => ({
+    ({
+      config_dashboard,
+      name,
+      id,
+      status,
+      preferences,
+      does_invoice,
+      is_provider,
+      gateway_credentials,
+      config_portal,
+      logo,
+    }) => ({
       config_dashboard,
       config_portal,
+      status,
       preferences,
       name,
       does_invoice,
       id,
       is_provider,
       gateway_credentials,
+      logo,
     })
   );
 
@@ -27,8 +40,10 @@ const sanitizeStudents = (students: BillingStudent[]) =>
   students.map(({ first_name, id, billing_guardian }) => ({
     first_name,
     id,
-    billing_guardian_id: billing_guardian?.id,
+    billing_guardian: { id: billing_guardian?.id ?? null },
   }));
+
+const isSchoolEnabled = (school: School) => school.status && !['onboarding', 'paused'].includes(school.status);
 
 /**
  * Options for NextAuth.js used to configure
@@ -60,6 +75,7 @@ export const authOptions: NextAuthOptions = {
             if (res.status !== 200) throw Error('Request failed');
 
             const { token, ...user } = res.data;
+
             user.dependents = addColorsToDependents(sanitizeStudents(user.dependents)) as any[];
             return { token, user } as unknown as Session['user'];
           } else {
@@ -107,10 +123,23 @@ export const authOptions: NextAuthOptions = {
       if (res.status === 200) {
         const user = res.data;
         user.dependents = addColorsToDependents(sanitizeStudents(user.dependents)) as any[];
-        user.schools = sanitizeSchools(user.schools) as any;
+        const schoolsFiltered = user.schools.filter(isSchoolEnabled);
+        user.schools = sanitizeSchools(
+          schoolsFiltered.length > 0
+            ? schoolsFiltered
+            : user.schools.filter((school) => school.status && school.status !== 'paused')
+        ) as any;
         session.user = user;
       }
       return Promise.resolve({ ...token, ...session });
+    },
+  },
+  events: {
+    signIn({ user }) {
+      Sentry.setUser({ id: user.id });
+    },
+    signOut() {
+      Sentry.setUser(null);
     },
   },
 };

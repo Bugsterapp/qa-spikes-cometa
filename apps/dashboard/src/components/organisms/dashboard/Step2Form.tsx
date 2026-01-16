@@ -16,11 +16,12 @@ import { es } from 'date-fns/locale';
 import { RadioGroup, RadioGroupItem } from '../../ui/RadioGroup';
 import { Label } from '../../ui/Label';
 import useSendTrackEventWithUserName from '/src/hooks/useSendTrackEventWithUserName';
+import { Events } from '/src/constants/events';
 
 export function Step2Form({ setData, onBack, onNext, formData }: StepProps<FormValues2 & { orders: Order[] }>) {
   const selectedSchool = useSelectedSchool();
   const sendTrackEventWithUserName = useSendTrackEventWithUserName();
-  sendTrackEventWithUserName('dashboard: Concept | New Concept P2A.1.1 Meses');
+  sendTrackEventWithUserName(Events.concept_new_p2a1_meses);
 
   const { data: schoolCycles } = api.charge.schoolCycleList.useQuery(
     {
@@ -83,7 +84,7 @@ export function Step2Form({ setData, onBack, onNext, formData }: StepProps<FormV
             formData?.inscription
           )
         : [],
-    [selectedSchoolCycle?.year_start, selectedSchoolCycle?.year_end]
+    [selectedSchoolCycle?.year_start, selectedSchoolCycle?.year_end, formData?.school_cycle]
   );
   const [orders, setOrders] = useState<Order[]>([]);
 

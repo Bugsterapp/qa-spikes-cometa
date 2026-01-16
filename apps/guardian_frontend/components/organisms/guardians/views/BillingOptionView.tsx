@@ -2,7 +2,7 @@ import RemoveBilling from '~/components/molecules/guardians/RemoveBilling';
 import BillingCardOption from '~/components/molecules/guardians/BillingCardOption';
 import { useEffect, useState } from 'react';
 import type { Session } from 'next-auth';
-import { useRouter } from 'next/router';
+import { useUTMRouter as useRouter } from '~/components/UtmNavigation';
 
 interface BillingOptionViewProps {
   session: Session;
@@ -32,7 +32,7 @@ function BillingOptionView({ session }: BillingOptionViewProps) {
           }
         />
       </div>
-      <div className="mt-10 mb-24">{haveRFC && <RemoveBilling onAgree={() => setHaveRFC(false)} />}</div>
+      <div className="mt-10 mb-24">{haveRFC && <RemoveBilling onClick={() => setHaveRFC(false)} />}</div>
     </div>
   );
 }

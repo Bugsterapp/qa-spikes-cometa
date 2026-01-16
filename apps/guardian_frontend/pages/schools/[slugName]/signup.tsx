@@ -1,7 +1,7 @@
 import { OnboardingStageEnum, School } from '@cometa/trpc/src/types';
 import { GetServerSideProps } from 'next';
 import Head from 'next/head';
-import { useRouter } from 'next/router';
+import { useUTMRouter as useRouter } from '~/components/UtmNavigation';
 import useSendTrackEvent from '~/hooks/useSendEvent';
 import { createSchoolsCaller } from '~/server/api/routers/schools';
 import { createInnerTRPCContext } from '~/server/api/trpc';
@@ -26,7 +26,7 @@ function SignUp({ school }: Readonly<SignUpProps>) {
   return (
     <OnboardingGuardianInfo
       isLoading={false}
-      disabled={guardianMutation.isLoading}
+      disabled={guardianMutation.isPending}
       school={school}
       onSubmit={async (values) => {
         try {

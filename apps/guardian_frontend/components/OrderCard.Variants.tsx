@@ -5,7 +5,7 @@ import Link, { LinkProps } from 'next/link';
 import * as OrderCard from '~/components/OrderCard';
 import Warning from '~/public/icons/warning.svg';
 import { Banner } from '~/components/Banner';
-import { Button } from './atoms/Button';
+import { Button } from './ui/Button';
 
 const negativeAmountFallback = (amount: string) => (Number(amount) < 0 ? '0.00' : amount);
 
@@ -32,7 +32,9 @@ const useOrder = (order: GuardianDependentFulfillment) => {
 
   const discounts = [...(scholarships?.details ?? []), ...(special?.details ?? [])];
   const interests = [...(order.special_over_charges.filter((so) => so.is_visible) as any), ...interest];
-  const payments = order.has_partial_payins ? order.payins.map((p) => ({ name: p.created, amount: p.total })) : [];
+  const payments = order.has_partial_payins
+    ? order.payins.map((p) => ({ name: p.created, amount: p.total_paid ?? p.total }))
+    : [];
 
   return {
     scholarships,
@@ -150,9 +152,12 @@ export function OrderCardNotDue({
           </OrderCard.Details>
         )}
         <OrderCard.PayFooter
+          orderId={order.id}
           testId={`card-footer-${order.name}`}
           amount={strPendingAmount}
-          hideButton={cannotPayInPortal(canPayPartial) || Number(order.final_amount) <= 0}
+          hideButton={
+            cannotPayInPortal(canPayPartial) || Number(order.final_amount) <= 0 || Number(order.pending_amount) <= 0
+          }
           pending={order.status === StatusDc1Enum.WAITING_PAID}
         />
       </OrderCard.Content>
@@ -227,9 +232,12 @@ export function OrderCardInscription({
           </OrderCard.Details>
         )}
         <OrderCard.PayFooter
+          orderId={order.id}
           testId={`card-footer-${order.name}`}
           amount={strPendingAmount}
-          hideButton={cannotPayInPortal(canPayPartial) || Number(order.final_amount) <= 0}
+          hideButton={
+            cannotPayInPortal(canPayPartial) || Number(order.final_amount) <= 0 || Number(order.pending_amount) <= 0
+          }
           pending={order.status === StatusDc1Enum.WAITING_PAID}
         />
       </OrderCard.Content>
@@ -311,9 +319,12 @@ export function OrderCardDue({
         )}
 
         <OrderCard.PayFooter
+          orderId={order.id}
           testId={`card-footer-${order.name}`}
           amount={strPendingAmount}
-          hideButton={cannotPayInPortal(canPayPartial) || Number(order.final_amount) <= 0}
+          hideButton={
+            cannotPayInPortal(canPayPartial) || Number(order.final_amount) <= 0 || Number(order.pending_amount) <= 0
+          }
           pending={order.status === StatusDc1Enum.WAITING_PAID}
         />
       </OrderCard.Content>
@@ -345,7 +356,7 @@ export function OrderCardSubscription({
   onClickInfo,
   onPaymentFailInfo,
 }: Readonly<SubscriptionOrderCardProps>) {
-  const canPayManually = order.subscription.payment_is_failed === true;
+  const canPayManually = order.subscription.payment_has_failed === true;
 
   const { hasPriceModifiers, strPendingAmount, discounts, interests, payments } = useOrder(order);
 
@@ -408,6 +419,7 @@ export function OrderCardSubscription({
         ) : null}
 
         <OrderCard.PayFooter
+          orderId={order.id}
           testId={`card-footer-${order.name}`}
           amount={strPendingAmount}
           hideButton={!canPayManually}

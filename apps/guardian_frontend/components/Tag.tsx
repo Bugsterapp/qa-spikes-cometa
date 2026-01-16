@@ -1,13 +1,13 @@
 import { gray } from 'tailwindcss/colors';
 import { cn } from '~/lib/cn';
-import { cva, VariantProps } from 'class-variance-authority';
+import { cva, type VariantProps } from 'class-variance-authority';
 
 const TagVariants = cva(
-  'px-[7px] rounded-[4px] inline-flex bg-[var(--box-color-text-bg)] text-[var(--box-color-text)] font-bold',
+  'px-[7px] py-1 rounded content-center bg-[var(--box-color-text-bg)] text-[var(--box-color-text)] capitalize',
   {
     variants: {
       size: {
-        small: 'text-[10px]',
+        small: 'text-[10px] leading-[16px] tracking-[0.6px] font-semibold',
         medium: 'text-sm font-semibold rounded-lg py-1',
       },
     },
@@ -28,7 +28,7 @@ const Tag = ({ bgcolor, color, text, className, size }: BoxColorTextProps) => (
   <span
     className={cn(TagVariants({ size }), className)}
     style={
-      { '--box-color-text-bg': bgcolor || gray[100], '--box-color-text': color || gray[800] } as React.CSSProperties
+      { '--box-color-text-bg': bgcolor ?? gray[100], '--box-color-text': color ?? gray[800] } as React.CSSProperties
     }
   >
     {text}

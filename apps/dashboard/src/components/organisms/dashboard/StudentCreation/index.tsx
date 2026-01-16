@@ -1,25 +1,30 @@
-import SidebarHeader from '/src/components/molecules/dashboard/SidebarHeader';
-import { useRef, useState } from 'react';
-import StudentPersonalDataView from './PersonalInformation';
-import SchoolarDataView from './ScholarInformation';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSelectedSchool } from '/src/guards/AuthGuard';
-import ApiClient from '/src/services/ApiClient';
-import { useSession } from 'next-auth/react';
-import { DrawerView, useSetDrawerState } from '/src/components/AssignTutorDrawer';
-import * as Sentry from '@sentry/nextjs';
-import { useRouter } from 'next/router';
-import useLevels from '/src/hooks/useLevels';
-import useSections from '/src/hooks/useSections';
-import Dialog from '/src/components/atoms/Dialog';
-import Button from '../Button';
+import { DashboardStudent } from '@cometa/trpc/src/types';
 import { useSendTrackEvent } from '@cometa/utils';
-import ErrorToast from '/src/components/ErrorToast';
+import * as Sentry from '@sentry/nextjs';
+import { useMutation } from '@tanstack/react-query';
+import { useSession } from 'next-auth/react';
+import { useEffect, useState } from 'react';
 
-interface IStudentCreationProps {
+import CAlert from '/src/components/atoms/CAlert';
+import Dialog from '/src/components/atoms/Dialog';
+import ErrorToast from '/src/components/ErrorToast';
+import SidebarHeader from '/src/components/molecules/dashboard/SidebarHeader';
+import { useSelectedSchool } from '/src/guards/AuthGuard';
+import { defaultAlertTime } from '/src/hooks/useAlert';
+import ApiClient from '/src/services/ApiClient';
+import { api } from '/src/utils/api';
+
+import Button from '../Button';
+import ScholarInformationTab from './ScholarInformationTab';
+import { StudentGuardianTab } from './StudentGuardianTab';
+import StudentPersonalTab from './StudentPersonalTab';
+import { StudentCreateType } from './types';
+
+export interface StudentCreationProps {
   onClose: () => void;
 }
-interface AllFormData {
+
+export interface StudentFormType {
   first_name: string;
   last_name: string;
   identifier: string;
@@ -37,171 +42,143 @@ interface AllFormData {
   school_cycle_id: string;
 }
 
-export default function StudentCreation({ onClose }: IStudentCreationProps) {
+export default function StudentCreation({ onClose }: StudentCreationProps) {
   const { data: session } = useSession();
-  const formRef = useRef<HTMLFormElement>(null);
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [step, setStep] = useState<number>(1);
-  const [student, setStudent] = useState<
-    (StudentDetails.RootObject & { year: string; month: string; day: string }) | null
-  >(null);
-
+  const [studentFormFields, setStudentFormFields] = useState<StudentCreateType | null>(null);
+  const [student, setStudent] = useState<DashboardStudent | undefined>();
   const selectedSchool = useSelectedSchool();
-  const setDrawerState = useSetDrawerState();
-  const queryClient = useQueryClient();
-  const router = useRouter();
-  const { data: levelsData } = useLevels(session?.token, selectedSchool?.id);
-  const { data: sectionsData } = useSections(session?.token, selectedSchool?.id);
+  const utils = api.useUtils();
   const sendTrackEvent = useSendTrackEvent();
-  const [isFormDirty, setIsFormDirty] = useState(false);
-  const [studentCreatedId, setStudentCreatedId] = useState<string | null>(null);
+  const [showStudentCreatedAlert, setShowStudentCreatedAlert] = useState(false);
+  const [showStudentCreationFailAlert, setShowStudentCreationFailAlert] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleNext = (data: any) => {
-    const dataToPass = data;
-    if (data.entry_date) {
-      dataToPass.entry_date = data.entry_date.toISOString().split('T')[0];
+  const onCloseDrawer = (exit?: boolean) => {
+    if (exit) {
+      onClose();
+    } else {
+      setOpenDialog(true);
     }
-    setStudent((student) => ({ ...student, ...dataToPass }));
+  };
+
+  const onBack = () => {
+    setOpenDialog(false);
+  };
+
+  const onCancel = () => {
+    setOpenDialog(false);
+    setTimeout(() => {
+      onClose();
+    }, 200);
+  };
+
+  const handleNext = () => {
     setStep((step) => step + 1);
     if (step === 1) sendTrackEvent('dashboard: New Student Basic Info Completed', session);
     if (step === 2) sendTrackEvent('dashboard: New Student Academic Completed', session);
   };
 
+  useEffect(() => {
+    if (showStudentCreatedAlert || showStudentCreationFailAlert) {
+      const timer = setTimeout(() => {
+        setShowStudentCreatedAlert(false);
+        setShowStudentCreationFailAlert(false);
+      }, defaultAlertTime);
+
+      return () => clearTimeout(timer);
+    }
+  }, [showStudentCreatedAlert, showStudentCreationFailAlert]);
+
   const createStudentMutation = useMutation({
-    mutationFn: (payload: AllFormData) => ApiClient.createStudent(session?.token, selectedSchool?.id, payload),
+    mutationFn: (payload: StudentFormType) => ApiClient.createStudent(selectedSchool?.id, payload),
     onMutate: () => {
-      setDrawerState({ disabled: true });
+      setLoading(true);
     },
-    onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ['student_detail'] });
-      setStudentCreatedId(data.data.id);
-      if (data.data.guardians.length > 0) {
-        sendTrackEvent('dashboard: New Student Parent Assigned', session);
-        setTimeout(() => {
-          onClose();
-        }, 3000);
-        router.push(`/student/detail/${data.data.id}`);
-      }
+    onSuccess: async (response: DashboardStudent) => {
+      setLoading(false);
+      await utils.students.dashboardSchoolDueOrdersStudentDetail.invalidate();
+      setStudent(response);
+      handleNext();
+      setShowStudentCreatedAlert(true);
     },
-    onError: (err: any) => {
+    onError: (err) => {
+      setLoading(false);
+      setShowStudentCreationFailAlert(true);
       Sentry.captureException(err);
     },
   });
 
-  const handleCreateStudent = async (guardianId: string | null): Promise<void> => {
-    const studentData = {
-      ...student,
-      school_cycle_id: student?.school_cycle_id === 'null' ? '' : student?.school_cycle_id,
-      birthdate: `${student?.year}-${student?.month}-${student?.day}`,
-    } as AllFormData;
-    if (guardianId) {
-      studentData.billing_guardian = guardianId;
-    }
-    try {
-      await createStudentMutation.mutateAsync(studentData);
-    } catch (error) {
-      Sentry.captureException(error);
-    }
+  const handleCreate = async (stepFormValues: StudentFormType): Promise<void> => {
+    const payload = {
+      ...studentFormFields,
+      ...stepFormValues,
+      school_cycle_id: stepFormValues?.school_cycle_id === 'null' ? '' : stepFormValues?.school_cycle_id,
+      birthdate: `${stepFormValues?.year}-${stepFormValues?.month}-${stepFormValues?.day}`,
+    } as StudentFormType;
+
+    createStudentMutation.mutateAsync(payload);
   };
 
   const handleBack = () => {
     setStep((step) => step - 1);
-    setDrawerState({ guardian: null, selectedTab: null });
   };
 
   return (
     <>
       <div className="flex flex-col flex-auto h-full">
+        {showStudentCreatedAlert && (
+          <CAlert
+            className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10"
+            type="success"
+            message="Estudiante creado correctamente."
+          />
+        )}
+        {showStudentCreationFailAlert && (
+          <CAlert
+            className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10"
+            type="error"
+            message="Hubo un error al crear el estudiante. Ponte en contacto con nuestro equipo de soporte."
+          />
+        )}
         <div className="pb-4 px-9">
-          {step !== 3 && (
-            <SidebarHeader
-              title="Nuevo Estudiante"
-              onClose={() => {
-                if (!isFormDirty) {
-                  onClose();
-                  return;
-                }
-                setOpenDialog(true);
-              }}
-            />
-          )}
+          {step !== 3 && <SidebarHeader title="Nuevo Estudiante" onClose={onCloseDrawer} />}
         </div>
+
         {step === 1 && (
-          <StudentPersonalDataView
+          <StudentPersonalTab
+            handleNext={handleNext}
+            setStudent={setStudentFormFields}
             onCancel={setOpenDialog}
-            onSubmit={handleNext}
-            ref={formRef}
-            student={student}
-            setIsFormDirty={setIsFormDirty}
-            schoolId={selectedSchool?.id}
+            student={studentFormFields}
           />
         )}
+
         {step === 2 && (
-          <SchoolarDataView
-            onCancel={handleBack}
-            onSubmit={handleNext}
-            student={student}
-            ref={formRef}
-            levels={levelsData || []}
-            sections={sectionsData || []}
-            postStatus={createStudentMutation}
-          />
+          <ScholarInformationTab handleCreate={handleCreate} onCancel={handleBack} student={studentFormFields} />
         )}
+
         {step === 3 && (
           <div className="h-full">
             <ErrorToast
               message="El nro. de matrícula ya ha sido registrado. Por favor, ingresa un nuevo número"
               show={createStudentMutation.isError}
-              // onClose={() => setState({ ...InitialDrawerState, isOpen: true })}
             />
-            <DrawerView
-              handleCreateStudent={handleCreateStudent}
-              onCancel={handleBack}
-              student={student}
-              isMutating={createStudentMutation.isLoading}
-              studentId={createStudentMutation.data?.data.id}
-              studentCreatedId={studentCreatedId}
-              onClose={(exit) => {
-                if (exit) {
-                  setDrawerState({
-                    isOpen: false,
-                    guardian: null,
-                    selectedTab: null,
-                    disabled: true,
-                  });
-                  onClose();
-                } else {
-                  setOpenDialog(true);
-                }
-              }}
-            />
+            <StudentGuardianTab onCancel={handleBack} studentId={student?.id} onClose={onCloseDrawer} />
           </div>
         )}
       </div>
+
       <Dialog.Root open={!!openDialog} position="right" classNames="right-28">
         <Dialog.Title>
           {step !== 3 ? '¿Cancelar el registro de estudiante?' : 'Cancelar el registro de tutor'}
         </Dialog.Title>
         <div className="flex justify-center gap-x-10">
-          <Button id="dialog-in-drawer-cancel" variant="ghost" size="tooltip" onClick={() => setOpenDialog(false)}>
+          <Button id="dialog-in-drawer-cancel" variant="ghost" size="tooltip" onClick={onBack}>
             Atrás
           </Button>
-          <Button
-            variant="cancel"
-            size="tooltip"
-            onClick={() => {
-              setOpenDialog(false);
-              setTimeout(() => {
-                setDrawerState({
-                  isOpen: false,
-                  guardian: null,
-                  selectedTab: null,
-                  disabled: true,
-                });
-                onClose();
-              }, 200);
-            }}
-          >
+          <Button variant="cancel" size="tooltip" onClick={onCancel} disabled={loading}>
             Si, cancelar
           </Button>
         </div>

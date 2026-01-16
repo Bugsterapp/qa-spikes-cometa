@@ -1,41 +1,21 @@
-import { Grid, Typography } from '@mui/material';
-import { getSession } from 'next-auth/react';
-import ApiClient from '../../../../services/ApiClient';
-import { useQuery } from '@tanstack/react-query';
-import { QUERY_KEY_SCHOLARSHIPS_OLD } from '/src/utils/reactQueryKeys';
-import * as Sentry from '@sentry/nextjs';
-import { Table } from '/src/components/Table';
+import { ScholarshipExpired } from '@cometa/trpc/src/types';
 import { createColumnHelper } from '@tanstack/react-table';
-import { renderMoney } from '/src/utils/datagridHeaders';
-import IcArrowRight from '/public/assets/icons/ic_arrow_right.svg';
-import ScholarshipAssignmentDetail from '../ScholarshipAssignmentDetail';
 import { useState } from 'react';
-import useSendTrackEventWithUserName from '/src/hooks/useSendTrackEventWithUserName';
-import { formatDate, formatDateShort } from '/src/utils/general';
+
+import IcArrowRight from '/public/assets/icons/ic_arrow_right.svg';
 import Sheet from '/src/components/atoms/Sheet';
+import { Table } from '/src/components/Table';
+import useSendTrackEventWithUserName from '/src/hooks/useSendTrackEventWithUserName';
+import { Events } from '/src/constants/events';
+import { api } from '/src/utils/api';
+import { renderMoney } from '/src/utils/datagridHeaders';
+import { formatDate, formatDateShort } from '/src/utils/general';
+
+import ScholarshipAssignmentDetail from '../ScholarshipAssignmentDetail';
 
 interface IOrderTableForSchoarshipsOldProps {
   studentId: string;
   hideHeader?: boolean;
-}
-
-interface Result {
-  id: number;
-  scholarship_id: string;
-  affected_concept_types: string[];
-  name: string;
-  type: string;
-  value: string;
-  assigned_at: string;
-  deassigned_at: string;
-  arrow?: string;
-}
-
-interface ScholarshipsOldTableResponse {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: Result[];
 }
 
 export default function OrderTableForScholarshipsOld({
@@ -56,12 +36,12 @@ export default function OrderTableForScholarshipsOld({
 
   const statusPercent = ['BRILLAMONT', 'PERCENT'];
 
-  const handlerRowClick = (row: Result) => {
+  const handlerRowClick = (row: ScholarshipExpired) => {
     const { scholarship_id: id, name, assigned_at, deassigned_at } = row;
     const formated_assigned_at = formatDateShort(assigned_at);
     const formated_deassigned_at = formatDateShort(deassigned_at);
     setScholarshipIdName({ id, name, formated_assigned_at, formated_deassigned_at });
-    sendTrackEventWithUserName('dashboard: Scolarship | Detail viewed');
+    sendTrackEventWithUserName(Events.scholarship_detail_viewed);
   };
 
   const typeValue = (type: string) => {
@@ -77,23 +57,13 @@ export default function OrderTableForScholarshipsOld({
     }
   };
 
-  const scholarshipsQuery = async () => {
-    const session = await getSession();
-    const res = await ApiClient.getScholarshipsOldForStudent(session?.token, studentId);
-    return res?.data;
-  };
-
   const {
     data: scholarships,
-    isLoading,
+    isPending: isLoading,
     isFetching,
-  } = useQuery([QUERY_KEY_SCHOLARSHIPS_OLD], scholarshipsQuery, {
-    onError(err) {
-      Sentry.captureException(err);
-    },
-  });
+  } = api.students.expiredScholarships.useQuery({ studentId: studentId });
 
-  const columnHelper = createColumnHelper<ScholarshipsOldTableResponse['results'][number]>();
+  const columnHelper = createColumnHelper<ScholarshipExpired>();
 
   const columns = [
     columnHelper.accessor('name', {
@@ -110,7 +80,7 @@ export default function OrderTableForScholarshipsOld({
       cell: (info) => (
         <div className="flex text-left">
           {statusPercent.includes(info.row.original.type)
-            ? `${parseFloat(info.row.original.value)}%`
+            ? `${info.row.original.value}%`
             : renderMoney(info.row.original.value) || '0'}
         </div>
       ),
@@ -127,9 +97,9 @@ export default function OrderTableForScholarshipsOld({
       header: () => <span className="whitespace-nowrap">Hasta</span>,
       size: 250,
     }),
-    columnHelper.accessor('arrow', {
+    columnHelper.display({
+      id: 'arrow',
       cell: () => <IcArrowRight />,
-      header: () => null,
       size: 250,
     }),
   ];
@@ -138,11 +108,9 @@ export default function OrderTableForScholarshipsOld({
     <>
       <div id="table-for-scholarships-old">
         {hideHeader && (
-          <Grid item xs={12} p={3} pl={6} display="flex" justifyContent="space-between">
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Becas pasadas
-            </Typography>
-          </Grid>
+          <div className="p-3 pl-6 flex justify-between">
+            <h6 className="text-lg font-semibold mb-2">Becas pasadas</h6>
+          </div>
         )}
         <Table
           data={scholarships?.results || []}

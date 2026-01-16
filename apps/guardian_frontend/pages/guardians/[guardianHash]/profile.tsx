@@ -1,7 +1,5 @@
 import Head from 'next/head';
 import Navbar from '~/components/Navbar';
-import CustomInput from '~/components/atoms/guardians/CustomInput';
-import FormField from '~/components/CustomFormField';
 import ExpandMore from '/public/icons/ic_expand_more.svg';
 import Pencil from '/public/icons/pencil.svg';
 import { api } from '~/utils/api';
@@ -11,17 +9,48 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/PhoneInput/Select';
 import { GenderEnum } from '@cometa/trpc';
-import { Button } from '~/components/atoms/Button';
-import PageHeader from '~/components/PageHeader';
+import { Button } from '~/components/ui/Button';
 import Dialog from '~/components/molecules/common/Dialog';
-import { WHAT_ONBOARDING_HELP } from '~/utils/linksWhatsapp';
-import LoadingButton from '~/components/molecules/LoadingButton';
+import { WHAT_ONBOARDING_HELP_PROFILE } from '~/utils/linksWhatsapp';
+import LoadingButton from '~/components/ui/LoadingButton';
 import { DevTool } from '@hookform/devtools';
-import { useSelectedSchool } from '~/components/molecules/common/AuthGlobal';
+import { useSelectedSchool } from '~/stores/globalStore';
 import { useSession } from 'next-auth/react';
 import { DrawerAlert, DrawerAlertActions, DrawerAlertContent } from '~/components/organisms/guardians/DrawerAlert';
 import IcInfo from '/public/icons/information-white.svg';
 import { cn } from '~/lib/cn';
+import { useSendEvent, useSendPageEvent } from '~/hooks/useSendEvent';
+import { PageViewedCategory, TrackEvents } from '~/constants/events';
+import { PhoneInput } from '@cometa/recreo';
+
+function Skeleton() {
+  return (
+    <div className="flex flex-col gap-[16px] px-5 py-6">
+      <div className="flex flex-col gap-[8px]">
+        <div className="h-[20px] w-[100px] bg-neutral-100 rounded animate-pulse" />
+        <div className="h-[20px] w-full bg-neutral-100 rounded animate-pulse" />
+        <div className="h-[20px] w-3/4 bg-neutral-100 rounded animate-pulse" />
+      </div>
+
+      <div className="bg-white border border-[#ebedf0] rounded-[12px]">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between px-4 py-4 border-b border-[#ebedf0]">
+          <div className="h-[24px] w-[100px] bg-neutral-100 rounded animate-pulse" />
+          <div className="h-[32px] w-[80px] bg-neutral-100 rounded-full animate-pulse" />
+        </div>
+
+        <div className="flex flex-col gap-[12px] px-4 py-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex flex-col gap-[4px] h-[54px] justify-center">
+              <div className="h-[20px] w-[120px] bg-neutral-100 rounded animate-pulse" />
+              <div className="h-[24px] w-[200px] bg-neutral-100 rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const ProfileResolver = z.object({
   first_name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
@@ -37,10 +66,14 @@ function Profile() {
   const [edit, setEdit] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const school = useSelectedSchool();
+  const sendEvent = useSendEvent();
+  const sendPageEvent = useSendPageEvent();
 
-  const { data: guardian } = api.guardian.me.useQuery(undefined, {
-    staleTime: Infinity,
-  });
+  useEffect(() => {
+    sendPageEvent(TrackEvents.profile.pageViewed, PageViewedCategory);
+  }, []);
+
+  const { data: guardian, refetch: refetchGuardian, isLoading } = api.guardian.me.useQuery();
 
   const {
     register,
@@ -65,33 +98,26 @@ function Profile() {
       if (res.error) {
         Object.keys(res.data).forEach((key) => setError(`root.${key}`, { type: 'validate', message: res.data[key] }));
       }
-
-      const parsedData = ProfileResolver.safeParse(res.data);
-      if (parsedData.success) {
-        setEdit(false);
-        reset({
-          first_name: parsedData.data.first_name,
-          last_name: parsedData.data.last_name,
-          gender: parsedData.data.gender,
-          email: parsedData.data.email,
-        });
-      }
+      refetchGuardian();
+      setEdit(false);
     },
   });
 
   useEffect(() => {
     const parsedValues = ProfileResolver.safeParse(guardian);
     if (guardian && parsedValues.success) {
+      const { data } = parsedValues;
       reset({
-        first_name: parsedValues.data.first_name,
-        last_name: parsedValues.data.last_name,
-        email: parsedValues.data.email,
-        gender: parsedValues.data.gender,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        gender: data.gender,
       });
     }
   }, [guardian]);
 
   const submit = (values: FormValues) => {
+    sendEvent(TrackEvents.profile.confirmClicked);
     if (isDirty && guardian?.id) {
       mutation.mutate({
         data: values,
@@ -106,116 +132,234 @@ function Profile() {
   return (
     <>
       <DevTool control={control} />
-      <div className="min-h-[76px]">
-        {!edit ? (
-          <div className="border-b border-b-[#E3E0FF] flex justify-between px-5 py-2 min-h-[76px] items-center mb-8">
-            <h2 className="text-lg font-semibold text-[#283877]">Mi perfil</h2>
-            {school?.config_portal?.enable_edit_guardian && (
-              <Button variant="ghost" onClick={() => setEdit(true)} data-testid="edit-button">
-                Editar
-                <Pencil className="w-4 ml-1" />
-              </Button>
-            )}
-          </div>
-        ) : (
-          <PageHeader
-            buttonAction={() => (isDirty ? setShowConfirmation(true) : setEdit(false))}
-            headerText="Editar datos del perfil"
-            className="mb-8"
-          />
-        )}
-      </div>
-
-      <form className="flex flex-col px-5" onSubmit={handleSubmit(submit)}>
-        <FormField label="Nombre/s" className="mb-3" error={errors.first_name?.message}>
-          <CustomInput
-            className="px-5 pt-[25px] pb-[18px] rounded-[14px]"
-            defaultValue={guardian?.first_name}
-            disabled={!edit || isSubmitting}
-            {...register('first_name')}
-          />
-        </FormField>
-        <FormField label="Apellido/s" className="mb-3" error={errors.last_name?.message}>
-          <CustomInput
-            className="px-5 pt-[25px] pb-[18px] rounded-[14px]"
-            defaultValue={guardian?.last_name}
-            disabled={!edit || isSubmitting}
-            {...register('last_name')}
-          />
-        </FormField>
-        <FormField label="Email*" className="mb-3" error={errors.email?.message}>
-          <CustomInput
-            className="px-5 pt-[25px] pb-[18px] rounded-[14px]"
-            defaultValue={guardian?.email}
-            disabled={!edit || isSubmitting}
-            {...register('email')}
-          />
-        </FormField>
-        <FormField label="Celular*" className="mb-3">
-          <CustomInput
-            disabled
-            className="px-5 pt-[25px] pb-[18px] rounded-[14px]"
-            value={guardian?.phone ?? session.data?.user.phone ?? ''}
-          />
-        </FormField>
-        <Controller
-          control={control}
-          name="gender"
-          render={({ field }) => (
-            <Select
-              key={field.value}
-              value={(field.value || guardian?.gender) ?? undefined}
-              onValueChange={field.onChange}
-              disabled={!edit || isSubmitting}
-            >
-              <SelectTrigger
-                data-error={Boolean(errors.gender)}
-                data-testid="gender-list"
-                className="group bg-white h-[67px] data-[error=true]:border-error data-[error=true]:border  data-[error=true]:border-r-0 py-0 px-0 pl-4 pr-1 w-full rounded-2xl"
-              >
-                <SelectValue data-testid="gender-value" placeholder="Género" />
-                <ExpandMore
-                  width="24"
-                  height="24"
-                  className="text-blue-100 group-disabled:text-[#A6A6A6] group-data-[state='open']:rotate-180 transition-transform"
-                />
-              </SelectTrigger>
-              <SelectContent className="w-full min-w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)]">
-                <SelectItem value={GenderEnum.M} className="flex hover:cursor-pointer" textValue="Masculino">
-                  Masculino
-                </SelectItem>
-                <SelectItem value={GenderEnum.F} className="flex hover:cursor-pointer" textValue="Femenino">
-                  Femenino
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          )}
-        />
-        {edit && (
-          <>
-            <span className="text-[#57537A] mt-3">
-              Para solicitar el cambio de número del celular contáctanos vía{' '}
+      {isLoading ? (
+        <Skeleton />
+      ) : !edit ? (
+        <div className="flex flex-col gap-[16px] px-5 py-6">
+          {/* Page Title and Description */}
+          <div className="flex flex-col gap-[8px]">
+            <h2 className="text-[18px] font-bold leading-[20px] text-[#22222a]">Mi Perfil</h2>
+            <p className="text-[14px] leading-[20px] text-[#535765]">
+              Mantén tus datos correctos y actualizados. Si tu número de teléfono no es el correcto, contáctanos por{' '}
               <a
-                data-testid="whatsapp-link"
-                href={WHAT_ONBOARDING_HELP}
+                href={WHAT_ONBOARDING_HELP_PROFILE}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#513FFF]"
+                className="text-[#1890ff] underline"
               >
-                WhatsApp.
+                aquí
               </a>
-            </span>
-            <LoadingButton
-              data-testid="confirm-button"
-              className="mt-8"
-              disabled={isSubmitting || mutation.isLoading || !isDirty}
-              loading={mutation.isLoading}
-            >
-              Confirmar
-            </LoadingButton>
-          </>
-        )}
-      </form>
+              .
+            </p>
+          </div>
+
+          {/* Card Container */}
+          <div className="bg-white border border-[#ebedf0] rounded-[12px]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-4 border-b border-[#ebedf0]">
+              <h3 className="text-[16px] font-semibold leading-[24px] text-[#22222a]">Mis datos</h3>
+              {school?.config_portal?.enable_edit_guardian && (
+                <button
+                  className="bg-[#f3f6fb] flex items-center gap-1 px-4 py-[6px] rounded-full cursor-pointer"
+                  onClick={() => {
+                    sendEvent(TrackEvents.profile.editClicked);
+                    setEdit(true);
+                  }}
+                  data-testid="edit-button"
+                >
+                  <span className="text-[14px] font-semibold leading-[20px] text-[#1c1c1d]">Editar</span>
+                  <Pencil className="w-[14px] h-[14px]" />
+                </button>
+              )}
+            </div>
+
+            {/* Content */}
+            <div className="flex flex-col gap-[12px] px-4 py-3">
+              {/* Nombre(s) */}
+              <div className="flex flex-col gap-[4px] h-[54px] justify-center">
+                <p className="text-[14px] leading-[20px] text-[#6e7480]">Nombre(s)</p>
+                <p className="text-[16px] leading-[24px] text-[#22222a]">{guardian?.first_name || '-'}</p>
+              </div>
+
+              {/* Apellidos */}
+              <div className="flex flex-col gap-[4px] h-[54px] justify-center">
+                <p className="text-[14px] leading-[20px] text-[#6e7480]">Apellidos</p>
+                <p className="text-[16px] leading-[24px] text-[#22222a]">{guardian?.last_name || '-'}</p>
+              </div>
+
+              {/* Correo */}
+              <div className="flex flex-col gap-[4px] h-[54px] justify-center">
+                <p className="text-[14px] leading-[20px] text-[#6e7480]">Correo</p>
+                <p className="text-[16px] leading-[24px] text-[#22222a]">{guardian?.email || '-'}</p>
+              </div>
+
+              {/* Teléfono Móvil */}
+              <div className="flex flex-col gap-[4px] h-[54px] justify-center">
+                <p className="text-[14px] leading-[20px] text-[#6e7480]">Teléfono Móvil</p>
+                <p className="text-[16px] leading-[24px] text-[#22222a]">
+                  {guardian?.phone || session.data?.user.phone || '-'}
+                </p>
+              </div>
+
+              {/* Género */}
+              <div className="flex flex-col gap-[4px] h-[54px] justify-center">
+                <p className="text-[14px] leading-[20px] text-[#6e7480]">Género</p>
+                <p className="text-[16px] leading-[24px] text-[#22222a]">
+                  {guardian?.gender === GenderEnum.M
+                    ? 'Masculino'
+                    : guardian?.gender === GenderEnum.F
+                    ? 'Femenino'
+                    : '-'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-[16px] px-5 py-6">
+          {/* Page Title and Description */}
+          <div className="flex flex-col gap-[8px]">
+            <h2 className="text-[18px] font-bold leading-[20px] text-[#22222a]">Mi Perfil</h2>
+            <p className="text-[14px] leading-[20px] text-[#535765]">
+              Mantén tus datos correctos y actualizados. Si tu número de teléfono no es el correcto, contáctanos por{' '}
+              <a
+                href={WHAT_ONBOARDING_HELP_PROFILE}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#1890ff] underline"
+              >
+                aquí
+              </a>
+              .
+            </p>
+          </div>
+
+          {/* Card Container */}
+          <div className="bg-white border border-[#ebedf0] rounded-[12px]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-4 border-b border-[#ebedf0]">
+              <h3 className="text-[16px] font-semibold leading-[24px] text-[#22222a]">Mis datos</h3>
+              <button
+                className="bg-[#f3f6fb] flex items-center gap-[10px] px-4 py-[6px] rounded-full cursor-pointer"
+                onClick={() => (isDirty ? setShowConfirmation(true) : setEdit(false))}
+                data-testid="cancel-button"
+              >
+                <span className="text-[14px] font-semibold leading-[20px] text-[#1c1c1d]">Cancelar</span>
+              </button>
+            </div>
+
+            {/* Form Content */}
+            <form className="flex flex-col gap-5 px-4 py-3" onSubmit={handleSubmit(submit)}>
+              {/* Nombre(s) */}
+              <div className="flex flex-col gap-1 w-full">
+                <label className="text-[14px] leading-[1.5] text-[#535765]">Nombre(s)</label>
+                <input
+                  className={cn(
+                    'border border-[#c0c9d8] rounded-[6px] h-[48px] px-4 py-3 text-[16px] leading-[1.5] text-[#1c1c1d] w-full outline-none focus:border-[#513FFF]',
+                    errors.first_name && 'border-red-500'
+                  )}
+                  defaultValue={guardian?.first_name}
+                  disabled={isSubmitting}
+                  {...register('first_name')}
+                />
+                {errors.first_name && <span className="text-red-500 text-sm mt-1">{errors.first_name.message}</span>}
+              </div>
+
+              {/* Apellidos */}
+              <div className="flex flex-col gap-1 w-full">
+                <label className="text-[14px] leading-[1.5] text-[#535765]">Apellidos</label>
+                <input
+                  className={cn(
+                    'border border-[#c0c9d8] rounded-[6px] h-[48px] px-4 py-3 text-[16px] leading-[1.5] text-[#1c1c1d] w-full outline-none focus:border-[#513FFF]',
+                    errors.last_name && 'border-red-500'
+                  )}
+                  defaultValue={guardian?.last_name}
+                  disabled={isSubmitting}
+                  {...register('last_name')}
+                />
+                {errors.last_name && <span className="text-red-500 text-sm mt-1">{errors.last_name.message}</span>}
+              </div>
+
+              {/* Correo */}
+              <div className="flex flex-col gap-1 w-full">
+                <label className="text-[14px] leading-[1.5] text-[#535765]">Correo</label>
+                <input
+                  className={cn(
+                    'border border-[#c0c9d8] rounded-[6px] h-[48px] px-4 py-3 text-[16px] leading-[1.5] text-[#1c1c1d] w-full outline-none focus:border-[#513FFF]',
+                    errors.email && 'border-red-500'
+                  )}
+                  defaultValue={guardian?.email}
+                  disabled={isSubmitting}
+                  {...register('email')}
+                />
+                {errors.email && <span className="text-red-500 text-sm mt-1">{errors.email.message}</span>}
+              </div>
+
+              {/* Teléfono Móvil */}
+              <div className="flex flex-col gap-1 w-full">
+                <label className="text-[14px] leading-[1.5] text-[#535765]">Teléfono Móvil</label>
+                <PhoneInput
+                  initialValue={guardian?.phone ?? session.data?.user.phone ?? ''}
+                  label=""
+                  onChange={() => null as any}
+                  disabled
+                  isLegacy={false}
+                  className="[&>button]:!bg-[#f3f6fb] [&>button]:!h-[52px] [&>button]:!border-0 [&>button]:!border-r [&>button]:!border-r-[#c0c9d8] [&>button]:!border-solid [&>button]:!shadow-none [&>button]:!rounded-l-[6px] [&>button]:!px-[10px] [&>button]:!py-2 [&>div]:!h-[52px] [&>div]:!rounded-r-[6px] [&>div>div>input]:!bg-[#f3f6fb] [&>div>div>input]:!text-[#a5acc4] [&>div]:!border-none [&>div>label]:hidden"
+                />
+              </div>
+
+              {/* Género */}
+              <div className="flex flex-col gap-1 w-full">
+                <label className="text-[14px] leading-[1.5] text-[#535765]">Género</label>
+                <Controller
+                  control={control}
+                  name="gender"
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={(field.value || guardian?.gender) ?? undefined}
+                      onValueChange={field.onChange}
+                      disabled={isSubmitting}
+                    >
+                      <SelectTrigger
+                        data-error={Boolean(errors.gender)}
+                        data-testid="gender-list"
+                        className={cn(
+                          'bg-white border !border-[#c0c9d8] !rounded-[6px] !shadow-none h-[48px] !px-4 !py-3 w-full flex items-center gap-[10px] !border-r !outline-none focus:!border-[#513FFF]',
+                          errors.gender && '!border-red-500'
+                        )}
+                      >
+                        <div className="flex-1 text-[16px] leading-[1.5] text-[#1c1c1d] text-left">
+                          <SelectValue data-testid="gender-value" placeholder="Género" />
+                        </div>
+                        <ExpandMore width="20" height="20" className="shrink-0 text-[#6e7480]" />
+                      </SelectTrigger>
+                      <SelectContent className="w-full min-w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)]">
+                        <SelectItem value={GenderEnum.M} className="flex hover:cursor-pointer" textValue="Masculino">
+                          Masculino
+                        </SelectItem>
+                        <SelectItem value={GenderEnum.F} className="flex hover:cursor-pointer" textValue="Femenino">
+                          Femenino
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+
+              {/* Save Button */}
+              <LoadingButton
+                data-testid="confirm-button"
+                className="bg-[#1c1c1d] text-white rounded-full w-full px-5 py-[10px] h-auto text-[14px] font-semibold leading-[20px] mt-5 shadow-none hover:bg-[#1c1c1d]/90 active:bg-[#513FFF]"
+                disabled={isSubmitting || mutation.isPending || !isDirty}
+                loading={mutation.isPending}
+              >
+                Guardar
+              </LoadingButton>
+            </form>
+          </div>
+        </div>
+      )}
 
       <Dialog open={showConfirmation ?? false}>
         <Dialog.Content className="w-screen px-5">
@@ -263,7 +407,7 @@ function Profile() {
               type="button"
               target="_blank"
               rel="noopener noreferrer"
-              href={WHAT_ONBOARDING_HELP}
+              href={WHAT_ONBOARDING_HELP_PROFILE}
             >
               Contactar a soporte
             </a>

@@ -1,27 +1,9 @@
-import { m } from 'framer-motion';
 // next
 import NextLink from 'next/link';
-import { styled } from '@mui/material/styles';
-// @mui
-import { Button, Typography, Container } from '@mui/material';
 // layouts
 import Layout from '../components/layouts';
-// components
-import { MotionContainer, varBounce } from '../components/animate';
 // assets
 import SeverErrorIllustration from '/public/assets/icons/illustration_500.svg';
-
-// ----------------------------------------------------------------------
-
-const ContentStyle = styled('div')(({ theme }) => ({
-  maxWidth: 480,
-  margin: 'auto',
-  minHeight: '100vh',
-  display: 'flex',
-  justifyContent: 'center',
-  flexDirection: 'column',
-  padding: theme.spacing(12, 0),
-}));
 
 // ----------------------------------------------------------------------
 
@@ -35,29 +17,31 @@ const getLayout = (page) => (
 
 export default function Page500() {
   return (
-    <Container component={MotionContainer}>
-      <ContentStyle sx={{ textAlign: 'center', alignItems: 'center' }}>
-        <m.div variants={varBounce().in}>
-          <Typography variant="h3" paragraph>
-            Error 500, hubo un error en nuestros servidores
-          </Typography>
-        </m.div>
+    <div className="container mx-auto px-4">
+      <div className="max-w-[480px] mx-auto min-h-screen flex justify-center flex-col py-48 text-center items-center">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight mb-4">Error 500, hubo un error en nuestros servidores</h1>
+        </div>
 
-        <m.div variants={varBounce().in}>
-          <Typography sx={{ color: 'text.secondary' }}>Por favor, intentalo mas tarde</Typography>
-        </m.div>
+        <div>
+          <p className="text-gray-600">Por favor, intentalo mas tarde</p>
+        </div>
 
-        <m.div variants={varBounce().in}>
-          <SeverErrorIllustration />
-        </m.div>
+        <div>
+          <div className="my-5 sm:my-10">
+            <SeverErrorIllustration />
+          </div>
+        </div>
 
-        <NextLink href="/" passHref>
-          <Button size="large" variant="contained">
-            Inico
-          </Button>
-        </NextLink>
-      </ContentStyle>
-    </Container>
+        <div>
+          <NextLink href="/" passHref>
+            <button className="inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-[#00AB55] text-white hover:bg-[#007B55] h-12 px-6 text-lg">
+              Inicio
+            </button>
+          </NextLink>
+        </div>
+      </div>
+    </div>
   );
 }
 Page500.getLayout = getLayout;

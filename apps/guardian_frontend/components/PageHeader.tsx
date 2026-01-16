@@ -1,4 +1,4 @@
-import { Button } from '~/components/atoms/Button';
+import { Button } from '~/components/ui/Button';
 import React from 'react';
 import { cn } from '~/lib/cn';
 import Chevron from '~/public/icons/chevron.svg';

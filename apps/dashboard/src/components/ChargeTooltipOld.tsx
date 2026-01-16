@@ -25,13 +25,13 @@ const ChargeToolTip = ({ children, percentage, delinquents, barMonth, pending }:
             <span className="text-xs text-[#050B1F] font-semibold">
               Pagaron:{' '}
               <span className="font-normal">
-                {pending} {pending === 0 || pending > 1 ? 'alumnos' : 'alumno'}
+                {pending} {pending === 0 || pending > 1 ? 'estudiantes' : 'estudiante'}
               </span>
             </span>
             <span className="text-xs text-[#050B1F] font-semibold">
               Faltan por pagar:{' '}
               <span className="font-normal">
-                {delinquents} {delinquents === 0 || delinquents > 1 ? 'alumnos' : 'alumno'}
+                {delinquents} {delinquents === 0 || delinquents > 1 ? 'estudiantes' : 'estudiante'}
               </span>
             </span>
           </div>

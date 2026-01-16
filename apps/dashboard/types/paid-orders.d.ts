@@ -1,6 +1,3 @@
-import { PartialPayin } from './due-orders';
-import type { CometaCurrency } from '@cometa/utils';
-
 export interface Student {
   id: string;
   first_name: string;
@@ -18,13 +15,20 @@ export interface Guardian {
 
 type Status = 'pending' | 'failed' | 'success' | 'canceled' | 'canceling' | 'not_requested' | 'multiple' | 'sponsored';
 
+export interface BillingGuardian {
+  id: string;
+  tax_id: string;
+  billing_name: string;
+}
+
 export interface Invoice {
   failed_reason?: string;
   id?: string;
   pdf_url?: string;
   status: Status;
+  expedition_date: string;
   fiscal_identifier?: string;
-  billing_guardian?: string;
+  billing_guardian?: BillingGuardian;
   billing_guardian_fullname?: string;
   client_identifier?: string;
   billing_name?: string;
@@ -34,47 +38,9 @@ export interface Invoice {
   is_paid_invoice?: boolean;
   service_identifier?: string;
   fail_origin?: string;
-}
-export interface PaidOrder {
-  id: string;
-  order_name: string;
-  student: Student;
-  guardian: Guardian;
-  amount: string;
-  final_amount: string;
-  paid_date: string;
-  paid_status: string;
-  invoices: Invoice[];
-  invoice_status: string | Status;
-  has_partial_payins: boolean;
-  paid_amount: string;
-  payin_type: string;
-  correlative_id?: string;
-  collected_at_school: boolean;
-  payin_correlative_id?: string;
-  payin_id?: string;
-  payout?: {
-    id: string;
-    correlative_id: string;
-  };
-  partial_payins: Pick<PartialPayin, 'id' | 'correlative_id'>[];
-  payins: PartialPayin[];
-  total_paid: string;
-  status: string;
-  is_sponsored: boolean;
-}
-
-interface FulfillmentCurrency extends PaidOrder {
-  amount: CometaCurrency;
-  final_amount: CometaCurrency;
-  paid_amount: CometaCurrency;
-}
-export interface FulfillmentTable {
-  count: number;
-  next: string;
-  previous?: string;
-  results: FulfillmentCurrency[];
-  total_amount: CometaCurrency;
+  correlative_id: string;
+  type: string;
+  related_fiscal_identifier: string;
 }
 
 export interface EarlyBirdDiscounts {

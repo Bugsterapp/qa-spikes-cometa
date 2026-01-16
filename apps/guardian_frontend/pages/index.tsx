@@ -1,5 +1,5 @@
 import Head from 'next/head';
-import { Button } from '~/components/atoms/Button';
+import { Button } from '~/components/ui/Button';
 import { Tabs, TabsContent, TabsTrigger } from '~/components/Tabs';
 import Cometa from '~/public/cometa-logo.svg';
 import { useForm } from 'react-hook-form';
@@ -20,6 +20,8 @@ import ExpandMore from '~/public/icons/ic_expand_more.svg';
 import dynamic from 'next/dynamic';
 import { api } from '~/utils/api';
 import { MethodEnum } from '@cometa/trpc';
+import type { GetServerSidePropsContext } from 'next';
+import { getServerAuthSession } from '~/server/auth';
 
 const FlagEmoji = dynamic(() => import('~/hooks/useTelephone').then((mod) => mod.FlagEmoji), { ssr: false });
 const SelectContent = dynamic(() => import('~/components/PhoneInput/Select').then((mod) => mod.SelectContent), {
@@ -48,6 +50,23 @@ type FormState =
 
 let pageViewed = false;
 
+export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
+  const session = await getServerAuthSession(ctx);
+
+  if (session?.user?.hash) {
+    return {
+      redirect: {
+        destination: `/guardians/${session.user.hash}`,
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {},
+  };
+};
+
 const Home = () => {
   if (!pageViewed && typeof window !== 'undefined') {
     sendPageViewedEvent('portal: Login Page');
@@ -75,7 +94,7 @@ const Home = () => {
 
   const debouncedSubmitting = useThrottle(isSubmitting, 500);
 
-  const { mutate, isLoading } = api.guardian.sendCode.useMutation({
+  const { mutate, isPending: isLoading } = api.guardian.sendCode.useMutation({
     onError: (_, variables) => {
       sendTrackEvent('portal: Login Page submit', {
         method: variables.method,

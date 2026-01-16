@@ -3,17 +3,18 @@ import {
   getCoreRowModel,
   getFacetedRowModel,
   flexRender,
-  TableState,
-  Row,
-  PaginationState,
-  OnChangeFn,
-  ColumnDef,
-  Updater,
-  SortingState,
+  type TableState,
+  type Row,
+  type PaginationState,
+  type OnChangeFn,
+  type ColumnDef,
+  type Updater,
+  type SortingState,
 } from '@tanstack/react-table';
 import React, { useRef } from 'react';
 import cx from 'classnames';
 import { cn } from '../utils/cn';
+import { SortingIcon } from './atoms/SortingIcon';
 
 interface TableProps<Data> {
   data: Data[] | undefined;
@@ -121,7 +122,7 @@ export const Table = <T extends Record<string, any>>({
   const isEmptyTable = table.getRowModel().rows.length === 0 && !isLoading;
 
   return (
-    <div className="flex flex-col justify-between w-full h-full overflow-hidden bg-white relative">
+    <div className="relative flex flex-col justify-between w-full h-full overflow-hidden bg-white">
       <div
         className={`h-[2px] bg-green transition-all duration-500 ease-linear animate-pulse ${
           isFetching ? 'w-full' : 'w-0'
@@ -135,7 +136,7 @@ export const Table = <T extends Record<string, any>>({
       >
         <table
           className={cn(
-            `text-sm border-collapse table-auto relative`,
+            'text-sm border-collapse table-auto relative',
             { 'grid-area-1': isEmptyTable, 'opacity-50': isLoading, 'opacity-60': isFetching },
             className
           )}
@@ -175,49 +176,8 @@ export const Table = <T extends Record<string, any>>({
                             }}
                           >
                             {flexRender(header.column.columnDef.header, header.getContext())}
-                            {{
-                              asc: (
-                                <svg
-                                  width="20"
-                                  height="20"
-                                  viewBox="0 0 20 20"
-                                  fill="none"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                >
-                                  <path
-                                    d="M14.7585 8.23348L11.1752 4.65848C10.8629 4.34806 10.4405 4.17383 10.0002 4.17383C9.55986 4.17383 9.13744 4.34806 8.82517 4.65848L5.24184 8.23348C5.08663 8.38962 4.99951 8.60083 4.99951 8.82098C4.99951 9.04114 5.08663 9.25235 5.24184 9.40848C5.31931 9.48659 5.41148 9.54858 5.51302 9.59089C5.61457 9.6332 5.7235 9.65498 5.83351 9.65498C5.94352 9.65498 6.05244 9.6332 6.15399 9.59089C6.25554 9.54858 6.3477 9.48659 6.42517 9.40848L9.16684 6.66682V15.8335C9.16684 16.0545 9.25464 16.2665 9.41092 16.4227C9.5672 16.579 9.77916 16.6668 10.0002 16.6668C10.2212 16.6668 10.4331 16.579 10.5894 16.4227C10.7457 16.2665 10.8335 16.0545 10.8335 15.8335V6.66682L13.5752 9.40848C13.731 9.5654 13.9428 9.654 14.1639 9.65478C14.385 9.65556 14.5974 9.56846 14.7543 9.41265C14.9113 9.25683 14.9999 9.04507 15.0006 8.82393C15.0014 8.60279 14.9143 8.3904 14.7585 8.23348Z"
-                                    fill="#637381"
-                                  />
-                                </svg>
-                              ),
-                              desc: (
-                                <svg
-                                  width="20"
-                                  height="20"
-                                  viewBox="0 0 20 20"
-                                  fill="none"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                >
-                                  <path
-                                    d="M14.7585 10.5915C14.681 10.5134 14.5889 10.4514 14.4873 10.4091C14.3858 10.3668 14.2768 10.345 14.1668 10.345C14.0568 10.345 13.9479 10.3668 13.8464 10.4091C13.7448 10.4514 13.6526 10.5134 13.5752 10.5915L10.8335 13.3332V4.99984C10.8335 4.77882 10.7457 4.56686 10.5894 4.41058C10.4331 4.2543 10.2212 4.1665 10.0002 4.1665C9.77916 4.1665 9.5672 4.2543 9.41092 4.41058C9.25464 4.56686 9.16684 4.77882 9.16684 4.99984V13.3332L6.42517 10.5915C6.3477 10.5134 6.25554 10.4514 6.15399 10.4091C6.05244 10.3668 5.94352 10.345 5.83351 10.345C5.7235 10.345 5.61457 10.3668 5.51302 10.4091C5.41148 10.4514 5.31931 10.5134 5.24184 10.5915C5.08663 10.7476 4.99951 10.9588 4.99951 11.179C4.99951 11.3992 5.08663 11.6104 5.24184 11.7665L8.82517 15.3415C9.1363 15.6545 9.55886 15.8313 10.0002 15.8332C10.4386 15.8291 10.8578 15.6525 11.1668 15.3415L14.7502 11.7665C14.9065 11.6115 14.9951 11.4009 14.9967 11.1807C14.9982 10.9606 14.9126 10.7487 14.7585 10.5915Z"
-                                    fill="#637381"
-                                  />
-                                </svg>
-                              ),
-                            }[header.column.getIsSorted() as string] ?? null}
-                            {header.column.getCanSort() && !header.column.getIsSorted() && (
-                              <svg
-                                width="20"
-                                height="20"
-                                viewBox="0 0 20 20"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <path
-                                  d="M5.24402 3.57766C5.40029 3.42144 5.61221 3.33367 5.83318 3.33367C6.05415 3.33367 6.26608 3.42144 6.42235 3.57766L9.75568 6.911C9.90748 7.06816 9.99148 7.27867 9.98958 7.49716C9.98768 7.71566 9.90004 7.92467 9.74553 8.07918C9.59103 8.23369 9.38202 8.32133 9.16352 8.32322C8.94502 8.32512 8.73452 8.24113 8.57735 8.08933L6.66652 6.1785V15.8335C6.66652 16.0545 6.57872 16.2665 6.42244 16.4228C6.26616 16.579 6.0542 16.6668 5.83318 16.6668C5.61217 16.6668 5.40021 16.579 5.24393 16.4228C5.08765 16.2665 4.99985 16.0545 4.99985 15.8335V6.1785L3.08902 8.08933C2.93185 8.24113 2.72135 8.32512 2.50285 8.32322C2.28435 8.32133 2.07534 8.23369 1.92084 8.07918C1.76633 7.92467 1.67869 7.71566 1.67679 7.49716C1.67489 7.27867 1.75889 7.06816 1.91068 6.911L5.24402 3.57766ZM13.3332 13.8218V4.16683C13.3332 3.94582 13.421 3.73385 13.5773 3.57757C13.7335 3.42129 13.9455 3.3335 14.1665 3.3335C14.3875 3.3335 14.5995 3.42129 14.7558 3.57757C14.9121 3.73385 14.9999 3.94582 14.9999 4.16683V13.8218L16.9107 11.911C17.0679 11.7592 17.2784 11.6752 17.4969 11.6771C17.7153 11.679 17.9244 11.7666 18.0789 11.9211C18.2334 12.0757 18.321 12.2847 18.3229 12.5032C18.3248 12.7217 18.2408 12.9322 18.089 13.0893L14.7557 16.4227C14.5994 16.5789 14.3875 16.6667 14.1665 16.6667C13.9455 16.6667 13.7336 16.5789 13.5774 16.4227L10.244 13.0893C10.0922 12.9322 10.0082 12.7217 10.0101 12.5032C10.012 12.2847 10.0997 12.0757 10.2542 11.9211C10.4087 11.7666 10.6177 11.679 10.8362 11.6771C11.0547 11.6752 11.2652 11.7592 11.4224 11.911L13.3332 13.8218Z"
-                                  fill="#919EAB"
-                                />
-                              </svg>
+                            {header.column.getCanSort() && (
+                              <SortingIcon sorting={header.column.getIsSorted() || false} />
                             )}
                           </div>
                         </>
@@ -244,12 +204,12 @@ export const Table = <T extends Record<string, any>>({
                 {row.getVisibleCells().map((cell, i) => (
                   <td
                     key={cell.id}
-                    className={cx('whitespace-nowrap py-6 text-sm text-secondary border-b border-[#E4EBF6]', {
+                    className={cx('whitespace-nowrap py-6 text-sm text-foreground border-b border-[#E4EBF6]', {
                       'text-info font-semibold':
                         cell.column.id === 'scheduled_date' && row.original.status === 'SCHEDULED_STATUS',
                       'text-green font-semibold':
                         cell.column.id === 'scheduled_date' && row.original.status === 'APPROVED_STATUS',
-                      'text-warning font-semibold':
+                      'text-warning-500 font-semibold':
                         cell.column.id === 'scheduled_date' && row.original.status === 'PROCESSING_STATUS',
                       'pl-12': i === 0,
                       'pl-10': i !== 0,
@@ -439,7 +399,7 @@ export const Table = <T extends Record<string, any>>({
               <span className="font-semibold" data-testid="studentsCountFooter-span">
                 {studentsCount}
               </span>
-              <span className="text-sm">Total alumnos</span>
+              <span className="text-sm">Total estudiantes</span>
             </div>
           ) : null}
           <span className="flex items-center gap-1 text-sm">

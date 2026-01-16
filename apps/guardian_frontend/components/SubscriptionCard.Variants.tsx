@@ -1,9 +1,12 @@
-import Link, { LinkProps } from 'next/link';
+import { UTMLink as Link } from './UtmNavigation';
 import * as OrderCard from '~/components/OrderCard';
 import ArrowSmallLeft from '~/public/icons/arrow-small-left.svg';
 import { Banner } from './Banner';
 import Warning from '~/public/icons/warning.svg';
 import { RetrieveSubscribableConceptsResponseDTO } from '@cometa/trpc';
+import { LinkProps } from 'next/link';
+import { useSendEvent } from '~/hooks/useSendEvent';
+import { TrackEvents } from '~/constants/events';
 
 interface SubscriptionCardActiveProps {
   hasDueOrder?: boolean;
@@ -82,6 +85,7 @@ export function SubscriptionCardAvailable({
   nextDue,
   hrefToPay,
 }: Readonly<SubscriptionCardAvailableProps>) {
+  const sendEvent = useSendEvent();
   return (
     <OrderCard.Root
       status="subscription"
@@ -95,7 +99,11 @@ export function SubscriptionCardAvailable({
             <Warning className="text-[#F46F6F] min-w-[14px] h-3.5 mt-1" />
             <span className="pr-5 font-medium">
               No puedes domiciliarte a este concepto porque tienes una orden vencida pendiente.{' '}
-              <Link className="font-semibold text-[#4A5CFF]" href={hrefToPay}>
+              <Link
+                className="font-semibold text-[#4A5CFF]"
+                href={hrefToPay}
+                onClick={() => sendEvent(TrackEvents.subscriptions.expiredOrderClicked)}
+              >
                 Ir a pagar.
               </Link>
             </span>
@@ -113,6 +121,7 @@ export function SubscriptionCardAvailable({
 
         <OrderCard.PayFooter
           testId="subscription-card-footer-1"
+          data-testid="subscription-card-footer-1"
           amount={`${price}`}
           pending={false}
           tooltip={

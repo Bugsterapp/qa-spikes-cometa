@@ -11,7 +11,7 @@ export type DrawerProps = ComponentProps<typeof Vaul.Root> & { minHeight?: strin
 export const Drawer = ({ children, minHeight = '45%', className, ...props }: DrawerProps) => (
   <Vaul.Root {...props}>
     <Vaul.Portal>
-      <Vaul.Overlay className="fixed inset-0 bg-black/40" />
+      <Vaul.Overlay className="fixed inset-0 bg-black/40 z-[3]" />
       <Vaul.Content
         style={
           {

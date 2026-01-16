@@ -1,3 +1,6 @@
+/**
+ * @deprecated: Do not use this enum use `TrackEvents` instead
+ */
 export enum Events {
   pay_with_card = 'portal: Pay With Card Selected',
   pay_with_bank_transfer = 'portal: Pay With Bank Transfer Selected',
@@ -12,4 +15,196 @@ export enum Events {
   payment_failed_change_method = 'Pago Fallido Cambiar método de pago',
   expired_link = 'portal: Page view - expired link',
   bank_transfer_initiated_kushki = 'portal: Bank Transfer Initiated - Kushki',
+  checkout_cart_opened = 'portal: Checkout Cart Opened',
 }
+
+export const PageViewedCategory = 'Portal';
+
+export const TrackEvents = {
+  auth: {
+    userLogin: 'portal: User Login',
+    expiredLink: 'portal: Page view - expired link',
+  },
+  home: {
+    pageViewed: 'Home — Por pagar/ordenes pasadas',
+    optionalOrdersTabClicked: 'portal: Optional Concepts Nav Clicked',
+    mandatoryOrdersTabClicked: 'portal: Mandatory Concepts Nav Clicked',
+    searchConceptsClicked: 'portal: Search Concepts Clicked',
+  },
+  global: {
+    menu: {
+      menuOpened: 'portal: Menu Open',
+      menuClosed: 'portal: Menu Close',
+      linkClicked: 'portal: Menu Link Clicked',
+    },
+    back: 'portal: Back Clicked',
+  },
+  students: {
+    pageViewed: 'Students',
+    editClicked: 'portal: Students Edit Clicked',
+    editNameClicked: 'portal: Students Edit Name Clicked',
+    editLastnameClicked: 'portal: Students Edit Lastname Clicked',
+    editBirthdayClicked: 'portal: Students Edit Birthday Clicked',
+    editCURPClicked: 'portal: Students Edit CURP Clicked',
+    editGenderClicked: 'portal: Students Edit Gender Clicked',
+    editContactStreetClicked: 'portal: Students Edit Contract Street Clicked',
+    editContactInteriorNumberClicked: 'portal: Students Edit Contact Interior Number Clicked',
+    editContactNeighborhoodClicked: 'portal: Students Edit Contact Neighborhood Clicked',
+    editContactMunicipalityClicked: 'portal: Students Edit Contact Municipality Clicked',
+    editContactZipCodeClicked: 'portal: Students Edit Contact Zip Code Clicked',
+    editConfirm: 'portal: Students Edit Confirm',
+  },
+  subscriptions: {
+    pageViewed: 'Domiciliaciones',
+    subscriptionDetailPageViewed: 'Detalle Domiciliaciones',
+    activeSubscription: {
+      clicked: 'portal: ActiveSubscription Clicked',
+      changeCardClicked: 'portal: ActiveSubscription ChangeCard Clicked',
+      changeCardConfirmed: 'portal: ActiveSubscription ChangeCard Confirmed',
+      cancelClicked: 'portal: ActiveSubscription Cancel Clicked',
+      cancelConfirmed: 'portal: ActiveSubscription Cancel Confirmed',
+    },
+    summaryPageViewed: 'Resumen Domiciliaciones',
+    checkoutOpened: 'portal: Subscription Checkout Opened',
+    expiredOrderClicked: 'portal: Subscriptions ExpiredOrder Clicked',
+    checkoutPageViewed: 'Checkout Domiciliaciones',
+    checkoutSuccessPageViewed: 'Confirmación Domiciliación',
+    subscription: {
+      submitted: 'portal: Subscription Submitted',
+      dismissed: 'portal: Subscription Dismissed',
+      failed: 'portal: Subscription Failed',
+      errorDismissed: 'portal: Subscription Error Dismissed',
+      selected: 'portal: Subscription Selected',
+      deselected: 'portal: Subscription Deselected',
+    },
+    tabs: {
+      availableClicked: 'portal: Subscriptions Available Clicked',
+      activeClicked: 'portal: Subscriptions Active Clicked',
+    },
+  },
+  billing: {
+    pageViewed: 'Datos de facturación',
+    taxId: {
+      change: 'portal: Change Invoicing Clicked',
+    },
+    form: {
+      personType: 'portal: Person Type Selected',
+      taxId: 'portal: Invoice Rfc Edited',
+      billingName: 'portal: Invoice Business Name Edited',
+      taxRegime: 'portal: Tax Regime Edited',
+      zipCode: 'portal: Zip Code Edited',
+      confirm: 'portal: onboarding invoice opt-in complete',
+      cancel: 'portal: Invoicing Cancel Edit',
+    },
+  },
+  history: {
+    pageViewed: 'Historial de pagos',
+    clickViewDetails: 'portal: Payment History Details Clicked',
+  },
+  paymentDetail: {
+    pageViewed: 'Detalle de pago',
+    downloadInvoice: 'portal: Download Invoice Clicked',
+    viewDetails: 'portal: Payment History Details Viewed',
+  },
+  invoice: {
+    requested: 'portal: Invoice | Requested',
+    generatedSuccess: 'portal: Invoice | Generated | Success',
+    generatedFailed: 'portal: Invoice | Generated | Failed',
+  },
+  faq: {
+    linkClicked: 'portal: Help clicked',
+  },
+  chat: {
+    pageViewed: 'Habla con nosotros',
+    linkClicked: 'portal: Chat clicked',
+  },
+  checkout: {
+    orderSelected: 'portal: Order Selected',
+    orderDeselected: 'portal: Order Deselected',
+    cartOpened: 'portal: Checkout Cart Opened',
+    summary: {
+      pageViewed: 'Resumen',
+      toggleDetails: 'portal: Summary Details Clicked',
+      payClicked: 'portal: Summary Pay Clicked',
+      invoiceConfirm: 'portal: Summary Woinvoice Confirm',
+      invoiceBack: 'portal: Summary Woinvoice Back Clicked',
+      registerTaxId: 'portal: Register Invoicing Clicked',
+      cancelInvoicing: 'portal: Invoice Opt-in Cancel Clicked',
+    },
+    paymentMethods: {
+      pageViewed: 'Metodo de Pago',
+      paymentMethodSelected: 'portal: Payment Method Selected',
+      payWithCard: 'portal: Pay With Card Selected',
+      payWithCash: 'portal: Pay With Cash Selected',
+      payWithBankTransfer: 'portal: Pay With Bank Transfer Selected',
+      payWithCrediko: 'portal: Pay With Crediko Selected',
+    },
+    payment: {
+      initiated: 'portal: Payment Initiated',
+      initiatedLegacy: 'portal: Payment Initiated Legacy',
+      success: 'portal: Payment Success',
+      failed: 'portal: Payment Failed',
+    },
+    bankTransfer: {
+      pageViewed: 'Metodo de pago - Transferencia - Kushki',
+      bankTransferInitiated: 'portal: Bank Transfer Initiated - Kushki',
+      bankCodeCopied: 'portal: Bank Transfer CLABE Copy Clicked',
+      bankTransferTaxIdCopied: 'portal: Bank Transfer RFC Copy Clicked',
+      bankTransferFinished: 'portal: Bank Transfer Finalize Clicked',
+    },
+    cash: {
+      pageViewed: 'Metodo de pago - Efectivo',
+      cashPaymentInitiated: 'portal: Cash Payment Initiated',
+      payOrderPageViewed: 'Efectivo - Orden de pago',
+      downloadPayOrder: 'portal: Cash Payment Download Clicked',
+      detailsClicked: 'portal: Cash Payment Where Details Clicked',
+      howToPayClicked: 'portal: Cash Payment How Details Clicked',
+      confirmCashPayment: 'portal: Cash Payment Confirm Submitted',
+    },
+    card: {
+      pageViewed: 'Metodo de pago - Tarjeta - Kushki',
+      pay: 'portal: Card Payment Submitted',
+      paymentFailed: 'portal: Card Payment Failed',
+      errorDismissed: 'portal: Card Payment Error Dismissed',
+    },
+    success: {
+      pageViewed: 'Pago Completado',
+      backToHome: 'portal: Payment Success Back To  Home Clicked',
+      whatsappLinkClicked: 'portal: Payment Success Whatsapp Clicked',
+    },
+  },
+  pending: {
+    pageViewed: 'Pagos en proceso',
+    viewPendingsClicked: 'portal: Payment In Progress Clicked',
+    viewDetails: 'portal: Payment In Progress View Order Clicked',
+    alreadyPaidClicked: 'portal: Payment In Progress Paid Clicked',
+    deletePayment: 'portal: Payment In Progress Delete Clicked',
+    confirmDeletion: 'portal: Payment In Progress Delete Confirmed',
+    backToHome: 'portal: Payment In Progress Back Home Clicked',
+    cancelDeletion: 'portal: Payment In Progress Delete Back Clicked',
+  },
+  profile: {
+    pageViewed: 'Perfil',
+    editClicked: 'portal: Profile Edit Clicked',
+    confirmClicked: 'portal: Profile Edit Confirm',
+  },
+  announcements: {
+    pageViewed: 'Home - Portal Comunicaciones - Comunicados',
+    homeLinkClicked: 'portal: Announcements Home Link Clicked',
+    announcmentsViewed: 'portal: Announcements List Viewed',
+    announcementTabClicked: 'portal: Announcements Tab Clicked',
+    announcementCardClicked: 'portal: Announcements Card Clicked',
+    announcementsScrolled: 'portal: Announcements List Scrolled',
+    detail: {
+      pageViewed: 'Detalle Comunicado',
+      backClicked: 'portal: Announcements Back Clicked',
+      multipleChoiceClicked: 'portal: Announcement Response Option Selected',
+      freeTextEdited: 'portal: Announcement Open Response Edited',
+      responseSubmitted: 'portal: Announcement Response Submitted',
+      attachmentDownloaded: 'portal: Announcement Attachment Downloaded',
+    },
+  },
+  performance: {
+    pageLoadTime: 'Page Load Time',
+  },
+} as const;

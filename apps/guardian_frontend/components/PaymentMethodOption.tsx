@@ -14,7 +14,7 @@ interface OptionProps extends RadioGroup.RadioGroupItemProps {
 const Option = ({ className, children, ...props }: OptionProps) => (
   <RadioGroup.Item
     className={cn(
-      "group items-center min-h-[83px] grid grid-cols-[30px_1fr_auto] gap-x-4 w-full bg-transparent group p-4 rounded-2xl border-2 border-solid data-[state='checked']:border-[#4A5CFF] data-[state='checked']:bg-white data-[state='unchecked']:border-[#344054] data-[state='unchecked']:disabled:border-[#C4C4C4]",
+      "group items-center min-h-[83px] grid grid-cols-[30px_1fr_auto] gap-x-4 w-full bg-transparent group p-4 rounded-2xl border-2 border-solid data-[state='checked']:border-[#4A5CFF] data-[state='checked']:bg-white data-[state='unchecked']:border-[#344054] data-[state='unchecked']:disabled:border-[#C4C4C4] disabled:cursor-not-allowed",
       className
     )}
     {...props}

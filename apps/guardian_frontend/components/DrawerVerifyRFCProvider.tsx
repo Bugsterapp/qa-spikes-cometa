@@ -1,22 +1,24 @@
-import { DetailedHTMLProps, InputHTMLAttributes, ReactNode, useState } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
-import * as Drawer from '~/components/atoms/guardians/Drawer';
-import IcInfo from '~/public/icons/information-white.svg';
-import IcFile from '~/public/icons/file.svg';
-import { Button } from '~/components/atoms/Button';
-import { useVerifyRFC } from '~/hooks/useVerifyRFC';
-import { useRouter } from 'next/router';
-import { HelperTextWithIcon } from '~/components/CustomFormField';
-import { cn } from '~/lib/cn';
-import BoxColorText from '~/components/atoms/guardians/BoxColorText';
-import { Color, addColorsToDependents } from '~/utils/colors';
-import { AssignBilling, RetrieveGuardian } from '@cometa/trpc';
-import { api } from '~/utils/api';
+import type { AssignBilling, RetrieveGuardian } from '@cometa/trpc';
 import { useSendTrackEvent } from '@cometa/utils';
-import { useAlert } from '~/hooks';
-import { useSelectedSchool } from '~/components/molecules/common/AuthGlobal';
-import { DependantErrorRFC } from '~/contexts/VerifyRFCContext';
+import * as Dialog from '@radix-ui/react-dialog';
+import { type DetailedHTMLProps, type InputHTMLAttributes, type ReactNode, useState } from 'react';
+import BoxColorText from '~/components/atoms/guardians/BoxColorText';
+import * as Drawer from '~/components/atoms/guardians/Drawer';
+import { HelperTextWithIcon } from '~/components/CustomFormField';
+import { useUTMRouter as useRouter } from '~/components/UtmNavigation';
+import { Button } from '~/components/ui/Button';
+import { TrackEvents } from '~/constants/events';
 import DrawerVerifyRFCContext from '~/contexts/DrawerVerifyRFCContext';
+import type { DependantErrorRFC } from '~/contexts/VerifyRFCContext';
+import { useAlert } from '~/hooks';
+import { useSendEvent } from '~/hooks/useSendEvent';
+import { useVerifyRFC } from '~/hooks/useVerifyRFC';
+import { cn } from '~/lib/cn';
+import IcFile from '~/public/icons/file.svg';
+import IcInfo from '~/public/icons/information-white.svg';
+import { useSelectedSchool } from '~/stores/globalStore';
+import { api } from '~/utils/api';
+import { addColorsToDependents, type Color } from '~/utils/colors';
 
 export enum VerifyStatus {
   INVOICE_DISMISSED = 'invoice_dismissed',
@@ -60,13 +62,16 @@ const useAssignBillings = (onSuccess: () => void, initSelectedRfc: Record<string
     assignBillings(data);
   };
   const multiAssignBillings = () => {
-    const data = Object.keys(selectedRfc).map<AssignBilling>((id) => ({ id: id, billing_guardian: selectedRfc[id] }));
+    const data = Object.keys(selectedRfc).map<AssignBilling>((id) => ({
+      id: id,
+      billing_guardian: selectedRfc[id],
+    }));
     assignBillings(data);
   };
   return {
     assignBillingGuardian,
     multiAssignBillings,
-    isLoading: mutation.isLoading,
+    isLoading: mutation.isPending,
     selectedRfc,
     updateSelectedRfc,
   };
@@ -85,19 +90,26 @@ enum OpenDrawersEnum {
 export const DrawerVerifyRFCProvider = ({ children }: DrawerVerifyRFCProviderProps) => {
   const router = useRouter();
   const selectedSchool = useSelectedSchool();
+  const sendEvent = useSendEvent();
 
   const { user, dependentsWithErrors: dependentsWithErrorsWithOutColor } = useVerifyRFC();
   const userHasRFC = !!(user?.id && user.tax_id && user.billing_name && user.taxing_system && user.postal_code);
   const dependentsWithErrors = addColorsToDependents<DependantErrorRFC>(dependentsWithErrorsWithOutColor);
 
   const initSelectedRfc =
-    user?.dependents?.reduce((acc, current) => ({ ...acc, [current.id]: current?.billing_guardian?.id || null }), {}) ??
-    {};
+    user?.dependents?.reduce(
+      (acc, current) => ({
+        ...acc,
+        [current.id]: current?.billing_guardian?.id || null,
+      }),
+      {}
+    ) ?? {};
 
   const [openDrawer, setOpenDrawer] = useState<OpenDrawersEnum | null>(null);
   const [selectedDependentId, setSelectedDependentId] = useState<string>('');
 
   const closeDrawers = () => {
+    sendEvent(TrackEvents.checkout.summary.cancelInvoicing);
     setOpenDrawer(null);
     setSelectedDependentId('');
   };
@@ -110,8 +122,12 @@ export const DrawerVerifyRFCProvider = ({ children }: DrawerVerifyRFCProviderPro
 
   const goToEditRFC = () => {
     router.push({
-      pathname: '/guardians/[guardianHash]/billing/edit',
-      query: { back: router.asPath, isEditing: true, guardianHash: router.query.guardianHash },
+      pathname: '/guardians/[guardianHash]/billing',
+      query: {
+        back: router.asPath,
+        isEditing: true,
+        guardianHash: router.query.guardianHash,
+      },
     });
   };
 
@@ -158,7 +174,14 @@ export const DrawerVerifyRFCProvider = ({ children }: DrawerVerifyRFCProviderPro
   };
 
   return (
-    <DrawerVerifyRFCContext.Provider value={{ handleAssignRFC, allSuccess, studentsWithoutInvoice, openHasError }}>
+    <DrawerVerifyRFCContext.Provider
+      value={{
+        handleAssignRFC,
+        allSuccess,
+        studentsWithoutInvoice,
+        openHasError,
+      }}
+    >
       {children}
       <DialogHasError open={openHasError} onClose={closeDrawers} />
       <DrawerIncompleteData
@@ -181,7 +204,10 @@ export const DrawerVerifyRFCProvider = ({ children }: DrawerVerifyRFCProviderPro
         open={openDrawer === OpenDrawersEnum.SELECTOR_RFC}
         onClose={closeDrawers}
         dependents={dependentsWithErrors}
-        goToEditRFC={goToEditRFC}
+        goToEditRFC={() => {
+          sendEvent(TrackEvents.checkout.summary.registerTaxId);
+          goToEditRFC();
+        }}
         user={user}
         hasRFC={userHasRFC}
         isLoading={isLoading}
@@ -345,8 +371,8 @@ const DrawerDependentErrorRFC = ({
                       openChangeRFC();
                     } else {
                       selectedDependent && assignBilling(selectedDependentId, null);
+                      onClose();
                     }
-                    onClose();
                   }}
                 >
                   {hasOtherRFC ? 'Seleccionar otro RFC' : 'No facturar'}

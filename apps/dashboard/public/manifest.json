@@ -1,9 +1,9 @@
 {
-  "name": "Dashboard Cometa",
+  "name": "Cometa",
   "short_name": "Cometa",
   "display": "standalone",
   "start_url": "/",
-  "theme_color": "#000000",
+  "theme_color": "#FB63AC",
   "background_color": "#ffffff",
   "icons": [
     {

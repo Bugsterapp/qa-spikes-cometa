@@ -1,5 +1,4 @@
 import { Combobox } from '@headlessui/react';
-import { IconButton } from '@mui/material';
 import React, { useEffect, useMemo } from 'react';
 import IcSearch from '/public/assets/icons/ic_search.svg';
 import IcClose from '/public/assets/icons/ic_close.svg';
@@ -43,14 +42,15 @@ const CAutocomplete = ({
       {currentValue ? (
         <div className="flex items-center justify-between relative w-full border-2 rounded-lg shadow-sm px-4 py-4 mb-4 text-left cursor-default focus-within:outline-none focus-within:ring-1 ring-blue-500 border-blue-500 sm:text-sm font-semibold group focus:ring-0">
           {currentValue.name}
-          <IconButton
+          <button
             onClick={() => {
               setSelected(null);
             }}
             disabled={disabled}
+            className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <IcClose fill="#212B36" />
-          </IconButton>
+          </button>
         </div>
       ) : (
         <>
@@ -64,7 +64,7 @@ const CAutocomplete = ({
                   }}
                   autoComplete="off"
                   placeholder={placeholder}
-                  className="block w-full pl-3 pr-10 py-2 text-base border-0 bg-transparent rounded-md focus:outline-none sm:text-sm focus:ring-0"
+                  className="block w-full pl-3 pr-10 py-2 text-base border-0 bg-transparent rounded-md focus:outline-none sm:text-sm focus:ring-0 truncate placeholder:text-gray-500 placeholder:overflow-visible"
                 />
               </Combobox.Button>
               <Combobox.Options
@@ -84,17 +84,11 @@ const CAutocomplete = ({
                             setSelected(item);
                           }}
                         >
-                          <span
-                            className={`${
-                              (item.is_assigned || item.is_already_assigned) && 'text-[#B3B3B3]'
-                            } text-base disabled:opacity-50`}
-                          >
-                            {item.name}
-                          </span>
+                          <span className="text-base disabled:opacity-50">{item.name}</span>
                           {item.is_assigned && <SelectChip theme="blue">Ya asignado</SelectChip>}
                           {item.is_active && <SelectChip theme="blue">Ciclo actual</SelectChip>}
                           {item.is_already_assigned && <SelectChip theme="blue">Ya asignada</SelectChip>}
-                          {item.type && !item.is_already_assigned && (
+                          {item.type && !item.is_already_assigned && item.value && (
                             <div className="py-1 px-2 rounded-lg text-[#229A16] bg-[#54D62C1F] font-bold text-xs w-max">
                               {statusPercent.includes(item.type)
                                 ? `${parseFloat(item.value)}%`

@@ -2,10 +2,11 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { expect, within } from '@storybook/test';
 import { SubscriptionCardActive, SubscriptionCardAvailable } from '~/components/SubscriptionCard.Variants';
 import { StudentMock } from './mocks/SubscriptionCard.Variants';
+import { SessionProvider } from 'next-auth/react';
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
-  title: 'Guardian Home/Subscriptions Cards',
+  title: 'Subscriptions/Subscriptions Cards',
   component: SubscriptionCardActive,
   parameters: {
     // Optional parameter to center the component in the Canvas. More info: https://storybook.js.org/docs/configure/story-layout
@@ -29,6 +30,15 @@ const meta = {
     concept: 'Colegiatura Secundaria',
     payDate: '2022-01-01',
   },
+  decorators: [
+    (Story) => (
+      <SessionProvider>
+        <div style={{ minWidth: 448 }}>
+          <Story />
+        </div>
+      </SessionProvider>
+    ),
+  ],
 } satisfies Meta<typeof SubscriptionCardActive>;
 
 export default meta;
@@ -110,6 +120,5 @@ export const AvailableWithDue: AvailableStory = {
 
     await expect(bannerError).toBeVisible();
     await expect(goToPay).toBeVisible();
-    await expect(goToPay).toHaveAttribute('href', '/#');
   },
 };

@@ -15,6 +15,7 @@ import { TRPCError } from '@trpc/server';
 
 const onboardingSchema = zodEnumFromObjKeys(OnboardingStageEnum);
 const taxingTypeSchema = z.nativeEnum(TaxingTypeEnum).or(z.nativeEnum(BlankEnum));
+
 const SECRET = process.env.NEXT_PUBLIC_API_SECRET ?? '';
 
 export type taxingTypeValues = z.infer<typeof taxingTypeSchema>;
@@ -171,4 +172,62 @@ export const guardianRouter = createTRPCRouter({
       Sentry.captureException(err);
     });
   }),
+  existGuardian: publicProcedure
+    .input(
+      z.object({
+        schoolId: z.string(),
+        query: z
+          .object({
+            id: z.string().optional(),
+            email: z.string().optional(),
+            phone: z.string().optional(),
+          })
+          .optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      const response = await ServiceClient.apiV1DashboardSchoolsGuardiansList(input.schoolId, input.query as any, {
+        headers: {
+          secret: SECRET,
+        },
+      });
+      return response.data;
+    }),
+  sendInvoicesToEmail: protectedProcedure
+    .input(
+      z.object({
+        payinId: z.string(),
+        schoolId: z.string(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        const response = await ServiceClient.apiV1SchoolsPayinsSendInvoicesToEmailCreate(
+          input.payinId,
+          input.schoolId,
+          {
+            headers: {
+              token: ctx.session.token,
+            },
+          }
+        );
+        return response.data;
+      } catch (err) {
+        Sentry.captureException(err);
+      }
+    }),
+  getGuardianDebt: protectedProcedure
+    .input(
+      z.object({
+        school_id: z.string(),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const response = await ServiceClient.apiAppSchoolsGuardiansDebtRetrieve(input.school_id, {
+        headers: {
+          token: ctx.session.token,
+        },
+      });
+      return response.data;
+    }),
 });

@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/nextjs';
 import { createTRPCRouter, protectedProcedure } from '../trpc';
 import { ServiceClient } from '~/utils/api';
 import { CardTypeEnum } from '@cometa/trpc';
+import { TRPCError } from '@trpc/server';
 
 const cardType = z.nativeEnum(CardTypeEnum);
 
@@ -23,8 +24,14 @@ export const subscriptionsRouter = createTRPCRouter({
         });
         const data = response.data;
         return data;
-      } catch (err) {
+      } catch (err: unknown) {
         Sentry.captureException(err);
+        if (err && (err as { status: number }).status === 404) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Subscription not found',
+          });
+        }
       }
     }),
   getSubscribables: protectedProcedure
@@ -94,7 +101,14 @@ export const subscriptionsRouter = createTRPCRouter({
         );
         return response.data;
       } catch (err) {
-        Sentry.captureException(err);
+        if ((err as any)?.error?.code !== '006') {
+          Sentry.captureException(err);
+        }
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: JSON.stringify((err as any)?.error || {}),
+          cause: (err as any)?.error,
+        });
       }
     }),
 });

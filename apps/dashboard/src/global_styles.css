@@ -12,7 +12,116 @@ we should be able to remove this in the future
 }
 
 :root {
+  /* Fuente principal */
+  --font-sans: 'Lota Grotesque', system-ui, sans-serif;
+
+  /* Cometa UI Tokens - Light Mode */
+  --background: 220 27% 98%;
+  --foreground: 225 26% 18%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 225 26% 18%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 225 26% 18%;
+
+  --primary: 263 100% 61%;
+  --primary-foreground: 0 0% 100%;
+  --primary-neutral: 225 26% 18%;
+
+  --secondary: 264 100% 96%;
+  --secondary-foreground: 263 100% 61%;
+  --secondary-neutral: 222 36% 95%;
+  --secondary-neutral-foreground: 225 26% 18%;
+
+  --muted: 220 27% 98%;
+  --muted-foreground: 226 12% 47%;
+
+  --accent: 222 36% 95%;
+  --accent-foreground: 225 26% 18%;
+
+  --destructive: 0 74% 63%;
+  --destructive-foreground: 0 86% 97%;
+
+  --border: 221 36% 86%;
+  --input: 221 36% 86%;
+  --ring: 226 21% 71%;
+
+  --radius: 0.625rem;
+
+  --chart-1: 130 66% 46%;
+  --chart-2: 209 100% 55%;
+  --chart-3: 330 99% 69%;
+  --chart-4: 25 100% 67%;
+  --chart-5: 45 100% 51%;
+
+  --sidebar-background: 220 27% 98%;
+  --sidebar-foreground: 226 12% 47%;
+  --sidebar-primary: 225 26% 18%;
+  --sidebar-primary-foreground: 220 27% 98%;
+  --sidebar-accent: 222 36% 95%;
+  --sidebar-accent-foreground: 225 26% 18%;
+  --sidebar-border: 221 36% 86%;
+  --sidebar-ring: 226 13% 55%;
+
+  --background-white: 0 0% 100%;
+  --overlay: 225 26% 18%;
+
+  /* Legacy variable - keeping for compatibility */
   --color-danger: 253, 98, 98;
+}
+
+.dark {
+  /* Cometa UI Tokens - Dark Mode */
+  --background: 0 0% 4%;
+  --foreground: 0 0% 98%;
+
+  --card: 0 0% 9%;
+  --card-foreground: 0 0% 98%;
+
+  --popover: 0 0% 15%;
+  --popover-foreground: 0 0% 98%;
+
+  --primary: 0 0% 90%;
+  --primary-foreground: 0 0% 9%;
+  --primary-neutral: 0 0% 98%;
+
+  --secondary: 222 36% 95%;
+  --secondary-foreground: 0 0% 98%;
+  --secondary-neutral: 0 0% 15%;
+  --secondary-neutral-foreground: 222 36% 95%;
+
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 64%;
+
+  --accent: 0 0% 25%;
+  --accent-foreground: 0 0% 98%;
+
+  --destructive: 0 91% 71%;
+  --destructive-foreground: 0 86% 97%;
+
+  --border: 0 0% 100%;
+  --input: 0 0% 100%;
+  --ring: 0 0% 45%;
+
+  --radius: 0.625rem;
+
+  --chart-1: 224 76% 48%;
+  --chart-2: 160 84% 39%;
+  --chart-3: 38 92% 50%;
+  --chart-4: 271 91% 65%;
+  --chart-5: 350 89% 60%;
+
+  --sidebar-background: 0 0% 9%;
+  --sidebar-foreground: 0 0% 98%;
+  --sidebar-primary: 224 76% 48%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 0 0% 15%;
+  --sidebar-accent-foreground: 0 0% 98%;
+  --sidebar-border: 0 0% 100%;
+  --sidebar-ring: 0 0% 32%;
+
+  --background-white: 0 0% 100%;
 }
 
 @tailwind base;
@@ -25,6 +134,10 @@ input[type='password'] {
 html {
   scrollbar-gutter: stable;
 }
+.scrollbar-unset {
+  scrollbar-gutter: unset;
+}
+
 .scrollbar-stable {
   scrollbar-gutter: stable;
 }
@@ -52,9 +165,7 @@ input:-webkit-autofill:focus {
 }
 @font-face {
   font-family: 'Lota Grotesque Bold It';
-  src:
-    url('/grotesque-font/LotaGrotesque-BoldIt.woff2') format('woff2'),
-    url('/grotesque-font/LotaGrotesque-BoldIt.woff') format('woff');
+  src: url('/fonts/Lota-Grotesque-Bold-Italic.woff2') format('woff2');
   font-weight: bold;
   font-style: italic;
   font-display: swap;
@@ -62,9 +173,7 @@ input:-webkit-autofill:focus {
 
 @font-face {
   font-family: 'Lota Grotesque';
-  src:
-    url('/grotesque-font/LotaGrotesque-Black.woff2') format('woff2'),
-    url('/grotesque-font/LotaGrotesque-Black.woff') format('woff');
+  src: url('/fonts/Lota-Grotesque-Black.woff2') format('woff2');
   font-weight: 900;
   font-style: normal;
   font-display: swap;
@@ -72,9 +181,7 @@ input:-webkit-autofill:focus {
 
 @font-face {
   font-family: 'Lota Grotesque Black It';
-  src:
-    url('/grotesque-font/LotaGrotesque-BlackIt.woff2') format('woff2'),
-    url('/grotesque-font/LotaGrotesque-BlackIt.woff') format('woff');
+  src: url('/fonts/Lota-Grotesque-Black-Italic.woff2') format('woff2');
   font-weight: 900;
   font-style: italic;
   font-display: swap;
@@ -82,9 +189,7 @@ input:-webkit-autofill:focus {
 
 @font-face {
   font-family: 'Lota Grotesque';
-  src:
-    url('/grotesque-font/LotaGrotesque-Bold.woff2') format('woff2'),
-    url('/grotesque-font/LotaGrotesque-Bold.woff') format('woff');
+  src: url('/fonts/Lota-Grotesque-Bold.woff2') format('woff2');
   font-weight: bold;
   font-style: normal;
   font-display: swap;
@@ -92,9 +197,7 @@ input:-webkit-autofill:focus {
 
 @font-face {
   font-family: 'Lota Grotesque Extra';
-  src:
-    url('/grotesque-font/LotaGrotesque-ExtraLight.woff2') format('woff2'),
-    url('/grotesque-font/LotaGrotesque-ExtraLight.woff') format('woff');
+  src: url('/fonts/Lota-Grotesque-Extra-Light.woff2') format('woff2');
   font-weight: 200;
   font-style: normal;
   font-display: swap;
@@ -102,9 +205,7 @@ input:-webkit-autofill:focus {
 
 @font-face {
   font-family: 'Lota Grotesque Extra Light It';
-  src:
-    url('/grotesque-font/LotaGrotesque-ExtraLightIt.woff2') format('woff2'),
-    url('/grotesque-font/LotaGrotesque-ExtraLightIt.woff') format('woff');
+  src: url('/fonts/Lota-Grotesque-Extra-Light-Italic.woff2') format('woff2');
   font-weight: 200;
   font-style: italic;
   font-display: swap;
@@ -112,9 +213,7 @@ input:-webkit-autofill:focus {
 
 @font-face {
   font-family: 'Lota Grotesque Semi Bold It';
-  src:
-    url('/grotesque-font/LotaGrotesque-SemiBoldIt.woff2') format('woff2'),
-    url('/grotesque-font/LotaGrotesque-SemiBoldIt.woff') format('woff');
+  src: url('/fonts/Lota-Grotesque-Semi-Bold-Italic.woff2') format('woff2');
   font-weight: 600;
   font-style: italic;
   font-display: swap;
@@ -122,9 +221,7 @@ input:-webkit-autofill:focus {
 
 @font-face {
   font-family: 'Lota Grotesque';
-  src:
-    url('/grotesque-font/LotaGrotesque-Light.woff2') format('woff2'),
-    url('/grotesque-font/LotaGrotesque-Light.woff') format('woff');
+  src: url('/fonts/Lota-Grotesque-Light.woff2') format('woff2');
   font-weight: 300;
   font-style: normal;
   font-display: swap;
@@ -132,9 +229,7 @@ input:-webkit-autofill:focus {
 
 @font-face {
   font-family: 'Lota Grotesque';
-  src:
-    url('/grotesque-font/LotaGrotesque-Regular.woff2') format('woff2'),
-    url('/grotesque-font/LotaGrotesque-Regular.woff') format('woff');
+  src: url('/fonts/Lota-Grotesque-Regular.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -142,9 +237,7 @@ input:-webkit-autofill:focus {
 
 @font-face {
   font-family: 'Lota Grotesque It';
-  src:
-    url('/grotesque-font/LotaGrotesque-RegularIt.woff2') format('woff2'),
-    url('/grotesque-font/LotaGrotesque-RegularIt.woff') format('woff');
+  src: url('/fonts/Lota-Grotesque-Regular-Italic.woff2') format('woff2');
   font-weight: normal;
   font-style: italic;
   font-display: swap;
@@ -152,9 +245,7 @@ input:-webkit-autofill:focus {
 
 @font-face {
   font-family: 'Lota Grotesque Light It';
-  src:
-    url('/grotesque-font/LotaGrotesque-LightIt.woff2') format('woff2'),
-    url('/grotesque-font/LotaGrotesque-LightIt.woff') format('woff');
+  src: url('/fonts/Lota-Grotesque-Light-Italic.woff2') format('woff2');
   font-weight: 300;
   font-style: italic;
   font-display: swap;
@@ -162,9 +253,7 @@ input:-webkit-autofill:focus {
 
 @font-face {
   font-family: 'Lota Grotesque Semi';
-  src:
-    url('/grotesque-font/LotaGrotesque-SemiBold.woff2') format('woff2'),
-    url('/grotesque-font/LotaGrotesque-SemiBold.woff') format('woff');
+  src: url('/fonts/Lota-Grotesque-Semi-Bold.woff2') format('woff2');
   font-weight: 600;
   font-style: normal;
   font-display: swap;
@@ -172,9 +261,7 @@ input:-webkit-autofill:focus {
 
 @font-face {
   font-family: 'Lota Grotesque';
-  src:
-    url('/grotesque-font/LotaGrotesque-Thin.woff2') format('woff2'),
-    url('/grotesque-font/LotaGrotesque-Thin.woff') format('woff');
+  src: url('/fonts/Lota-Grotesque-Thin.woff2') format('woff2');
   font-weight: 100;
   font-style: normal;
   font-display: swap;
@@ -182,9 +269,7 @@ input:-webkit-autofill:focus {
 
 @font-face {
   font-family: 'Lota Grotesque Thin It';
-  src:
-    url('/grotesque-font/LotaGrotesque-ThinIt.woff2') format('woff2'),
-    url('/grotesque-font/LotaGrotesque-ThinIt.woff') format('woff');
+  src: url('/fonts/Lota-Grotesque-Thin-Italic.woff2') format('woff2');
   font-weight: 100;
   font-style: italic;
   font-display: swap;
@@ -218,10 +303,9 @@ input:-webkit-autofill {
 .border-radius-none {
   border-radius: 0px !important;
 }
-
 *:not(.scrollbar)::-webkit-scrollbar {
-  width: 6px;
-  height: 5px;
+  width: 8px;
+  height: 8px;
   background-color: transparent;
 }
 
@@ -236,7 +320,11 @@ input:-webkit-autofill {
     color-stop(0.86, rgb(186, 186, 186))
   );
 }
-table td:last-child {
+table:not(.first-column-expanded) td:last-child {
+  width: 100%;
+}
+
+table.first-column-expanded td:first-child {
   width: 100%;
 }
 @media print {
@@ -345,7 +433,19 @@ input:checked + div svg {
   height: 12px;
   @apply bg-gray-200;
 }
-
+html::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  @apply bg-gray-200;
+}
+.scrollbar::-webkit-scrollbar-thumb {
+  width: 12px;
+  height: 12px;
+  display: block;
+  background-clip: padding-box;
+  border-radius: 50px;
+  background-color: rgba(0, 0, 0, 0.161);
+}
 .scrollbar::-webkit-scrollbar-thumb {
   width: 12px;
   height: 12px;
@@ -355,12 +455,14 @@ input:checked + div svg {
   background-color: rgba(0, 0, 0, 0.161);
 }
 
-.scrollbar::-webkit-scrollbar-thumb:hover {
+html::-webkit-scrollbar-thumb:hover {
   background-color: rgb(205, 207, 208);
   @apply transition-colors;
 }
-
-.scrollbar::-webkit-scrollbar-corner {
+[data-radix-popper-content-wrapper] {
+  z-index: 99 !important;
+}
+html::-webkit-scrollbar-corner {
   width: 20px;
   height: 20px;
 }
@@ -408,6 +510,15 @@ input:checked + div svg {
   background-position: 40% 50%;
 }
 
+.scroll-hidden {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
+.scroll-hidden::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
+
 .grid-area-1 {
   grid-area: 1/1;
 }
@@ -424,6 +535,56 @@ input[role='dashboard-input']:focus {
   --tw-ring-opacity: 0;
   --tw-ring-color: transparent;
   box-shadow: none;
+}
+
+.customScrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 64px;
+  background-color: #f5f7fa;
+}
+
+.customScrollbar::-webkit-scrollbar-thumb {
+  border-radius: 5px;
+  background: #535765;
+  max-height: 64px;
+}
+
+.customScrollbar::-webkit-scrollbar-track {
+  background-color: #d9d9d9;
+}
+
+.customScrollbar::-webkit-scrollbar-button {
+  display: none;
+}
+
+.customScrollbar::-webkit-scrollbar-thumb:vertical {
+  min-height: 64px;
+}
+
+/* sdsd */
+
+.navBarScrollBar::-webkit-scrollbar {
+  width: 6px;
+  height: 64px;
+  background-color: #f5f7fa;
+}
+
+.navBarScrollBar::-webkit-scrollbar-thumb {
+  border-radius: 5px;
+  background: #a2abb9;
+  max-height: 64px;
+}
+
+.navBarScrollBar::-webkit-scrollbar-track {
+  background-color: #d9d9d9;
+}
+
+.navBarScrollBar::-webkit-scrollbar-button {
+  display: none;
+}
+
+.navBarScrollBar::-webkit-scrollbar-thumb:vertical {
+  max-height: 64px;
 }
 /* .rc-tree {
   margin: 0;
@@ -493,7 +654,7 @@ input[role='dashboard-input']:focus {
 .rc-tree .rc-tree-node-content-wrapper {
   display: flex;
   width: 100%;
-  max-width: 500px;
+  /* max-width: 500px; */
   align-items: center;
   height: 72px;
   padding: 1px 3px 0 0;
@@ -503,7 +664,7 @@ input[role='dashboard-input']:focus {
 
 .rc-tree span.rc-tree-switcher {
   align-self: center;
-  padding-left: 16px;
+  padding-left: 24px;
   padding-bottom: 10px;
 }
 
@@ -525,93 +686,6 @@ input[role='dashboard-input']:focus {
   margin: 0 3px;
   background-position: 0 0;
 }
-/*
-.rc-tree-treenode span.rc-tree-checkbox-checked {
-  background-position: -14px 0;
-}
-
-.rc-tree-treenode span.rc-tree-checkbox-indeterminate {
-  background-position: -14px -28px;
-}
-
-.rc-tree-treenode span.rc-tree-checkbox-disabled {
-  background-position: 0 -56px;
-}
-
-.rc-tree-treenode span.rc-tree-checkbox-checked.rc-tree-checkbox-disabled {
-  background-position: -14px -56px;
-}
-
-.rc-tree-treenode span.rc-tree-checkbox-indeterminate.rc-tree-checkbox-disabled {
-  position: relative;
-  background: #ccc;
-  border-radius: 3px;
-}
-
-.rc-tree-treenode span.rc-tree-checkbox-indeterminate.rc-tree-checkbox-disabled::after {
-  position: absolute;
-  top: 5px;
-  left: 3px;
-  width: 5px;
-  height: 0;
-  border: 2px solid #fff;
-  border-top: 0;
-  border-left: 0;
-  transform: scale(1);
-  content: ' ';
-}
-
-.rc-tree:not(.rc-tree-show-line) .rc-tree-treenode .rc-tree-switcher-noop {
-  background: none;
-}
-
-.rc-tree.rc-tree-show-line .rc-tree-treenode:not(:last-child) > ul {
-  background: url('data:image/gif;base64,R0lGODlhCQACAIAAAMzMzP///yH5BAEAAAEALAAAAAAJAAIAAAIEjI9pUAA7') 0 0 repeat-y;
-}
-.rc-tree.rc-tree-show-line .rc-tree-treenode:not(:last-child) > .rc-tree-switcher-noop {
-  background-position: -56px -18px;
-}
-
-.rc-tree.rc-tree-show-line .rc-tree-treenode:last-child > .rc-tree-switcher-noop {
-  background-position: -56px -36px;
-}
-
-.rc-tree-child-tree {
-  display: none;
-}
-
-.rc-tree-child-tree-open {
-  display: block;
-}
-
-.rc-tree-treenode-disabled > span:not(.rc-tree-switcher),
-.rc-tree-treenode-disabled > a,
-.rc-tree-treenode-disabled > a span {
-  color: #767676;
-  cursor: not-allowed;
-}
-
-.rc-tree-treenode-active {
-  background: rgba(0, 0, 0, 0.1);
-}
-
-.rc-tree-node-selected {
-  background-color: #ffe6b0;
-  box-shadow: 0 0 0 1px #ffb951;
-  opacity: 0.8;
-}
-
-.rc-tree-icon__open {
-  margin-right: 2px;
-  vertical-align: top;
-  background-position: -110px -16px;
-}
-
-.rc-tree-icon__close {
-  margin-right: 2px;
-  vertical-align: top;
-  background-position: -110px 0;
-} */
 
 .rc-tree-title {
   width: 100%;
@@ -627,3 +701,53 @@ input[role='dashboard-input']:focus {
   display: inline-block;
   width: 40px;
 }
+
+/* styles.css */
+.ScrollAreaRoot {
+  width: 100%;
+  height: 100%;
+}
+
+.ScrollAreaViewport {
+  width: 100%;
+  height: 100%;
+}
+
+.ScrollAreaScrollbar {
+  width: 4px;
+  padding: 5px 2px;
+}
+
+.ScrollAreaThumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* NProgress styles */
+#nprogress {
+  pointer-events: none;
+}
+
+#nprogress .bar {
+  @apply fixed top-0 left-0 w-full h-[2px] z-[1400];
+  background-color: #00ab55;
+  box-shadow: 0 0 2px #00ab55;
+}
+
+#nprogress .peg {
+  @apply block absolute right-0 opacity-100 w-[100px] h-full;
+  transform: rotate(3deg) translate(0px, -4px);
+  box-shadow:
+    0 0 10px #00ab55,
+    0 0 5px #00ab55;
+}
+
+@source "../node_modules/streamdown/dist/index.js";

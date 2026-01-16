@@ -1,13 +1,15 @@
-// theme
-import palette from '../theme/palette';
-
 // ----------------------------------------------------------------------
 
 export const colorPresets = [
   // DEFAULT
   {
     name: 'default',
-    ...palette.light.primary,
+    lighter: '#C8FACD',
+    light: '#5BE584',
+    main: '#00AB55',
+    dark: '#007B55',
+    darker: '#005249',
+    contrastText: '#fff',
   },
   // PURPLE
   {
@@ -27,7 +29,7 @@ export const colorPresets = [
     main: '#1CCAFF',
     dark: '#0E77B7',
     darker: '#053D7A',
-    contrastText: palette.light.grey[800],
+    contrastText: '#212B36',
   },
   // BLUE
   {
@@ -47,7 +49,7 @@ export const colorPresets = [
     main: '#fda92d',
     dark: '#B66816',
     darker: '#793908',
-    contrastText: palette.light.grey[800],
+    contrastText: '#212B36',
   },
   // RED
   {

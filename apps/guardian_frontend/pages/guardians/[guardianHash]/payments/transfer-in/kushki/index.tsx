@@ -1,23 +1,34 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Container, Box, Typography, IconButton, Divider, Button } from '@mui/material';
-import { getSession } from 'next-auth/react';
+import { useCallback, useEffect, useState, useRef } from 'react';
+import { getSession, useSession } from 'next-auth/react';
 import Head from 'next/head';
-import { useRouter } from 'next/router';
+import { useUTMRouter as useRouter } from '~/components/UtmNavigation';
 import KushkiTransferInCard from '~/components/molecules/guardians/KushkiTransferInCard';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import StepsToPay from '~/components/molecules/guardians/StepsToPay';
 import { TRANSFER_IN_KUSHKI } from '~/utils/stepsToPay';
-import PoweredByKushki from '~/components/atoms/guardians/PoweredByKushki';
 import Image from 'next/image';
 import type { Session } from 'next-auth';
-import useSendPageViewedEvent from '~/hooks/useSendPageViewedEvent';
 import { GetServerSideProps } from 'next';
+import { InformationDrawer } from '~/components/Drawer.Variants';
 import { catchPaymentPage } from '~/utils/processCatch';
-import { useSelectionStore } from '@cometa/hooks';
+import { ProjectEnum } from '@cometa/hooks';
 import { getCommissionValues } from '~/utils/kushkiCreditCard';
-import { PreferenceTypeEnum } from '@cometa/trpc';
+import { PreferenceTypeEnum, CreateRefundDashboardRequestDTOPaymentMethodEnum } from '@cometa/trpc';
 import { StockErrorAlert } from '~/components/StockErrorAlert';
 import { isStockError } from '~/utils/stocks';
+import { useCartItems, useSelectionStore } from '~/stores/selectionStorePersisted';
+import { useSendEvent, useSendPageEvent } from '~/hooks/useSendEvent';
+import { PageViewedCategory, TrackEvents } from '~/constants/events';
+import { appendUtmParameters } from '~/lib/destinationWithUTM';
+import { useFlag } from '~/components/flags/FlagsProvider';
+import { useCheckoutPayment } from '~/hooks/usePayment';
+import { useAlert } from '~/hooks';
+import { Button } from '~/components/ui/Button';
+import Chevron from '~/public/icons/ic_arrow_right.svg';
+
+type PaymentContent = {
+  payin_id?: string;
+  clabe?: string;
+};
 
 interface KushkiTransferProps {
   session: Session;
@@ -37,9 +48,32 @@ function KushkiTransfer({ session, commissionValues }: KushkiTransferProps) {
   const { guardianHash } = router.query;
   const [hasClabe, setHasClabe] = useState(false);
   const { selectedItems, clear } = useSelectionStore();
+  const cartItems = useCartItems<ProjectEnum.PORTAL>();
   const currency = selectedItems?.[0]?.currency || 'MXN';
   const itemsQuantity = selectedItems?.length;
   const [stockError, setStockError] = useState(false);
+  const sendEvent = useSendEvent();
+  const sendPageEvent = useSendPageEvent();
+  const { data: sessionData } = useSession();
+  const { setAlert } = useAlert();
+  const [displayAlert, setDisplayAlert] = useState(false);
+
+  const [newCheckoutFlag] = useFlag('new-checkout-method');
+  const useNewCheckoutMethod = newCheckoutFlag?.variationKey === 'on';
+
+  const { checkoutMutation, pollPaymentStatus, isProcessing, getTimeToComplete, setPaymentInitiationTime } =
+    useCheckoutPayment({
+      onError() {
+        setAlert('No es posible realizar esta acción en este momento');
+      },
+      onTimeout() {
+        setDisplayAlert(true);
+      },
+    });
+
+  useEffect(() => {
+    sendPageEvent(TrackEvents.checkout.bankTransfer.pageViewed, PageViewedCategory);
+  }, []);
 
   const handlerClabe = () => {
     setHasClabe(true);
@@ -47,6 +81,7 @@ function KushkiTransfer({ session, commissionValues }: KushkiTransferProps) {
 
   const goToHome = useCallback(() => {
     if (hasClabe) {
+      sendEvent(TrackEvents.checkout.bankTransfer.bankTransferFinished);
       router.push({
         pathname: `/guardians/${guardianHash}/`,
         query: { tour: 'pending', status: 'pending', type: 'transfer' },
@@ -56,11 +91,46 @@ function KushkiTransfer({ session, commissionValues }: KushkiTransferProps) {
     }
   }, [hasClabe, router, guardianHash]);
 
-  useSendPageViewedEvent('Metodo de pago - Transferencia - Kushki');
-
   useEffect(() => {
     if (!itemsQuantity) goToHome();
   }, [itemsQuantity, goToHome]);
+
+  const handlePaymentStatusChange = useRef<() => void>(() => undefined);
+
+  handlePaymentStatusChange.current = () => {
+    if (pollPaymentStatus.data?.status === 'pending') {
+      const timeToComplete = getTimeToComplete();
+      const payinId =
+        (pollPaymentStatus.data?.content as PaymentContent)?.payin_id || checkoutMutation.data?.payment_id;
+
+      sendEvent(TrackEvents.checkout.payment.success, {
+        payin_id: payinId,
+        amount: commissionValues.TRANSFER_IN.total,
+        payment_method: CreateRefundDashboardRequestDTOPaymentMethodEnum.Transfer,
+        time_to_complete_seconds: timeToComplete,
+        items_count: itemsQuantity,
+      });
+
+      setHasClabe(true);
+    } else if (pollPaymentStatus.data?.status === 'rejected') {
+      const timeToComplete = getTimeToComplete();
+
+      sendEvent(TrackEvents.checkout.payment.failed, {
+        failure_reason: 'Bank transfer rejected',
+        error_code: 'bank_transfer_rejected',
+        amount: commissionValues.TRANSFER_IN.total,
+        payment_method: CreateRefundDashboardRequestDTOPaymentMethodEnum.Transfer,
+        time_to_complete_seconds: timeToComplete,
+      });
+
+      setAlert('No es posible realizar esta acción en este momento');
+    }
+  };
+
+  // Monitor payment status and redirect when payment is successful
+  useEffect(() => {
+    handlePaymentStatusChange.current();
+  }, [pollPaymentStatus.data, setAlert]);
 
   // clear on unmount
   useEffect(
@@ -70,55 +140,87 @@ function KushkiTransfer({ session, commissionValues }: KushkiTransferProps) {
     [clear, hasClabe]
   );
 
-  const items = selectedItems?.map((item) => ({
-    order: item.order_id,
-    student: item.student.id,
-  }));
-
   if (!itemsQuantity) return null;
 
   return (
     <>
-      <Head>
-        <title>Transferencia</title>
-      </Head>
-      <Container maxWidth="sm">
-        <Divider />
-        <Box display="flex" alignItems="center">
-          <IconButton
-            onClick={() => router.back()}
-            sx={{
-              backgroundColor: 'white.main',
-              m: 2,
-            }}
+      <InformationDrawer
+        intent="error"
+        open={displayAlert}
+        title="Se produjo un error al procesar la operación"
+        description=""
+        onClick={() => {
+          setDisplayAlert(false);
+          router.push(`/guardians/${guardianHash}`);
+        }}
+      />
+      <div className="max-w-[600px] mx-auto">
+        <div className="border-b" />
+        <header className="py-5 px-7  flex items-center gap-5 border-b border-[#E3E0FF] border-solid">
+          <button
+            className="flex items-center justify-center p-3 bg-white rounded-full w-11"
+            onClick={() => router.push(`/guardians/${guardianHash}/payments`)}
           >
-            <ChevronLeftIcon color="primary" />
-          </IconButton>
-          <Box>
-            <Typography variant="heading2" color="#091A7A">
-              Transferencia
-            </Typography>
-          </Box>
-        </Box>
-        <Divider />
-        <Box sx={{ p: 2.5 }}>
-          <Typography color="#212B36" variant="h6">
-            Instrucciones
-          </Typography>
+            <Chevron className="rotate-180 text-[#4A5CFF] w-3" />
+          </button>
+          <h2 className="text-[#213372] font-semibold">Transferencia</h2>
+        </header>
+        <div className="p-2.5">
+          <h3 className="text-[#212B36] text-lg font-semibold">Instrucciones</h3>
           &nbsp;
-          <Typography color="#637381" paragraph variant="body1">
+          <p className="text-[#637381]">
             Para poder realizar la transferencia, debes primero generar la CLABE. Una vez generada debes seguir las
             instrucciones para completar la transferencia.
-          </Typography>
-        </Box>
-        <Divider orientation="horizontal" sx={{ mb: 4, mr: 2, ml: 2 }} />
-        {Boolean(itemsQuantity) && (
+          </p>
+        </div>
+        {Boolean(itemsQuantity) && useNewCheckoutMethod ? (
+          pollPaymentStatus.data?.content ? (
+            <KushkiTransferInCard
+              hasCommission={!!commissionValues.TRANSFER_IN.commission}
+              handlerClabe={() => void 0}
+              guardian={session?.user?.id || ''}
+              currency={currency}
+              items={cartItems}
+              setStockError={setStockError}
+              prices={{
+                subtotal: commissionValues.TRANSFER_IN.subtotal,
+                commissions: commissionValues.TRANSFER_IN.commission,
+                total: commissionValues.TRANSFER_IN.total,
+              }}
+              disableMutation
+              clabeData={{ clabe: (pollPaymentStatus.data.content as Record<string, string>).clabe }}
+            />
+          ) : (
+            <Button
+              className="h-14 rounded-full w-full mx-auto max-w-[500px] px-6 mb-3 block"
+              onClick={() => {
+                sendEvent(TrackEvents.checkout.bankTransfer.bankTransferInitiated);
+                setPaymentInitiationTime();
+                sendEvent(TrackEvents.checkout.payment.initiated, {
+                  guardian_id: sessionData?.user.id,
+                  payment_method: CreateRefundDashboardRequestDTOPaymentMethodEnum.Transfer,
+                  amount: commissionValues.TRANSFER_IN.total,
+                  session_id: sessionData?.user.id,
+                  items_count: itemsQuantity,
+                });
+                checkoutMutation.mutate({
+                  items: cartItems,
+                  preferenceType: PreferenceTypeEnum.TRANSFER_IN,
+                  guardian: sessionData?.user.id || '',
+                });
+              }}
+              disabled={isProcessing}
+            >
+              {isProcessing ? 'Generando CLABE...' : 'Generar CLABE'}
+            </Button>
+          )
+        ) : (
           <KushkiTransferInCard
             hasCommission={!!commissionValues.TRANSFER_IN.commission}
             handlerClabe={handlerClabe}
             guardian={session?.user?.id || ''}
             currency={currency}
-            items={items}
+            items={cartItems}
             setStockError={setStockError}
             prices={{
               subtotal: commissionValues.TRANSFER_IN.subtotal,
@@ -127,62 +229,44 @@ function KushkiTransfer({ session, commissionValues }: KushkiTransferProps) {
             }}
           />
         )}
-        <Box
-          sx={{
-            pt: 3,
-            pr: 1,
-            pl: 1,
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
-          <Typography color="#091A7A" variant="h6" align="center">
-            ¿Cómo Pagar?
-          </Typography>
+        <div className="pt-3 px-1 flex flex-col">
+          <h3 className="text-[#091A7A] text-lg font-semibold text-center">¿Cómo Pagar?</h3>
           &nbsp;
           <StepsToPay steps={TRANSFER_IN_KUSHKI} />
-        </Box>
+        </div>
         {hasClabe && (
-          <Box display="flex" justifyContent="center" pt={4}>
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={goToHome}
-              sx={{
-                height: 56,
-                width: '100%',
-                borderRadius: 16,
-              }}
-            >
-              <Typography>Finalizar</Typography>
+          <div className="flex justify-center pt-4">
+            <Button className="h-14 rounded-full w-full mx-auto max-w-[500px] px-6" onClick={goToHome}>
+              Finalizar
             </Button>
-          </Box>
+          </div>
         )}
-        <Box mb={5} mt={16}>
-          <PoweredByKushki />
-        </Box>
-        <Divider orientation="horizontal" sx={{ mb: 4, mr: 2, ml: 2 }} />
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            mt: 2,
-            mb: 8,
-            mr: 2,
-            ml: 2,
-            alignItems: 'center',
-          }}
-        >
+        <div className="mb-5 mt-16 flex justify-center">
+          <Image src="/images/kushki-logo.svg" alt="Kushki" width={103} height={24} />
+        </div>
+        <div className="border-b mx-2 mb-4" />
+        <div className="flex justify-center items-center mt-2 mb-8 mx-2">
           <Image src="/images/pci-dss-compliant-logo.svg" alt="PCIDSS-logo" height={50} width={120} />
-          <Typography color="#919EAB" variant="caption" fontWeight={400} sx={{ ml: 1 }}>
+          <p className="text-[#919EAB] text-xs ml-1">
             Este pago es procesado de forma segura por Kushki, un proveedor de pagos PCI de nivel 1.
-          </Typography>
-        </Box>
+          </p>
+        </div>
         <StockErrorAlert stockError={stockError} setStockError={setStockError} resetSelection={clear} />
-      </Container>
+      </div>
     </>
   );
 }
+
+KushkiTransfer.getLayout = function getLayout(page: React.ReactElement) {
+  return (
+    <>
+      <Head>
+        <title>Transferencia</title>
+      </Head>
+      <div className="max-w-md mx-auto">{page}</div>
+    </>
+  );
+};
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const { guardianHash } = context.query;
@@ -198,11 +282,11 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     };
   } catch (err) {
     catchPaymentPage(err, context, 'GSSP Credit Card');
-    isStockError(err, guardianHash);
+    isStockError(err, guardianHash, context.query);
     return {
       redirect: {
         permanent: false,
-        destination: `/guardians/${guardianHash}`,
+        destination: appendUtmParameters(`/guardians/${guardianHash}`, context.query),
       },
     };
   }

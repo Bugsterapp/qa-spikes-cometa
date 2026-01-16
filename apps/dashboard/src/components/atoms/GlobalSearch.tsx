@@ -1,6 +1,7 @@
-import { useState, type ButtonHTMLAttributes, useEffect } from 'react';
+import { useState, type ButtonHTMLAttributes, useEffect, useMemo, useRef, useCallback } from 'react';
 import { cn } from '/src/utils/cn';
 import { debounce } from 'lodash';
+import { useTableConfig } from '/src/hooks/useTableConfig';
 
 type GlobalSearchProps = {
   search: string;
@@ -8,28 +9,108 @@ type GlobalSearchProps = {
   placeholder: string;
   typeButton?: ButtonHTMLAttributes<HTMLButtonElement>['type'];
   className?: string;
+  variant?: 'classic';
+  isLegacy?: boolean;
+  tableName?: string;
 };
 
-export function GlobalSearch({ search, setSearch, placeholder, typeButton, className }: GlobalSearchProps) {
+interface SearchFiltersConfig {
+  search?: string;
+}
+
+export function GlobalSearch({
+  search,
+  setSearch,
+  placeholder,
+  typeButton,
+  className,
+  variant,
+  isLegacy = true,
+  tableName,
+}: GlobalSearchProps) {
   const [localSearch, setLocalSearch] = useState(search);
+  const isTypingRef = useRef(false);
 
-  const debouncedSetSearch = debounce(setSearch, 100);
-
-  useEffect(() => {
-    setLocalSearch(search);
-  }, [search]);
+  const { shouldUseApi, tableConfig, initializedRef, previousSchoolIdRef, schoolId, upsertConfig, processTableConfig } =
+    useTableConfig<SearchFiltersConfig>({ tableName });
 
   useEffect(() => {
-    debouncedSetSearch(localSearch);
-    return () => {
-      debouncedSetSearch.cancel();
-    };
-  }, [localSearch, debouncedSetSearch]);
+    if (previousSchoolIdRef.current && previousSchoolIdRef.current !== schoolId) {
+      initializedRef.current = false;
+
+      if (shouldUseApi && !tableConfig) {
+        setLocalSearch('');
+        setSearch('');
+      }
+    }
+  }, [schoolId, shouldUseApi, tableConfig, setSearch, previousSchoolIdRef, initializedRef]);
+
+  const savedSearch = useMemo(
+    () => processTableConfig<string>((filtersConfig) => filtersConfig?.search ?? ''),
+    [processTableConfig]
+  );
+
+  useEffect(() => {
+    if (shouldUseApi && !initializedRef.current && tableConfig) {
+      if (savedSearch !== null) {
+        setLocalSearch(savedSearch);
+        setSearch(savedSearch);
+      } else {
+        setLocalSearch('');
+        setSearch('');
+      }
+
+      initializedRef.current = true;
+    }
+  }, [tableConfig, setSearch, shouldUseApi, savedSearch, initializedRef]);
+
+  const updateSearch = useCallback(
+    (value: string) => {
+      setSearch(value);
+      initializedRef.current = true;
+
+      if (shouldUseApi) {
+        upsertConfig({ search: value });
+      }
+    },
+    [setSearch, shouldUseApi, upsertConfig, initializedRef]
+  );
+
+  const debouncedSetSearch = useMemo(() => debounce(updateSearch, 300), [updateSearch]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setLocalSearch(value);
+    isTypingRef.current = true;
+    debouncedSetSearch(value);
+  };
+
+  useEffect(() => {
+    if (search !== localSearch && !isTypingRef.current) {
+      setLocalSearch(search);
+    }
+
+    if (search === localSearch) {
+      isTypingRef.current = false;
+    }
+  }, [search, localSearch]);
+
+  const handleClearSearch = () => {
+    setLocalSearch('');
+    setSearch('');
+    initializedRef.current = true;
+    isTypingRef.current = false;
+
+    if (shouldUseApi) {
+      upsertConfig({ search: '' });
+    }
+  };
+
   return (
-    <div className="relative flex items-center h-4">
+    <div className={cn('relative flex items-center h-12', { 'h-10': !isLegacy })}>
       <div className="flex items-center pl-2">
         <svg
-          className="absolute ml-2"
+          className="absolute ml-4"
           width="24"
           height="24"
           viewBox="0 0 24 24"
@@ -47,19 +128,31 @@ export function GlobalSearch({ search, setSearch, placeholder, typeButton, class
       <input
         type="text"
         className={cn(
-          'pl-10 border border-[#F3F6FB] text-[#1D2939] text-base rounded-full focus:ring-[#01AB55] focus:outline-none focus:border-[#01AB55] focus:shadow-green block w-full pr-3.5 py-2 min-w-[470px] outline-none placeholder:text-[#93A0AD] bg-[#F3F6FB]',
-          className
+          'pl-12 border border-[#F3F6FB] text-[#1D2939] text-base rounded-full',
+          'focus:ring-[#01AB55] focus:outline-none focus:border-[#01AB55] focus:shadow-green',
+          'block w-full pr-10 py-2 min-w-[370px] outline-none',
+          'placeholder:text-[#93A0AD] bg-[#F3F6FB] align-middle',
+          className,
+          {
+            'bg-white border-[#919EAB52] rounded-lg': variant === 'classic',
+            'min-w-52 text-sm text-neutral-500 bg-[#F3F6FB] border-[#F3F6FB]': !isLegacy,
+          }
         )}
         placeholder={placeholder}
-        onChange={(e) => setLocalSearch(e.target.value)}
+        onChange={handleInputChange}
         value={localSearch}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            debouncedSetSearch.flush();
+          }
+        }}
       />
       <button
         className={cn('absolute flex justify-end right-0 mr-2 bg-[919EAB]', {
-          hidden: search.length === 0,
+          hidden: localSearch.length === 0,
         })}
         type={typeButton}
-        onClick={() => setLocalSearch('')}
+        onClick={handleClearSearch}
       >
         <svg className="" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path

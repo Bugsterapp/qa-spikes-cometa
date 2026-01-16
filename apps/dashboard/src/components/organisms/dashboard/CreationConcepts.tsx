@@ -10,9 +10,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '/src/components/ui/Popo
 import { CalendarIcon } from 'lucide-react';
 import { format, parseISO, isDate, endOfMonth, startOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Calendar } from '/src/components/ui/Calendar';
+
 import { Order } from './Step2Form';
 import { cn } from '/src/utils/cn';
+import { Calendar } from '@cometa/recreo';
 export const schema = z
   .object({
     type: z.string().min(1, 'Falta completar este campo'),
@@ -27,6 +28,7 @@ export const schema = z
     has_due_date: z.enum(['true', 'false']).optional(),
     inscription: z.boolean().optional(),
     has_months_to_pay: z.enum(['true', 'false']).optional(),
+    available_in_online_store: z.enum(['true', 'false']).optional(),
   })
   .refine(
     (data) => {
@@ -45,6 +47,7 @@ export const schemaStep2 = z.object({
   orders: z.array(z.any()).default([]),
   year_start: z.string().min(1, 'Falta completar este campo'),
   setup_periodic_restrictions: z.enum(['true', 'false']),
+  same_school_cycle: z.boolean().optional(),
 });
 
 const SurchargeInfo = z
@@ -147,24 +150,58 @@ export type FormDiscount = z.infer<typeof discountSchema>;
 
 export const schemaStep4 = discountSchema;
 
-export const schemaStep5 = z.object({
-  has_sales_tax: z
-    .enum(['true', 'false'])
-    .optional()
-    .refine((val) => val !== undefined, {
-      message: 'Este campo es requerido',
-    }),
-  product_key: z.string().min(1, 'Falta completar este campo'),
-  unit_type: z.string().min(1, 'Falta completar este campo'),
-  has_rvoe: z
-    .enum(['true', 'false'])
-    .optional()
-    .refine((val) => val !== undefined, {
-      message: 'Este campo es requerido',
-    }),
-  rvoe: z.string().nonempty('Falta completar este campo').optional(),
-  is_billable: z.enum(['true', 'false']),
-});
+export const schemaStep5 = z
+  .object({
+    has_sales_tax: z.enum(['true', 'false']).optional(),
+    product_key: z.string().min(1, 'Falta completar este campo').optional(),
+    unit_type: z.string().min(1, 'Falta completar este campo').optional(),
+    has_rvoe: z.enum(['true', 'false']).optional(),
+    rvoe: z.string().min(1, 'Falta completar este campo').optional(),
+    is_billable: z.enum(['true', 'false']),
+    series: z.optional(z.object({ code: z.string(), id: z.string() })),
+    series_selector: z.enum(['true', 'false']),
+    does_invoice_as_general_public: z.enum(['true', 'false']).optional(),
+  })
+  .superRefine((val, ctx) => {
+    if (val.is_billable === 'false') {
+      return true;
+    }
+    if (!val.has_sales_tax) {
+      ctx.addIssue({
+        path: ['has_sales_tax'],
+        message: 'Falta completar este campo',
+        code: z.ZodIssueCode.custom,
+      });
+    }
+    if (!val.has_rvoe) {
+      ctx.addIssue({
+        path: ['has_rvoe'],
+        message: 'Falta completar este campo',
+        code: z.ZodIssueCode.custom,
+      });
+    }
+    if (!val.product_key) {
+      ctx.addIssue({
+        path: ['product_key'],
+        message: 'Falta completar este campo',
+        code: z.ZodIssueCode.custom,
+      });
+    }
+    if (!val.unit_type) {
+      ctx.addIssue({
+        path: ['unit_type'],
+        message: 'Falta completar este campo',
+        code: z.ZodIssueCode.custom,
+      });
+    }
+    if (val.has_rvoe === 'true' && !val.rvoe) {
+      ctx.addIssue({
+        path: ['rvoe'],
+        message: 'Falta completar este campo',
+        code: z.ZodIssueCode.custom,
+      });
+    }
+  });
 
 const schemaStepAttributes = z.object({
   attributes: z.array(z.any()).default([]),

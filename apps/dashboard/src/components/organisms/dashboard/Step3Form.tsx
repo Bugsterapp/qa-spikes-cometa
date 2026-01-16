@@ -9,10 +9,11 @@ import { Label } from '../../ui/Label';
 import { StepProps, FormValues3, schemaStep3 } from './CreationConcepts';
 import ConceptButton from './ConceptButton';
 import useSendTrackEventWithUserName from '/src/hooks/useSendTrackEventWithUserName';
+import { Events } from '/src/constants/events';
 
 export function Step3Form({ setData, onNext, onBack, formData }: StepProps<FormValues3>) {
   const sendTrackEventWithUserName = useSendTrackEventWithUserName();
-  sendTrackEventWithUserName('dashboard: Concept | New Concept P2A.2 Recargos');
+  sendTrackEventWithUserName(Events.concept_new_p2a2_recargos);
   const formStep3 = useForm<FormValues3>({
     resolver: zodResolver(schemaStep3),
     mode: 'all',

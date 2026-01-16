@@ -2,7 +2,6 @@ import * as React from 'react';
 import Document, { Html, Head, Main, NextScript, DocumentContext } from 'next/document';
 // import createCache from '@emotion/cache';
 // import createEmotionServer from '@emotion/server/create-instance';
-import palette from '../theme/palette';
 const { NEXT_PUBLIC_SEGMENT_WRITE_KEY, NODE_ENV = 'development' } = process.env;
 import * as snippet from '@segment/snippet';
 // import { AppType } from 'next/app';
@@ -38,14 +37,10 @@ export default class MyDocument extends Document {
           <link rel="apple-touch-icon" sizes="180x180" href="/favicon/cometa.svg" />
           <link rel="icon" type="image/svg" sizes="32x32" href="/favicon/cometa.svg" />
           <link rel="icon" type="image/svg" sizes="16x16" href="/favicon/cometa.svg" />
-          <meta name="theme-color" content={palette.light.primary.main} />
+          <meta name="theme-color" content="#FB63AC" />
+          <meta name="msapplication-TileColor" content="#FB63AC" />
+          <meta name="apple-mobile-web-app-status-bar-style" content="default" />
           <link rel="manifest" href="/manifest.json" />
-
-          <link rel="preconnect" href="https://fonts.gstatic.com" />
-          <link
-            href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap"
-            rel="stylesheet"
-          />
 
           <meta name="description" content="Dashboard Cometa" />
           <meta name="keywords" content="react,material,kit,application,dashboard,admin,template" />

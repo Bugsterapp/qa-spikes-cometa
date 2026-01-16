@@ -30,7 +30,14 @@ const moduleExports = {
   experimental: {
     esmExternals: false,
   },
-  transpilePackages: ['@cometa/hooks', '@cometa/utils', '@cometa/trpc', '@cometa/contexts', 'react-hotjar'],
+  transpilePackages: [
+    '@cometa/hooks',
+    '@cometa/utils',
+    '@cometa/trpc',
+    '@cometa/contexts',
+    '@cometa/dynamic-forms',
+    'react-hotjar',
+  ],
 };
 
 const sentryWebpackPluginOptions = {
@@ -41,7 +48,7 @@ const sentryWebpackPluginOptions = {
   //   urlPrefix, include, ignore
 
   org: 'cometa',
-  project: 'dashboard',
+  project: 'guardian-portal',
   silent: true, // Suppresses all logs
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options.

@@ -1,14 +1,13 @@
 import SidebarHeader from '/src/components/molecules/dashboard/SidebarHeader';
-import { useSession } from 'next-auth/react';
 import { useSelectedSchool } from '/src/guards/AuthGuard';
 import ApiClient from '/src/services/ApiClient';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import * as Sentry from '@sentry/nextjs';
 import cx from 'classnames';
 import { formatDateShort, formatTime, formatPrice } from '/src/utils/general';
-import InvoiceChip from '/src/components/atoms/Chip';
-import { Status } from '/types/paid-orders';
-import React, { useState } from 'react';
+import type { Status } from '/types/paid-orders';
+import type React from 'react';
+import { useState } from 'react';
 import File from '/public/assets/icons/download/file.svg';
 import XML from '/public/assets/icons/download/xml.svg';
 import Table from '/public/assets/icons/download/table.svg';
@@ -21,11 +20,13 @@ import {
   useSetToError,
   useSetToIdle,
 } from '/src/components/BackgroundDownload/BackgroundDownload';
-import { sendTrackEvent } from '/src/utils/events';
+import useSendTrackEventWithUserName from '/src/hooks/useSendTrackEventWithUserName';
+import { Events } from '/src/constants/events';
 import Sheet, { useValidateId } from '/src/components/atoms/Sheet';
-import FulfillmentDetail from '../FulfillmentDetail';
 import { trimId } from '/src/utils/trim-id';
 import { cn } from '/src/utils/cn';
+import OrderDetailSidepanel from '/src/components/order/OrderDetailSidepanel';
+import Chip from '/src/components/atoms/Chip';
 
 interface PayoutDetailProps {
   openTo: boolean;
@@ -33,31 +34,46 @@ interface PayoutDetailProps {
   payoutId: string;
 }
 
+function ExpandIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        className="group-hover:[transform:translate(2px,-2px)] transition-all duration-100 ease-in-out"
+        d="M16.6663 4.16683C16.6663 3.70659 16.2932 3.3335 15.833 3.3335H11.6663C11.2061 3.3335 10.833 3.70659 10.833 4.16683C10.833 4.62707 11.2061 5.00016 11.6663 5.00016H13.808L11.0746 7.74183C10.9169 7.8983 10.8281 8.1113 10.8281 8.3335C10.8281 8.55569 10.9169 8.76869 11.0746 8.92516C11.2311 9.08292 11.4441 9.17166 11.6663 9.17166C11.8885 9.17166 12.1015 9.08292 12.258 8.92516L14.9996 6.1835V8.3335C14.9996 8.79373 15.3727 9.16683 15.833 9.16683C16.2932 9.16683 16.6663 8.79373 16.6663 8.3335V4.16683Z"
+        fill="#3366FF"
+      />
+      <path
+        className="group-hover:[transform:translate(-2px,2px)] transition-all duration-100 ease-in-out"
+        d="M8.92467 11.0751C8.7682 10.9174 8.55521 10.8286 8.33301 10.8286C8.11081 10.8286 7.89781 10.9174 7.74134 11.0751L4.99967 13.8084V11.6668C4.99967 11.2065 4.62658 10.8334 4.16634 10.8334C3.7061 10.8334 3.33301 11.2065 3.33301 11.6668V15.8334C3.33301 16.2937 3.7061 16.6668 4.16634 16.6668H8.33301C8.79324 16.6668 9.16634 16.2937 9.16634 15.8334C9.16634 15.3732 8.79324 15.0001 8.33301 15.0001H6.18301L8.92467 12.2584C9.08243 12.102 9.17117 11.889 9.17117 11.6668C9.17117 11.4446 9.08243 11.2316 8.92467 11.0751V11.0751Z"
+        fill="#3366FF"
+      />
+    </svg>
+  );
+}
+
 export default function PayoutDetail({ openTo, onClose, payoutId }: PayoutDetailProps) {
   const [selectedFulfillment, setSelectedFulfillment] = useState<string | null>(null);
   const checkId = useValidateId();
 
-  const { data: session } = useSession();
   const selectedSchool = useSelectedSchool();
+  const sendTrackEventWithUserName = useSendTrackEventWithUserName();
 
   const setIsWorking = useSetIsWorking();
   const setToIdle = useSetToIdle();
   const setIsError = useSetToError();
 
-  const main = async () => {
-    const res = await ApiClient.getIncomePayout(session?.token, selectedSchool?.id, payoutId);
-    return res?.data;
-  };
-
-  const { data: payout, isLoading } = useQuery(['payout_detail', payoutId], main, {
-    enabled: !!selectedSchool && openTo,
-    onError(err) {
-      Sentry.captureException(err);
+  const { data: payout, isPending: isLoading } = useQuery({
+    queryKey: ['payout_detail', payoutId],
+    queryFn: async () => {
+      const res = await ApiClient.getIncomePayout(selectedSchool?.id, payoutId);
+      return res;
     },
+    enabled: !!selectedSchool && openTo,
+    meta: { logErrorToSentry: true },
   });
 
   const getPayoutsReport = async () =>
-    ApiClient.generatePayoutsReport(session?.token, selectedSchool?.id, {
+    ApiClient.generatePayoutsReport(selectedSchool?.id, {
       startDate: null,
       endDate: null,
       ids: [payoutId],
@@ -80,6 +96,7 @@ export default function PayoutDetail({ openTo, onClose, payoutId }: PayoutDetail
     APPROVED_STATUS: 'Recibido',
     PROCESSING_STATUS: 'En proceso',
     SCHEDULED_STATUS: 'Programado',
+    DECLINED_STATUS: 'Declinado',
   };
 
   const renderPayoutStatus = (status: string, loading: boolean, children: React.ReactNode) => {
@@ -88,6 +105,7 @@ export default function PayoutDetail({ openTo, onClose, payoutId }: PayoutDetail
       'text-[#B78103] bg-[#FFC107] bg-opacity-[0.16]': status === 'PROCESSING_STATUS',
       'text-[#1890FF] bg-[#1890FF] bg-opacity-[0.12]': status === 'SCHEDULED_STATUS',
       'text-[#454F5B] bg-[#919EAB] bg-opacity-[0.12]': status === 'PENDING_STATUS',
+      'text-[#FF4842] bg-[#FF484214] bg-opacity-[0.12]': status === 'DECLINED_STATUS',
     });
     return (
       <>
@@ -107,19 +125,20 @@ export default function PayoutDetail({ openTo, onClose, payoutId }: PayoutDetail
   };
 
   const handleAdd = async () => {
-    sendTrackEvent('dashboard: Deposits Downloaded', { Type: 'Tabla' });
+    sendTrackEventWithUserName(Events.deposits_downloaded, { Type: 'Tabla' });
     await mutation.mutate();
     setIsWorking();
   };
 
   const downloadInvoices = async (extension: string) => {
     setIsWorking();
-    sendTrackEvent('dashboard: Deposits Downloaded', { Type: `Facturas ${extension.toUpperCase()}` });
+    sendTrackEventWithUserName(Events.deposits_downloaded, { Type: `Facturas ${extension.toUpperCase()}` });
 
-    return ApiClient.getSchoolPayoutsInvoices(session?.token, selectedSchool?.id, extension, {
+    return ApiClient.getSchoolPayoutsInvoices(selectedSchool?.id, extension, {
       endDate: '',
       startDate: '',
       ids: [payoutId],
+      school_cycles: undefined,
     })
       .then((data: Record<string, any>) => {
         addToQueue(data.id, ETypeFile.ZIP);
@@ -265,6 +284,22 @@ export default function PayoutDetail({ openTo, onClose, payoutId }: PayoutDetail
                         -{!isLoading && formatPrice(payout?.commission, 'MXN')}
                       </label>
                     </div>
+                    {payout?.discounts && (
+                      <div className="grid grid-cols-4 gap-4 mt-4">
+                        <AmountTitle text="Descuentos:" loading={isLoading} />
+                        <label className="flex justify-end text-sm font-normal">
+                          -{!isLoading && formatPrice(payout?.discounts, 'MXN')}
+                        </label>
+                      </div>
+                    )}
+                    {payout?.surcharges && (
+                      <div className="grid grid-cols-4 gap-4 mt-4">
+                        <AmountTitle text="Recargos:" loading={isLoading} />
+                        <label className="flex justify-end text-sm font-normal">
+                          {!isLoading && formatPrice(payout?.surcharges, 'MXN')}
+                        </label>
+                      </div>
+                    )}
                     <div className="grid grid-cols-4 gap-4 mt-4 border-t border-t-[#637381] pt-5">
                       {isLoading && (
                         <div role="status" className="max-w-sm col-span-3 animate-pulse">
@@ -275,7 +310,13 @@ export default function PayoutDetail({ openTo, onClose, payoutId }: PayoutDetail
                         <>
                           <label className="flex col-span-3 text-base font-semibold">Total depositado</label>
                           <label className="flex justify-end text-base font-semibold">
-                            {formatPrice(payout?.total_received - payout?.commission, 'MXN')}
+                            {formatPrice(
+                              (Number(payout?.total_received) || 0) -
+                                (Number(payout?.commission) || 0) -
+                                (Number(payout?.discounts) || 0) +
+                                (Number(payout?.surcharges) || 0),
+                              'MXN'
+                            )}
                           </label>
                         </>
                       )}
@@ -321,13 +362,16 @@ export default function PayoutDetail({ openTo, onClose, payoutId }: PayoutDetail
           </div>
         </Sheet.Content>
       </Sheet>
-      {selectedFulfillment ? (
-        <FulfillmentDetail
+      {selectedFulfillment && (
+        <OrderDetailSidepanel
+          typeOfOrder="PAYMENT"
           open={Boolean(selectedFulfillment)}
-          onClose={() => setSelectedFulfillment(null)}
-          paymentId={selectedFulfillment}
+          onClose={() => {
+            setSelectedFulfillment(null);
+          }}
+          fulfillmentId={selectedFulfillment || ''}
         />
-      ) : null}
+      )}
     </>
   );
 }
@@ -349,6 +393,7 @@ const PayinFulfillmentPayout = ({
     multiple: 'neutral',
     sponsored: 'disabled',
   } as const;
+  const hasRefund = Boolean(payinFulfillment?.refund);
 
   const invoiceStatusI18N: Record<Status, { status: string; tooltip?: string }> = {
     success: {
@@ -364,7 +409,7 @@ const PayinFulfillmentPayout = ({
       status: 'Por cancelar',
     },
     not_requested: {
-      status: 'No facturable',
+      status: 'Sin factura',
     },
     failed: {
       status: 'En revisión',
@@ -376,12 +421,27 @@ const PayinFulfillmentPayout = ({
       status: 'Sin factura',
     },
   };
+
+  const isFulfillmentDeleted = !!payinFulfillment.fulfillment_deleted;
+
+  function handleFulfillmentSelected() {
+    if (isFulfillmentDeleted) return;
+
+    setSelectedOrder(payinFulfillment?.fulfillment_id, payinFulfillment.correlative_id);
+  }
+
+  const isParcialRefund =
+    parseFloat(payinFulfillment?.refund?.amount ?? '0') !== parseFloat(payinFulfillment?.final_amount ?? '0');
+
   return (
     <button
-      className="text-start w-full grid grid-cols-4 gap-4 py-[22px] px-4 border-b border-[#919EAB] border-opacity-[0.24] hover:bg-[#1890FF] hover:bg-opacity-[0.04] group hover:cursor-pointer"
-      onClick={() => {
-        setSelectedOrder(payinFulfillment?.fulfillment_id, payinFulfillment.correlative_id);
-      }}
+      className={cn(
+        'text-start w-full grid grid-cols-4 gap-4 py-[22px] px-4 border-b border-[#919EAB] border-opacity-[0.24] hover:bg-[#1890FF] hover:bg-opacity-[0.04] group cursor-default',
+        {
+          'cursor-pointer': !isFulfillmentDeleted,
+        }
+      )}
+      onClick={handleFulfillmentSelected}
     >
       <div className="flex items-center col-span-3">
         <label
@@ -392,27 +452,26 @@ const PayinFulfillmentPayout = ({
           {payinFulfillment?.correlative_id ?? 'ID por generar'}
         </label>
         <div className="flex items-center pl-2">
-          <label className="text-xs text-[#637381] font-medium mr-2">Factura:</label>
-          <InvoiceChip intent={invoiceStatus[payinFulfillment?.invoice_status as keyof typeof invoiceStatus]}>
-            {invoiceStatusI18N[payinFulfillment?.invoice_status as keyof typeof invoiceStatusI18N]?.status}
-          </InvoiceChip>
+          {hasRefund ? (
+            <Chip intent="warning" className="ml-2">
+              {isParcialRefund ? 'Devuelto parcialmente' : 'Devuelto'}
+            </Chip>
+          ) : (
+            <>
+              <label className="text-xs text-[#637381] font-medium mr-2">Factura:</label>
+              <Chip intent={invoiceStatus[payinFulfillment?.invoice_status as keyof typeof invoiceStatus]}>
+                {invoiceStatusI18N[payinFulfillment?.invoice_status as keyof typeof invoiceStatusI18N]?.status}
+              </Chip>
+            </>
+          )}
         </div>
       </div>
       <div className="flex self-center justify-end">
-        <button className="bg-transparent">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path
-              className="group-hover:[transform:translate(2px,-2px)] transition-all duration-100 ease-in-out"
-              d="M16.6663 4.16683C16.6663 3.70659 16.2932 3.3335 15.833 3.3335H11.6663C11.2061 3.3335 10.833 3.70659 10.833 4.16683C10.833 4.62707 11.2061 5.00016 11.6663 5.00016H13.808L11.0746 7.74183C10.9169 7.8983 10.8281 8.1113 10.8281 8.3335C10.8281 8.55569 10.9169 8.76869 11.0746 8.92516C11.2311 9.08292 11.4441 9.17166 11.6663 9.17166C11.8885 9.17166 12.1015 9.08292 12.258 8.92516L14.9996 6.1835V8.3335C14.9996 8.79373 15.3727 9.16683 15.833 9.16683C16.2932 9.16683 16.6663 8.79373 16.6663 8.3335V4.16683Z"
-              fill="#3366FF"
-            />
-            <path
-              className="group-hover:[transform:translate(-2px,2px)] transition-all duration-100 ease-in-out"
-              d="M8.92467 11.0751C8.7682 10.9174 8.55521 10.8286 8.33301 10.8286C8.11081 10.8286 7.89781 10.9174 7.74134 11.0751L4.99967 13.8084V11.6668C4.99967 11.2065 4.62658 10.8334 4.16634 10.8334C3.7061 10.8334 3.33301 11.2065 3.33301 11.6668V15.8334C3.33301 16.2937 3.7061 16.6668 4.16634 16.6668H8.33301C8.79324 16.6668 9.16634 16.2937 9.16634 15.8334C9.16634 15.3732 8.79324 15.0001 8.33301 15.0001H6.18301L8.92467 12.2584C9.08243 12.102 9.17117 11.889 9.17117 11.6668C9.17117 11.4446 9.08243 11.2316 8.92467 11.0751V11.0751Z"
-              fill="#3366FF"
-            />
-          </svg>
-        </button>
+        {!isFulfillmentDeleted ? (
+          <button className="bg-transparent">
+            <ExpandIcon />
+          </button>
+        ) : null}
       </div>
       <div className="flex col-span-4">
         <div className="flex flex-col w-full">

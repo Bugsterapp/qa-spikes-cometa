@@ -1,7 +1,6 @@
 import { ChangeEvent, useEffect } from 'react';
-import { Typography, ListItem } from '@mui/material';
 import SearchAutocomplete from '../../../molecules/dashboard/SearchAutocomplete';
-import PersonIcon from '@mui/icons-material/Person';
+import { User } from 'lucide-react';
 
 interface StudentSelectorProps {
   autocompleteKey?: string;
@@ -43,28 +42,14 @@ export default function StudentSelector(props: StudentSelectorProps) {
   };
 
   const renderOptionStudent = (props: any, student: Record<string, any>) => (
-    <ListItem
-      {...props}
-      key={student.id}
-      disablePadding
-      data-testid={`${student.first_name} ${student.last_name}-listItem`}
-    >
+    <li {...props} key={student.id} data-testid={`${student.first_name} ${student.last_name}-listItem`}>
       <div className="ml-2 truncate">
-        <Typography variant="subtitle1">
+        <p className="text-base font-normal">
           {student.first_name} {student.last_name}
-        </Typography>
-        <Typography
-          variant="subtitle2"
-          sx={{
-            fontSize: '12px',
-            fontWeight: 400,
-            lineHeight: '18px',
-          }}
-        >
-          {student.enrollment_code}
-        </Typography>
+        </p>
+        <p className="text-xs font-normal leading-[18px]">{student.enrollment_code}</p>
       </div>
-    </ListItem>
+    </li>
   );
 
   const optionLabel = (student: Record<string, any>) =>
@@ -87,9 +72,9 @@ export default function StudentSelector(props: StudentSelectorProps) {
       onClickAutocomplete={getStudentsOnSchool}
       onChangeAutocomplete={handleAutocomplete}
       inputText={selectedStudent ? optionLabel(selectedStudent) : searchStudent}
-      placeholderTextField={placeholder || 'Buscar por alumno'}
+      placeholderTextField={placeholder || 'Buscar por estudiante'}
       width={width}
-      icon={<PersonIcon />}
+      icon={<User />}
       loading={loading}
     />
   );

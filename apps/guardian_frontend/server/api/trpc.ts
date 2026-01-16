@@ -18,6 +18,7 @@
  */
 import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { type Session } from 'next-auth';
+// import * as Sentry from '@sentry/node';
 
 import { getServerAuthSession } from '../auth';
 
@@ -82,6 +83,12 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
  * @see https://trpc.io/docs/router
  */
 export const createTRPCRouter = t.router;
+
+// const sentryMiddleware = t.middleware(
+//   Sentry.trpcMiddleware({
+//     attachRpcInput: true,
+//   })
+// );
 
 /**
  * Public (unauthed) procedure

@@ -1,27 +1,22 @@
+import { useSession } from 'next-auth/react';
+import { FraudStatusEnum } from '@cometa/trpc';
+import * as ResumeCard from '~/components/ResumeCard';
 import { formatPrice } from '~/utils/orders';
-import BoxColorText from '~/components/Tag';
-import Accordion from '~/components/atoms/guardians/Accordion';
-import currencyjs from 'currency.js';
-import { cn } from '~/lib/cn';
-import Tour from '~/components/atoms/common/Tour';
-import { CHANGE_RFC_JOYRIDE } from '~/utils/joyride';
-import JoyrideTooltip from '~/components/atoms/common/JoyrideTooltip';
-import { useTour } from '~/hooks/useTour';
-import type { CallBackProps } from 'react-joyride';
 import { Color } from '~/utils/colors';
-import { DependentFulfillmentOrder } from '@cometa/hooks';
-import { useSelectedSchool } from '~/components/molecules/common/AuthGlobal';
+import { useSelectedSchool } from '~/stores/globalStore';
 import { DependantErrorRFC } from '~/contexts/VerifyRFCContext';
-import { GuardianDependentOrder } from '@cometa/trpc/src/types';
-import { VerifyRFCFooter } from '~/components/ResumeCard';
+import { TOrderPortal, calculateTotalToPay, ProjectEnum } from '@cometa/hooks';
+import OrderResumeCard, { OrderWithoutStudentResumeCard } from '~/components/Resume/OrderResumeCard';
+import { useOrderSelection, useCartItems } from '~/stores/selectionStorePersisted';
+import Sentry from '@sentry/nextjs';
 
 interface ResumeCardListProps {
   dependents: (DependantErrorRFC & Color)[];
-  selectedItems: DependentFulfillmentOrder[];
+  selectedItems: TOrderPortal[];
   isLoadingVerify?: boolean;
   isLoading?: boolean;
-  isVerify?: boolean;
   onAssignRFC?: (dependent: DependantErrorRFC & Color) => void;
+  ordersHaveDependents: boolean;
 }
 
 /**
@@ -38,103 +33,96 @@ const ResumeCardList = ({
   onAssignRFC,
   isLoadingVerify,
   isLoading,
-  isVerify,
+  ordersHaveDependents,
 }: ResumeCardListProps) => {
-  const { showTour, handleShowTour } = useTour();
+  const { data: session } = useSession();
   const selectedSchool = useSelectedSchool();
-  const handlerCallback = (callBack: CallBackProps) => {
-    if (callBack.status === 'finished') handleShowTour('change_rfc');
-  };
+  const { itemQuantities } = useOrderSelection([], ProjectEnum.PORTAL);
+  const cartItems = useCartItems<ProjectEnum.PORTAL>();
+  const hasHighRiskProfile = session?.user.fraud_status === FraudStatusEnum.HighRisk;
 
   return (
     <div className="flex flex-col space-y-6">
-      {dependents.map((dependent, index) => {
-        const items = selectedItems.filter((item) => item.student.id === dependent.id);
+      {ordersHaveDependents ? (
+        <>
+          {dependents.map((dependent) => {
+            const orders = selectedItems.filter((item) => item.student.id === dependent.id);
+            if (!orders.length) {
+              Sentry.captureMessage('No orders found for dependent', {
+                extra: {
+                  dependent,
+                  selectedItems,
+                },
+              });
+              return null;
+            }
 
-        if (!items.length) return null;
+            const filteredCartItems = cartItems.filter((item) => item.student === dependent.id);
+            const hasBillableItems = orders.some((item) => item.concept.is_billable);
+            const currency = orders[0].currency || 'MXN';
+            const total = calculateTotalToPay(orders, itemQuantities);
 
-        const hasBillableItems = items.some((item) => (item as GuardianDependentOrder).concept.is_billable);
-        const currency = items[0].currency || 'MXN';
-        const total = formatPrice(
-          items.reduce(
-            (total, item) =>
-              currencyjs(total).add('pending_amount' in item ? item.pending_amount : item.final_amount).value,
-            0
-          ),
-          currency
-        );
-        return (
-          <div key={dependent.id} id={`card-${dependent.id}`} className="flex flex-col">
-            <div className="flex items-center px-[26px] py-5 bg-white rounded-t-2xl">
-              <span className="text-sm font-semibold text-gray-300 mr-1.5">Estudiante:</span>
-              <BoxColorText
-                bgcolor={dependent?.color?.background}
-                color={dependent?.color?.text}
-                text={dependent.first_name.toUpperCase() || ''}
-              />
-            </div>
-            <div className="px-[26px] py-5 bg-white border-t border-[#adbbcc4d]">
-              <Accordion
-                tittle={
-                  <div className="flex items-center">
-                    <span className="mr-3 text-sm font-semibold text-gray-300">
-                      Órdenes{isVerify ? ' por pagar' : ' pagadas'}:
-                    </span>
-                    <BoxColorText
-                      bgcolor={dependent?.color?.background}
-                      color={dependent?.color?.text}
-                      text={items.length.toString()}
-                    />
-                  </div>
-                }
-              >
-                <div className="flex flex-col gap-y-1.5 ">
-                  {items.map((item) => {
-                    const { id, name } = item;
-                    return (
-                      <div key={id} className="flex items-center justify-between text-sm">
-                        <span className="text-gray-300">{name}</span>
-                        <span className="text-blue-700">
-                          {formatPrice('pending_amount' in item ? item.pending_amount : item.final_amount)}
-                        </span>
+            return hasHighRiskProfile ? (
+              cartItems.map((cartItem) => {
+                const item = orders.find((item) => item.id === cartItem.id && item.student.id === cartItem.student);
+                if (!item) return null;
+                return (
+                  <ResumeCard.Content key={item.order_id} id={`chargeback-card-${item.order_id}`}>
+                    <ResumeCard.Info className="space-x-1.5">
+                      <span className="font-semibold text-gray-300">Orden a pagar</span>
+                      <div className="flex flex-row justify-between text-sm font-normal">
+                        <span className="text-[#57537A]">{item.name}</span>
+                        <span className="text-[#2F2966]">{formatPrice(item.final_amount, currency)}</span>
                       </div>
-                    );
-                  })}
-                </div>
-              </Accordion>
-            </div>
-            <div
-              className={cn(
-                'px-[26px] flex flex-row justify-between text-sm font-semibold py-5 bg-white border-t border-[#adbbcc4d]',
-                { 'rounded-b-2xl': !selectedSchool?.does_invoice || !hasBillableItems }
-              )}
-            >
-              <span className="text-gray-300">Total:</span>
-              <span className="text-blue-700">{total}</span>
-            </div>
-            {selectedSchool?.does_invoice && hasBillableItems && (
-              <div className="bg-white rounded-b-2xl border-t border-[#adbbcc4d]">
-                <VerifyRFCFooter
-                  isLoading={isLoading}
-                  isLoadingVerify={isLoadingVerify}
-                  dependent={dependent}
-                  onAssignRFC={onAssignRFC}
-                  Tour={
-                    index === 0 ? (
-                      <Tour
-                        run={Boolean(showTour && !showTour?.change_rfc)}
-                        steps={CHANGE_RFC_JOYRIDE}
-                        tooltipComponent={JoyrideTooltip}
-                        callback={handlerCallback}
-                      />
-                    ) : undefined
-                  }
-                />
-              </div>
-            )}
-          </div>
-        );
-      })}
+                    </ResumeCard.Info>
+                  </ResumeCard.Content>
+                );
+              })
+            ) : (
+              <OrderResumeCard
+                key={dependent.id}
+                id={`card-${dependent.id}`}
+                dependent={dependent}
+                items={orders}
+                cartItems={filteredCartItems}
+                total={total}
+                isLoading={isLoading}
+                isLoadingVerify={isLoadingVerify}
+                onAssignRFC={onAssignRFC}
+                currency={currency}
+                showVerifyRFC={selectedSchool?.does_invoice && hasBillableItems}
+              />
+            );
+          })}
+        </>
+      ) : (
+        <>
+          {hasHighRiskProfile ? (
+            cartItems.map((cartItem) => {
+              const item = selectedItems.find((item) => item.id === cartItem.id);
+              if (!item) return null;
+              return (
+                <ResumeCard.Content key={item.order_id} id={`chargeback-card-${item.order_id}`}>
+                  <ResumeCard.Info className="space-x-1.5">
+                    <span className="font-semibold text-gray-300">Orden a pagar</span>
+                    <div className="flex flex-row justify-between text-sm font-normal">
+                      <span className="text-[#57537A]">{item.name}</span>
+                      <span className="text-[#2F2966]">{formatPrice(item.final_amount, item.currency || 'MXN')}</span>
+                    </div>
+                  </ResumeCard.Info>
+                </ResumeCard.Content>
+              );
+            })
+          ) : (
+            <OrderWithoutStudentResumeCard
+              cartItems={cartItems}
+              items={selectedItems}
+              total={calculateTotalToPay(selectedItems, itemQuantities)}
+              id={`card-${session?.user.id}`}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 };

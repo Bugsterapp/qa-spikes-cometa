@@ -1,8 +1,3 @@
-import { getSession } from 'next-auth/react';
-import ApiClient from '../../../../services/ApiClient';
-import { useQuery } from '@tanstack/react-query';
-import { QUERY_KEY_SCHOLARSHIPS } from '/src/utils/reactQueryKeys';
-import * as Sentry from '@sentry/nextjs';
 import { Table } from '/src/components/Table';
 import { createColumnHelper } from '@tanstack/react-table';
 import { renderMoney } from '/src/utils/datagridHeaders';
@@ -10,30 +5,15 @@ import IcArrowRight from '/public/assets/icons/ic_arrow_right.svg';
 import ScholarshipAssignmentDetail from '../ScholarshipAssignmentDetail';
 import { useState } from 'react';
 import useSendTrackEventWithUserName from '/src/hooks/useSendTrackEventWithUserName';
+import { Events } from '/src/constants/events';
 import { formatDate } from '/src/utils/general';
 import Sheet from '/src/components/atoms/Sheet';
+import { api } from '/src/utils/api';
+import { Scholarship } from '@cometa/trpc/src/types';
 
 interface IOrderTableForSchoarshipsProps {
   studentId: string;
   hideHeader?: boolean;
-}
-
-interface Result {
-  id: string;
-  affected_concept_types: string[];
-  name: string;
-  type: string;
-  value: string;
-  assigned_at?: string;
-  deassigned_at?: string;
-  arrow?: string;
-}
-
-interface ScholarshipstableResponse {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: Result[];
 }
 
 export default function OrderTableForScholarships({ studentId, hideHeader = false }: IOrderTableForSchoarshipsProps) {
@@ -45,10 +25,10 @@ export default function OrderTableForScholarships({ studentId, hideHeader = fals
     setScholarshipIdName(null);
   };
 
-  const handlerRowClick = (row: Result) => {
+  const handlerRowClick = (row: Scholarship) => {
     const { id, name } = row;
     setScholarshipIdName({ id, name });
-    sendTrackEventWithUserName('dashboard: Scolarship | Detail viewed', { source: document.title.split(' | ')[0] });
+    sendTrackEventWithUserName(Events.scholarship_detail_viewed, { source: document.title.split(' | ')[0] });
   };
 
   const typeValue = (type: string) => {
@@ -64,23 +44,20 @@ export default function OrderTableForScholarships({ studentId, hideHeader = fals
     }
   };
 
-  const scholarshipsQuery = async () => {
-    const session = await getSession();
-    const res = await ApiClient.getScholarshipsForStudent(session?.token, studentId);
-    return res?.data;
-  };
-
   const {
     data: scholarships,
-    isLoading,
     isFetching,
-  } = useQuery([QUERY_KEY_SCHOLARSHIPS], scholarshipsQuery, {
-    onError(err) {
-      Sentry.captureException(err);
+    isPending: isLoading,
+  } = api.students.studentsScholarshipList.useQuery(
+    {
+      studentId: studentId,
     },
-  });
+    {
+      enabled: Boolean(studentId),
+    }
+  );
 
-  const columnHelper = createColumnHelper<ScholarshipstableResponse['results'][number]>();
+  const columnHelper = createColumnHelper<Scholarship>();
 
   const columns = [
     columnHelper.accessor('name', {
@@ -97,7 +74,7 @@ export default function OrderTableForScholarships({ studentId, hideHeader = fals
       cell: (info) => (
         <div className="flex text-left">
           {statusPercent.includes(info.row.original.type)
-            ? `${parseFloat(info.row.original.value)}%`
+            ? `${parseFloat(info.row.original.value || '')}%`
             : renderMoney(info.row.original.value) || '0'}
         </div>
       ),
@@ -113,12 +90,12 @@ export default function OrderTableForScholarships({ studentId, hideHeader = fals
       header: () => <span className="whitespace-nowrap">Desde</span>,
       size: 250,
     }),
-    columnHelper.accessor('deassigned_at', {
+    columnHelper.accessor('created', {
       cell: () => <div className="text-left">-</div>,
       header: () => <span className="whitespace-nowrap">Hasta</span>,
       size: 250,
     }),
-    columnHelper.accessor('arrow', {
+    columnHelper.accessor('id', {
       cell: () => <IcArrowRight />,
       header: () => null,
       size: 250,

@@ -1,10 +1,9 @@
-import { Divider } from '@mui/material';
 import { ReactNode } from 'react';
 import BoxTextColor from '/src/components/atoms/BoxTextColor';
-import { ConceptAssignment } from '/types/paid-orders';
+import { StudentConceptDetailSerializerV2 } from '@cometa/trpc/src/types';
 
 interface ConceptInfoProps {
-  conceptData: ConceptAssignment;
+  conceptData: StudentConceptDetailSerializerV2;
   isOptional?: boolean;
 }
 interface Props {
@@ -50,26 +49,28 @@ const ConceptInfo = ({ conceptData }: ConceptInfoProps) => {
     );
   });
 
-  const earlyBirdsList = early_bird_discounts.map(({ discount_type, discount_value, up_to_days }, index) => {
-    const text = statusPercent.includes(discount_type) ? `${discount_value}%` : `${discount_value} MXN`;
-    const successDay =
-      up_to_days === 0
-        ? 'Antes de la fecha de vencimiento'
-        : `Hasta ${up_to_days} día${up_to_days > 1 ? 's' : ''} de la fecha de vencimiento`;
-    return (
-      <div key={index} className="flex flex-row items-center justify-start gap-x-2 font-medium">
-        <BoxTextColor text={text} />
-        <Value>{successDay}</Value>
-      </div>
-    );
-  });
+  const earlyBirdsList = (early_bird_discounts as Record<string, unknown>[]).map(
+    ({ discount_type, discount_value, up_to_days }, index) => {
+      const text = statusPercent.includes(discount_type as string) ? `${discount_value}%` : `${discount_value} MXN`;
+      const successDay =
+        up_to_days === 0
+          ? 'Antes de la fecha de vencimiento'
+          : `Hasta ${up_to_days} día${(up_to_days as number) > 1 ? 's' : ''} de la fecha de vencimiento`;
+      return (
+        <div key={index} className="flex flex-row items-center justify-start gap-x-2 font-medium">
+          <BoxTextColor text={text} />
+          <Value>{successDay}</Value>
+        </div>
+      );
+    }
+  );
 
   return (
     <div className="bg-[#919EAB14] rounded-lg px-6 py-5 flex flex-col gap-y-3">
       <>
         <div className="flex flex-col gap-4">
           <Label>Recargos por morosidad:</Label>
-          <Divider />
+          <hr className="border-t border-gray-300" />
           <div className="flex flex-col gap-4 pl-1 ">
             {interestsFormated.length === 0 ? (
               <span className="text-[#919EAB] italic text-sm">
@@ -82,7 +83,7 @@ const ConceptInfo = ({ conceptData }: ConceptInfoProps) => {
         </div>
         <div className="flex flex-col gap-4">
           <Label>Dscto. pronto pago:</Label>
-          <Divider />
+          <hr className="border-t border-gray-300" />
           <div className="flex flex-col gap-4 pl-1 ">
             {earlyBirdsList.length === 0 ? (
               <span className="text-[#919EAB] italic text-sm">

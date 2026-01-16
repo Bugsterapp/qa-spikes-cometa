@@ -1,5 +1,6 @@
 import { useSession } from 'next-auth/react';
-import { useSelectedSchool } from '/src/guards/AuthGuard';
+import { useGetPermissions, useSelectedSchool } from '/src/guards/AuthGuard';
+
 import ApiClient from '/src/services/ApiClient';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Sentry from '@sentry/nextjs';
@@ -11,8 +12,8 @@ import LinkTo from '/src/components/atoms/LinkDetail';
 import { formatDateShort, formatTime, payMethods, formatPrice } from '/src/utils/general';
 import PlaceToPay from '/src/components/atoms/PlaceToPay';
 import InvoiceChip from '/src/components/atoms/Chip';
-import { Status } from '/types/paid-orders';
-import FulfillmentDetail, { LinkToReceipt, Title, Value } from '../FulfillmentDetail';
+import type { Status } from '/types/paid-orders';
+import { LinkToReceipt, Title, Value } from '../../../payments/FulfillmentDetail';
 import useAlert from '/src/hooks/useAlert';
 import File from '/public/assets/icons/download/file.svg';
 import XML from '/public/assets/icons/download/xml.svg';
@@ -26,14 +27,16 @@ import {
   useSetToError,
   useSetToIdle,
 } from '/src/components/BackgroundDownload/BackgroundDownload';
-import { sendTrackEvent } from '/src/utils/events';
+import useSendTrackEventWithUserName from '/src/hooks/useSendTrackEventWithUserName';
+import { Events } from '/src/constants/events';
 import Dialog from '/src/components/atoms/Dialog';
 import Button from '../Button';
 import { cn } from '/src/utils/cn';
 import Sheet, { useValidateId } from '/src/components/atoms/Sheet';
 import { api } from '/src/utils/api';
-import { DashboardPayinFulfillment } from '@cometa/trpc/src/types';
+import type { DashboardPayinFulfillment } from '@cometa/trpc/src/types';
 import { trimId } from '/src/utils/trim-id';
+import OrderDetailSidepanel from '/src/components/order/OrderDetailSidepanel';
 
 interface PayinSidepanelDetailProps {
   payinId: string;
@@ -56,35 +59,38 @@ export default function PayinSidepanel({
   const queryClient = useQueryClient();
   const selectedSchool = useSelectedSchool();
   const [openDialog, setOpenDialog] = useState(false);
+  const sendTrackEventWithUserName = useSendTrackEventWithUserName();
   const { setAlertState } = useAlert();
   const setIsWorking = useSetIsWorking();
   const addToQueue = useAddToQueue();
   const setIsError = useSetToError();
   const setToIdle = useSetToIdle();
+  const permissions = useGetPermissions();
 
   const [selectedFulfillment, setSelectedFulfillment] = useState<string | null>(null);
   const checkId = useValidateId();
 
   const getPayinsReport = async () =>
-    ApiClient.generatePayinsReport(session?.token, selectedSchool?.id, {
+    ApiClient.generatePayinsReport(selectedSchool?.id, {
       startDate: null,
       endDate: null,
       guardians: null,
       ids: [payinId],
+      filters: {},
     });
 
   const deletePayin = async () => {
-    ApiClient.deleteIncomePayin(session?.token, selectedSchool?.id, payinId);
+    ApiClient.deleteIncomePayin(selectedSchool?.id, payinId);
   };
 
-  const { data: incomePayin, isLoading } = api.income.getPayinById.useQuery(
+  const { data: incomePayin, isPending: isLoading } = api.income.getPayinById.useQuery(
     { schoolId: selectedSchool?.id as string, payinId },
     {
       enabled: !!session && !!selectedSchool && open,
     }
   );
 
-  const { data: guardianPayin, isLoading: isLoadingGuardian } = api.guardian.getGuardianById.useQuery(
+  const { data: guardianPayin, isPending: isLoadingGuardian } = api.guardian.getGuardianById.useQuery(
     { id: incomePayin?.guardian as string, schoolId: selectedSchool?.id as string },
     {
       enabled: !!session && !!selectedSchool && open && !!incomePayin?.guardian,
@@ -96,6 +102,13 @@ export default function PayinSidepanel({
   const mutation = useMutation({
     mutationFn: deletePayin,
     async onSuccess() {
+      sendTrackEventWithUserName(Events.payin_detail_payment_deleted, {
+        payin_id: payinId,
+        guardian_name: `${guardianPayin?.first_name} ${guardianPayin?.last_name}`,
+        amount: incomePayin?.total,
+        payment_method: payMethodName,
+        paid_date: incomePayin?.paid_date,
+      });
       handleClosePayin();
       await queryClient.invalidateQueries({ queryKey: ['schoolPayins'] });
       setPayinDeleted({
@@ -136,12 +149,12 @@ export default function PayinSidepanel({
   };
 
   const downloadInvoices = async (extension: string) => {
-    sendTrackEvent('dashboard: Direct Payments Downloaded', {
+    sendTrackEventWithUserName(Events.direct_payments_downloaded, {
       PaymentType: 'complete',
       Type: `Facturas ${extension.toUpperCase()}`,
     });
     setIsWorking();
-    return ApiClient.getSchoolRegisteredPaymentsInvoices(session?.token, selectedSchool?.id, extension, {
+    return ApiClient.getSchoolRegisteredPaymentsInvoices(selectedSchool?.id, extension, {
       startDate: null,
       endDate: null,
       guardians: null,
@@ -157,7 +170,7 @@ export default function PayinSidepanel({
   };
 
   const handleAdd = async () => {
-    sendTrackEvent('dashboard: Direct Payments Downloaded', { PaymentType: 'complete', Type: 'Tabla' });
+    sendTrackEventWithUserName(Events.direct_payments_downloaded, { PaymentType: 'complete', Type: 'Tabla' });
     await mutationDownload.mutate();
     setIsWorking();
   };
@@ -223,27 +236,29 @@ export default function PayinSidepanel({
               <div id="order-data" className="px-8 mb-2">
                 <div className="flex justify-between w-full pb-3 border-b">
                   <label className="text-xs font-bold text-gray-600 ">DETALLE DEL PAGO</label>
-                  <Tooltip
-                    message="No es posible eliminar un pago que tiene facturas emitidas"
-                    disableHover={!incomePayin?.has_invoice}
-                  >
-                    <button
-                      disabled={Boolean(incomePayin?.has_invoice)}
-                      className="flex items-center bg-transparent cursor-pointer"
-                      onClick={() => {
-                        setOpenDialog(true);
-                      }}
+                  {permissions.can_delete_manual_payment && (
+                    <Tooltip
+                      message="No es posible eliminar un pago que tiene facturas emitidas"
+                      disableHover={!incomePayin?.has_invoice}
                     >
-                      <label
-                        className={cn('mr-2 text-sm font-bold cursor-pointer select-none text-error', {
-                          'text-gray-500 cursor-not-allowed': incomePayin?.has_invoice,
-                        })}
+                      <button
+                        disabled={Boolean(incomePayin?.has_invoice)}
+                        className="flex items-center bg-transparent cursor-pointer"
+                        onClick={() => {
+                          setOpenDialog(true);
+                        }}
                       >
-                        Eliminar pago
-                      </label>
-                      <Trash className={cn('text-error', { 'text-gray-500': incomePayin?.has_invoice })} />
-                    </button>
-                  </Tooltip>
+                        <label
+                          className={cn('mr-2 text-sm font-bold cursor-pointer select-none text-error', {
+                            'text-gray-500 cursor-not-allowed': incomePayin?.has_invoice,
+                          })}
+                        >
+                          Eliminar pago
+                        </label>
+                        <Trash className={cn('text-error', { 'text-gray-500': incomePayin?.has_invoice })} />
+                      </button>
+                    </Tooltip>
+                  )}
                 </div>
                 <div className="mt-8">
                   <div className="grid grid-cols-4 gap-4 mt-4">
@@ -474,10 +489,11 @@ export default function PayinSidepanel({
         </Sheet.Content>
       </Sheet>
       {selectedFulfillment ? (
-        <FulfillmentDetail
-          open={Boolean(selectedFulfillment)}
+        <OrderDetailSidepanel
           onClose={() => setSelectedFulfillment(null)}
-          paymentId={selectedFulfillment}
+          fulfillmentId={selectedFulfillment}
+          open={Boolean(selectedFulfillment)}
+          typeOfOrder="PAYMENT"
         />
       ) : null}
     </>
@@ -491,7 +507,7 @@ const AmountTitle = ({ text, loading }: { text: string; loading?: boolean }) => 
         <div className="h-2.5 bg-gray-200 rounded-full dark:bg-gray-400 w-24" />
       </div>
     ) : (
-      <label className="flex items-center col-span-3 text-base font-semibold text-secondary">{text}</label>
+      <label className="flex items-center col-span-3 text-base font-semibold text-foreground">{text}</label>
     )}
   </>
 );
@@ -529,7 +545,7 @@ const FulfillmentPayout = ({
       invoice_status: 'Por cancelar',
     },
     not_requested: {
-      invoice_status: 'No facturable',
+      invoice_status: 'Sin factura',
     },
     failed: {
       invoice_status: 'En revisión',

@@ -1,19 +1,26 @@
 import {
-  useReactTable,
+  ColumnDef,
+  flexRender,
   getCoreRowModel,
+  getFacetedMinMaxValues,
   getFacetedRowModel,
   getFacetedUniqueValues,
-  getFacetedMinMaxValues,
-  flexRender,
-  TableState,
+  Header,
+  OnChangeFn,
   Row,
-  ColumnDef,
+  SortingState,
+  TableState,
+  Updater,
+  useReactTable,
 } from '@tanstack/react-table';
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useVirtual } from '@tanstack/react-virtual';
-import { cn } from '../utils/cn';
 import { TableVirtuoso } from 'react-virtuoso';
-import Button from './organisms/dashboard/Button';
+import { useVisibleTableColumns } from 'src/components/ColumnCustomizer/hooks';
+import { getColumnHeader, getColumnId } from 'src/components/ColumnCustomizer/utils';
+import { Button } from './ui/Button';
+import { cn } from '@cometa/utils';
+import { SortingIcon } from './atoms/SortingIcon';
 
 interface TableProps<Data> {
   data: Data[] | undefined;
@@ -23,6 +30,7 @@ interface TableProps<Data> {
   addMorePaddingFirstRow?: boolean;
   hideColumns?: string[];
   onRowClick?: (row: Row<Data>['original']) => void;
+  onRowHover?: (row?: Row<Data>['original']) => void;
   totalCount: number;
   isFetching?: boolean;
   isFetchingNextPage?: boolean;
@@ -33,12 +41,31 @@ interface TableProps<Data> {
   selectedRowsToHighlight?: string[] | boolean;
   highlightId?: string;
   maxHeight?: number;
+  maxWidth?: number;
   hideFooter?: boolean;
   hideSum?: boolean;
   emptyStateText?: string;
   showEmptyStateImage?: boolean;
   emptyEndText?: string;
+  onSortingChange?: (sorting: SortingState) => void;
+  rowClassName?: string;
 }
+
+const TableHeaderContent = <T extends Record<string, any>, U>({ header }: { header: Header<T, U> }) => (
+  <div
+    {...{
+      className: header.column.getCanSort()
+        ? `cursor-pointer select-none flex justify-between gap-3 items-center pr-4 ${
+            header.column.columnDef.meta?.numeric && header.column.id ? 'justify-end' : ''
+          }`
+        : 'flex w-full',
+      onClick: header.column.getToggleSortingHandler(),
+    }}
+  >
+    {flexRender(header.column.columnDef.header, header.getContext())}
+    {header.column.getCanSort() && <SortingIcon sorting={header.column.getIsSorted() || false} />}
+  </div>
+);
 
 declare module '@tanstack/table-core' {
   // eslint-disable-next-line
@@ -66,13 +93,34 @@ export const Table = <T extends Record<string, any>>({
   maxHeight,
   emptyStateText = 'No tenemos resultados',
   showEmptyStateImage = false,
+  onSortingChange,
 }: TableProps<T>) => {
+  const [sorting, setSorting] = useState<SortingState>([]);
+
+  const handleSortingChange: OnChangeFn<SortingState> = React.useCallback(
+    (updaterOrValue: Updater<SortingState>) => {
+      const newSorting = typeof updaterOrValue === 'function' ? updaterOrValue(sorting) : updaterOrValue;
+      setSorting(newSorting);
+      if (onSortingChange) {
+        onSortingChange(newSorting);
+      }
+    },
+    [onSortingChange, setSorting, sorting]
+  );
+
   const table = useReactTable({
     data,
     columns,
     state: {
       ...state,
+      sorting,
       columnVisibility: hideColumns.reduce((o, key) => ({ ...o, [key]: false }), {}),
+    },
+    onSortingChange: handleSortingChange,
+    manualSorting: true,
+    enableSorting: true,
+    defaultColumn: {
+      enableSorting: false,
     },
     getCoreRowModel: getCoreRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
@@ -133,10 +181,7 @@ export const Table = <T extends Record<string, any>>({
         onScroll={(e) => fetchMoreOnBottomReached(e.target as HTMLDivElement)}
         ref={tableContainerRef}
       >
-        <table
-          className={`text-sm border-collapse table-fixed ${isEmptyTable ? 'grid-area-1' : ''} min-h-[300px]`}
-          style={{ height: `${maxHeight}px` }}
-        >
+        <table className={`text-sm border-collapse table-fixed ${isEmptyTable ? 'grid-area-1' : ''} min-h-[70px]`}>
           <thead className="bg-gray-300">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="bg-gray-200">
@@ -150,20 +195,7 @@ export const Table = <T extends Record<string, any>>({
                     }}
                     className="sticky z-10 py-4 pl-10 pr-4 font-semibold text-gray-600 bg-gray-200 whitespace-nowrap"
                   >
-                    {header.isPlaceholder ? null : (
-                      <>
-                        <div
-                          {...{
-                            className: header.column.getCanSort()
-                              ? `cursor-pointer select-none flex gap-1 items-end `
-                              : '',
-                            onClick: header.column.getToggleSortingHandler(),
-                          }}
-                        >
-                          {flexRender(header.column.columnDef.header, header.getContext())}
-                        </div>
-                      </>
-                    )}
+                    {header.isPlaceholder ? null : <TableHeaderContent header={header} />}
                   </th>
                 ))}
               </tr>
@@ -194,13 +226,15 @@ export const Table = <T extends Record<string, any>>({
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className={cn('whitespace-nowrap py-4 text-sm text-secondary pl-10 h-[70px]', {
+                      className={cn('whitespace-nowrap py-4 text-sm text-foreground pl-10 h-[70px]', {
                         'text-info font-semibold':
                           cell.column.id === 'scheduled_date' && row.original.status === 'SCHEDULED_STATUS',
                         'text-green font-semibold':
                           cell.column.id === 'scheduled_date' && row.original.status === 'APPROVED_STATUS',
-                        'text-warning font-semibold':
+                        'text-warning-500 font-semibold':
                           cell.column.id === 'scheduled_date' && row.original.status === 'PROCESSING_STATUS',
+                        'text-[#FF4842] font-semibold':
+                          cell.column.id === 'scheduled_date' && row.original.status === 'DECLINED_STATUS',
                         'text-right': cell.column.columnDef.meta?.numeric,
                         'sticky z-10': stickyColumns?.includes(cell.id.split('_')[1]),
                       })}
@@ -257,7 +291,7 @@ export const Table = <T extends Record<string, any>>({
             </tfoot>
           )}
           {isEmptyTable && (
-            <div className="bg-white w-[75%] grid-area-1 flex items-center justify-center flex-col gap-4 absolute ">
+            <div className="bg-white grid-area-1 flex items-center justify-center flex-col gap-4 absolute inset-0">
               {showEmptyStateImage && (
                 <svg width="86" height="60" viewBox="0 0 86 60" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path
@@ -448,10 +482,10 @@ export const FloatingActionOverlay: React.FC<OverlayActionsProps & { isWide?: bo
           'justify-between': isWide,
         })}
       >
-        <h2 className="text-center text-lg font-semibold">
+        <h2 className="text-lg font-semibold text-center">
           {itemCount} {itemLabel}
         </h2>
-        <div className="flex justify-center items-center">
+        <div className="flex items-center justify-center">
           {typeof actionContent === 'string' ? (
             <Button
               className={`mr-2 border rounded-lg px-2 py-1 font-bold h-[30px] ${buttonStyles[buttonType]}`}
@@ -469,29 +503,117 @@ export const FloatingActionOverlay: React.FC<OverlayActionsProps & { isWide?: bo
   );
 };
 
+type TableLayout = 'auto' | 'fixed' | 'inherit' | 'initial' | 'unset';
+
+type TableVirtualizedProps<T> = TableProps<T> & {
+  isSmallLoading?: boolean;
+  useWindowScroll?: boolean;
+  setHeaderVisible?: (value: boolean) => void;
+  headerVisible?: boolean;
+  hasSelectedOrders?: boolean;
+  rounded?: boolean;
+  classNameContainer?: string;
+  onSortingChange?: (sorting: SortingState) => void;
+  tableLayout?: TableLayout;
+  initialHeaderPosition?: number;
+  isFirstColumnExpanded?: boolean;
+  defaultVisibleColumns?: string[];
+};
+
 export const TableVirtualized = <T extends Record<string, any>>({
   data = [],
   columns,
   isFetching,
   addMorePaddingFirstRow = false,
-  isLoading,
+  isLoading = false,
   onRowClick,
+  onRowHover,
+  isSmallLoading = false,
   hasNextPage,
   maxHeight = 500,
+  maxWidth,
   fetchNextPage,
   isFetchingNextPage,
   selectedRowsToHighlight,
   emptyEndText,
-  emptyStateText,
+  emptyStateText = 'No hay información para mostrar',
+  onSortingChange,
+  hideFooter = false,
+  setHeaderVisible,
+  headerVisible,
+  useWindowScroll = false,
   hasSelectedOrders = false,
-}: TableProps<T> & { hasSelectedOrders?: boolean }) => {
+  rounded = false,
+  classNameContainer,
+  tableLayout = 'fixed',
+  initialHeaderPosition,
+  isFirstColumnExpanded = false,
+  defaultVisibleColumns,
+  rowClassName,
+}: TableVirtualizedProps<T>) => {
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const handleSortingChange: OnChangeFn<SortingState> = React.useCallback(
+    (updaterOrValue: Updater<SortingState>) => {
+      const newSorting = typeof updaterOrValue === 'function' ? updaterOrValue(sorting) : updaterOrValue;
+      setSorting(newSorting);
+      if (onSortingChange) {
+        onSortingChange(newSorting);
+      }
+    },
+    [onSortingChange, setSorting, sorting]
+  );
+
+  const tableColumns = useMemo(
+    () =>
+      columns.map((col, index) => ({
+        columnId: getColumnId(col),
+        columnName: getColumnHeader(col),
+        isVisible: defaultVisibleColumns ? defaultVisibleColumns.includes(getColumnId(col)) : true,
+        order: index,
+      })),
+    [columns, defaultVisibleColumns]
+  );
+  const visibleTableColumns = useVisibleTableColumns({ columns, tableColumns });
+
   const table = useReactTable({
     data,
-    columns,
+    columns: visibleTableColumns,
+    state: {
+      sorting,
+    },
+    onSortingChange: handleSortingChange,
     getCoreRowModel: getCoreRowModel(),
+    manualSorting: true,
+    enableSorting: true,
+    defaultColumn: {
+      enableSorting: false,
+    },
   });
+
   const { rows } = table.getRowModel();
   const isEmptyAndNotLoading = !isLoading && data && data.length === 0;
+  const [showShadow, setShowShadow] = useState(false);
+  const handleScroll = () => {
+    if (!setHeaderVisible) return;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const viewportHeight = initialHeaderPosition ? initialHeaderPosition + 10 : 500;
+    if (scrollTop > 0) {
+      setShowShadow(true);
+    } else {
+      setShowShadow(false);
+    }
+    if (scrollTop > viewportHeight) {
+      setHeaderVisible(false);
+    } else {
+      setHeaderVisible(true);
+    }
+  };
+
+  useEffect(() => {
+    if (!useWindowScroll) return;
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [useWindowScroll]);
 
   return (
     <div data-intercom-table>
@@ -503,13 +625,20 @@ export const TableVirtualized = <T extends Record<string, any>>({
       />
 
       {isEmptyAndNotLoading ? (
-        <div className="mx-auto w-full py-8 text-[#919EAB] text-center min-h-[500px] flex items-center justify-center">
+        <div
+          className={cn(
+            'mx-auto w-full py-8 text-[#919EAB] text-center min-h-[500px] flex items-center justify-center',
+            classNameContainer
+          )}
+        >
           {emptyStateText}
         </div>
       ) : !isLoading ? (
         <TableVirtuoso
-          style={{ height: `${maxHeight}px` }}
-          className="scrollbar z-30 scrollbar-stable"
+          style={{ height: `${maxHeight || 500}px`, width: `${maxWidth ? maxWidth + 'px' : ''}` }}
+          className={cn('scrollbar z-[9] scrollbar-stable', {
+            'rounded-xl border-[#E4EBF6] border': rounded,
+          })}
           totalCount={rows.length}
           endReached={fetchNextPage}
           overscan={100}
@@ -520,44 +649,68 @@ export const TableVirtualized = <T extends Record<string, any>>({
                 <img src="/assets/loading.svg" alt="loading" className="mx-auto" />
               </div>
             ) : !hasNextPage ? (
-              <div className="mx-auto w-full py-8 text-[#919EAB] text-center">{emptyEndText}</div>
+              <div
+                className={cn('mx-auto w-full py-8 text-[#919EAB] text-center min-w-[500px]', {
+                  'min-w-[200px]': isSmallLoading,
+                })}
+              >
+                {emptyEndText}
+              </div>
             ) : (
-              <div className="flex justify-between items-center px-4 py-2 bg-white border-t border-gray-200" />
+              <div className="flex items-center justify-between px-4 py-2 bg-white border-t border-gray-200" />
             )
           }
+          useWindowScroll={useWindowScroll}
           components={{
-            Table: ({ style, ...props }) => (
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            TableHead: ({ children, style, ...props }) => (
+              <thead
+                className={cn('z-20 sticky transition-all duration-1000', {
+                  'top-0': !headerVisible,
+                  [`top-[${initialHeaderPosition ?? 114}px] duration-500 translate-y-0`]: headerVisible,
+                })}
+                {...props}
+              >
+                {children}
+              </thead>
+            ),
+            Table: ({ style, children, ...props }) => (
               <div>
                 <table
                   {...props}
-                  className="w-full border-collapse border-spacing-0"
+                  className={cn('w-full border-collapse border-spacing-0', {
+                    'first-column-expanded': isFirstColumnExpanded,
+                  })}
                   data-testid="infinitScroll-table"
                   style={{
                     ...style,
                     width: '100%',
-                    tableLayout: 'fixed',
+                    tableLayout,
                     borderCollapse: 'collapse',
                     borderSpacing: 0,
                   }}
-                />
+                >
+                  {children}
+                </table>
               </div>
             ),
             TableFoot: () => (
-              <div
-                className={cn('w-[900px]', {
+              <tfoot
+                className={cn('w-full max-w-[900px]', {
                   'pt-24': hasSelectedOrders,
+                  hidden: hideFooter,
                 })}
               >
                 {hasNextPage && isFetchingNextPage ? (
-                  <div className="flex justify-center items-center px-4 py-2 bg-white border-t border-gray-200 w-[900px]">
+                  <div className="flex justify-center items-center px-4 py-2 bg-white border-t border-gray-200 w-[calc(100vw-255px)]">
                     <img src="/assets/loading.svg" alt="loading" className="mx-auto" />
                   </div>
                 ) : !hasNextPage && emptyEndText ? (
-                  <div className="mx-auto w-full py-8 text-[#919EAB] text-center">{emptyEndText}</div>
+                  <div className="mx-auto py-8 text-[#919EAB] text-center  w-[calc(100vw-255px)]">{emptyEndText}</div>
                 ) : (
-                  <div className="flex justify-between items-center px-4 py-2 bg-white border-t border-gray-200" />
+                  <div className="flex items-center justify-between px-4 py-2 bg-white border-t border-gray-200" />
                 )}
-              </div>
+              </tfoot>
             ),
             TableRow: (props) => {
               const index = props['data-index'];
@@ -565,14 +718,18 @@ export const TableVirtualized = <T extends Record<string, any>>({
               return (
                 <tr
                   {...props}
-                  className={cn('bg-white', {
-                    'bg-[rgba(0,171,85,0.08)]':
-                      ('id' in row.original &&
-                        Array.isArray(selectedRowsToHighlight) &&
-                        selectedRowsToHighlight.includes(String(row.original.id))) ||
-                      selectedRowsToHighlight === true,
-                    'hover:bg-green/5 hover:cursor-pointer': true,
-                  })}
+                  className={cn(
+                    'bg-white',
+                    {
+                      'bg-[rgba(0,171,85,0.08)]':
+                        ('id' in row.original &&
+                          Array.isArray(selectedRowsToHighlight) &&
+                          selectedRowsToHighlight.includes(String(row.original.id))) ||
+                        selectedRowsToHighlight === true,
+                      'hover:bg-green/5 hover:cursor-pointer': onRowClick,
+                    },
+                    rowClassName
+                  )}
                   data-intercom-row-index={index}
                 >
                   {row.getVisibleCells().map((cell, i) => (
@@ -582,14 +739,18 @@ export const TableVirtualized = <T extends Record<string, any>>({
                         if (cell.column.id === 'select') return;
                         onRowClick && onRowClick(row.original);
                       }}
-                      className={cn(
-                        'whitespace-nowrap py-4 text-sm text-secondary border-b border-[#E4EBF6] pr-2 pl-6',
-                        {
-                          'pl-10': i === 0 && addMorePaddingFirstRow,
-                          'pl-9': i === 0 && !addMorePaddingFirstRow,
-                          'text-right pr-4': cell.column.columnDef.meta?.numeric,
-                        }
-                      )}
+                      onMouseEnter={() => {
+                        onRowHover && onRowHover(row.original);
+                      }}
+                      onMouseLeave={() => {
+                        onRowHover && onRowHover();
+                      }}
+                      className={cn('whitespace-nowrap py-4 text-sm text-foreground pr-2 pl-6', {
+                        'pl-10': i === 0 && addMorePaddingFirstRow,
+                        'pl-9': i === 0 && !addMorePaddingFirstRow,
+                        'text-right pr-4': cell.column.columnDef.meta?.numeric,
+                        'border-b border-[#E4EBF6]': index !== rows.length - 1,
+                      })}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
@@ -600,7 +761,13 @@ export const TableVirtualized = <T extends Record<string, any>>({
           }}
           fixedHeaderContent={() =>
             table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="sticky bottom-0 bg-gray-200">
+              <tr
+                key={headerGroup.id}
+                className={cn('bg-gray-200 shadow-none transition-all duration-1000', {
+                  'shadow-[0px_12px_24px_-4px_#919EAB1F,0px_0px_2px_0px_#919EAB33]': showShadow,
+                  'shadow-none': !showShadow,
+                })}
+              >
                 {headerGroup.headers.map((header, i) => (
                   <th
                     key={header.id}
@@ -611,38 +778,17 @@ export const TableVirtualized = <T extends Record<string, any>>({
                       top: '0px',
                     }}
                     className={cn(
-                      'whitespace-nowrap text-sm font-semibold py-3 text-[#637381] sticky bg-[#FBFCFD] z-10',
+                      'whitespace-nowrap text-sm font-semibold py-3 text-[#637381] bg-[#FBFCFD] z-10',
                       {
                         'pl-10': i === 0 && addMorePaddingFirstRow,
                         'pl-9': i === 0 && !addMorePaddingFirstRow,
-                        // this is for those cases that we have a checkbox. We need to set a max-width to avoid the column to be too wide.
                         'w-[80px]': header.id === 'select',
                         'pr-6': i === headerGroup.headers.length - 1,
-                      }
+                      },
+                      { 'pl-6 border-l-2 border-[#919EAB3D] pr-4': i !== 0 }
                     )}
                   >
-                    <div
-                      className={cn('py-1', {
-                        'pl-6 border-[#919EAB3D] pr-4 border-l-2': i !== 0,
-                        'border-l-0': i === 1 && !addMorePaddingFirstRow,
-                      })}
-                    >
-                      {header.isPlaceholder ? null : (
-                        <>
-                          <div
-                            {...{
-                              className: header.column.getCanSort()
-                                ? `cursor-pointer select-none flex gap-1 items-end ${
-                                    header.column.columnDef.meta?.numeric ? 'justify-end' : ''
-                                  }`
-                                : '',
-                            }}
-                          >
-                            {flexRender(header.column.columnDef.header, header.getContext())}
-                          </div>
-                        </>
-                      )}
-                    </div>
+                    {header.isPlaceholder ? null : <TableHeaderContent header={header} />}
                   </th>
                 ))}
               </tr>
@@ -650,7 +796,15 @@ export const TableVirtualized = <T extends Record<string, any>>({
           }
         />
       ) : (
-        <div className="flex justify-center items-center px-4 py-2 bg-white border-t border-gray-200 w-[900px] min-h-[500px]">
+        <div
+          className={cn(
+            'flex justify-center items-center px-4 py-2 bg-white border-t border-gray-200 w-[900px] min-h-[500px]',
+            {
+              'w-[600px]': isSmallLoading,
+            },
+            classNameContainer
+          )}
+        >
           <img src="/assets/loading.svg" alt="loading" className="mx-auto" />
         </div>
       )}

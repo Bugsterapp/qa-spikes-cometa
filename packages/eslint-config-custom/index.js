@@ -48,7 +48,7 @@ module.exports = {
     'prettier/prettier': ['warn'],
     'arrow-body-style': 1,
     'react/display-name': 0,
-    'react/prop-types': 1,
+    'react/prop-types': 0,
     'react/no-children-prop': 0,
     'react/self-closing-comp': 2,
     'react/react-in-jsx-scope': 0,

@@ -1,3 +1,4 @@
+'use client';
 import { useToast } from './useToast';
 
 import { Toast, ToastClose, ToastDescription, ToastProvider, ToastTitle, ToastViewport } from './Toast';

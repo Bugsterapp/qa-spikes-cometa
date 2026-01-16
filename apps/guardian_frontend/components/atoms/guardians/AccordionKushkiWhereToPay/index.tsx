@@ -3,6 +3,8 @@ import Accordion from '~/components/atoms/guardians/Accordion';
 import { formatPrice } from '~/utils/orders';
 import Image from 'next/image';
 import { cn } from '~/lib/cn';
+import { useSendEvent } from '~/hooks/useSendEvent';
+import { TrackEvents } from '~/constants/events';
 
 interface AccordionKushkiWhereToPayProps {
   priceTotal: number;
@@ -18,8 +20,13 @@ export const AccordionKushkiWhereToPay = ({
   const validCommerces = commerces.filter((element) => element.maxAmountAllowed >= priceTotal);
   const invalidCommerces = commerces.filter((element) => element.maxAmountAllowed < priceTotal);
   const commercesSorted = [...validCommerces, ...invalidCommerces];
+  const sendEvent = useSendEvent();
   return (
-    <Accordion tittle={<span className="text-[#091A7A] text-lg">¿Dónde pagar?</span>}>
+    <Accordion
+      onClick={() => sendEvent(TrackEvents.checkout.cash.detailsClicked)}
+      title={<span className="text-[#091A7A] text-lg">¿Dónde pagar?</span>}
+      className="bg-white"
+    >
       <>
         <div className="flex flex-col mt-1 text-xs font-medium text-gray-600 gap-y-4">
           <span>Podrás pagar en cualquiera de estas sucursales una vez generado tu PIN de pago.</span>

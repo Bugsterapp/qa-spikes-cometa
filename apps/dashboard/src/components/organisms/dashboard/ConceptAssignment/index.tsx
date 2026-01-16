@@ -1,37 +1,46 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Dispatch, useCallback, useEffect, useMemo, useState, SetStateAction } from 'react';
 import ApiClient from '../../../../services/ApiClient';
 import { useSession } from 'next-auth/react';
 import * as Sentry from '@sentry/nextjs';
 import ConceptData from '/src/components/molecules/dashboard/ConceptData';
 import useAlert from '/src/hooks/useAlert';
 import { useRouter } from 'next/router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { QUERY_KEY_CONCEPTS, QUERY_KEY_DUE_ORDERS_STUDENT } from '/src/utils/reactQueryKeys';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { QUERY_KEY_CONCEPTS } from '/src/utils/reactQueryKeys';
 import CAutocomplete from '/src/components/molecules/dashboard/NCometaSingleSelect';
-import { ConceptAssignment as ConceptAssignmentType } from '/types/paid-orders';
 import SidebarHeader from '../../../molecules/dashboard/SidebarHeader';
 import { Tooltip } from '/src/components/atoms/Tooltip';
 import SidebarActions from '../../../atoms/SidebarActions';
 import useSendTrackEventWithUserName from '/src/hooks/useSendTrackEventWithUserName';
+import { Events } from '/src/constants/events';
 import { AxiosError } from 'axios';
 import { useSelectedSchoolId } from '/src/guards/AuthGuard';
 import Dialog from '/src/components/atoms/Dialog';
 import dayjs from 'dayjs';
 import Button from '../Button';
 import { api } from 'src/utils/api';
-import { StudentConcept } from '@cometa/trpc/src/types';
+import { StudentConcept, ConceptSlimTypeEnum } from '@cometa/trpc/src/types';
+import * as Combobox from '../../../ui/Combobox';
+import SelectChip from '/src/components/atoms/SelectChip';
 
 interface IOrderModalForAssignmentsProps {
   onClose: () => void;
   studentId: string;
+  source?: 'student' | 'lead';
+  defaultSchoolCycle?: { id: string; name: string } | null;
 }
 
-export default function ConceptAssignment(props: IOrderModalForAssignmentsProps) {
-  const { onClose, studentId } = props;
+export default function ConceptAssignment({
+  onClose,
+  studentId,
+  source = 'student',
+  defaultSchoolCycle = null,
+}: IOrderModalForAssignmentsProps) {
   const { data: session } = useSession();
   const [openDialog, setOpenDialog] = useState(false);
   const [currentConcept, setCurrentConcept] = useState<any>(null);
-  const [selectedCycle, setSelectedCycle] = useState<any>(null);
+  const [currentConceptType, setCurrentConceptType] = useState<any>(null);
+  const [selectedCycle, setSelectedCycle] = useState<any>(defaultSchoolCycle);
   const [selectedOrders, setSelectedOrders] = useState<any[]>([]);
   const selectedSchool = useSelectedSchoolId();
   const { setAlertState } = useAlert();
@@ -43,29 +52,30 @@ export default function ConceptAssignment(props: IOrderModalForAssignmentsProps)
   const sortByIsAssigned = (data: StudentConcept[] | undefined) =>
     data?.sort((a, b) => (a.is_assigned as any) - (b.is_assigned as any));
 
-  const conceptQuery = async () => {
-    const res = await ApiClient.getConceptAssignmentDetail(session?.token, studentId, currentConcept.id);
-    return res?.data;
-  };
+  const conceptQueryParams = useMemo(() => {
+    const params: {
+      studentId: string;
+      cycle_id: string[];
+      type?: string;
+    } = {
+      studentId,
+      cycle_id: [selectedCycle?.id],
+    };
 
-  const addDueDate = (data: any) => {
-    const newOrders = data.orders.map((order: any) => {
-      const dueDate = order.due ? new Date(`${order.due}T00:00`) : null;
-      return { ...order, dueDate };
-    });
-    data.orders = newOrders;
-    return data;
-  };
+    if (currentConceptType) {
+      params.type = currentConceptType.id;
+    }
 
-  const { data: concept, isLoading } = useQuery<ConceptAssignmentType>(
-    [QUERY_KEY_CONCEPTS, currentConcept?.id],
-    conceptQuery,
+    return params;
+  }, [studentId, selectedCycle?.id, currentConceptType]);
+
+  const { data: concept, isPending: isLoadingConcept } = api.students.studentConceptRetrieve.useQuery(
+    { conceptId: currentConcept?.id, studentId: studentId },
     {
       enabled: !!currentConcept,
-      select: useCallback(addDueDate, []),
     }
   );
-  const isOptional = concept?.orders.every((order) => !order.dueDate);
+  const isOptional = concept?.orders?.some((order) => order.optional) || false;
 
   useEffect(() => {
     if (!concept?.orders) {
@@ -74,9 +84,9 @@ export default function ConceptAssignment(props: IOrderModalForAssignmentsProps)
     }
 
     const newOrders = !isOptional
-      ? concept.orders.map(({ id, dueDate, would_be_due }) => ({
+      ? concept.orders.map(({ id, due, would_be_due }) => ({
           id,
-          dueDate,
+          dueDate: new Date(`${due}T00:00`),
           checked: !would_be_due,
         }))
       : concept.orders.map(({ id, has_fulfillment, is_skipped }) => ({
@@ -88,21 +98,32 @@ export default function ConceptAssignment(props: IOrderModalForAssignmentsProps)
     setSelectedOrders(newOrders);
   }, [concept?.orders, isOptional]);
 
-  const { data: schoolarCycles } = api.schools.schoolsCycles.useQuery(
+  const { data: schoolarCycles, isPending: isLoadingSchoolCycles } = api.schools.schoolsCycles.useQuery(
     { school_id: selectedSchool || '' },
     { enabled: !!selectedSchool }
   );
 
-  const { data: concepts } = api.students.studentConcepts.useQuery(
-    { studentId, cycle_id: [selectedCycle?.id] },
-    {
-      enabled: !!selectedSchool && !!selectedCycle,
-      onError(err) {
-        Sentry.captureException(err);
-      },
-      select: useCallback(sortByIsAssigned, []),
-    }
+  const { data: schoolCollectionsConceptTypes, isPending: isLoadingSchoolCollectionsConceptTypes } =
+    api.schools.schoolsCollectionsConceptTypes.useQuery(
+      { school_id: selectedSchool || '', school_cycle: [selectedCycle?.id] },
+      { enabled: !!selectedSchool && !!selectedCycle }
+    );
+  const normalizedSchoolCollectionsConceptTypes = useMemo(
+    () =>
+      schoolCollectionsConceptTypes?.map((conceptType) => ({
+        id: conceptType.type,
+        name: conceptType.name,
+        is_assigned: false,
+        is_optional: false,
+      })),
+    [schoolCollectionsConceptTypes]
   );
+
+  const { data: concepts, isPending: isLoadingConcepts } = api.students.studentConcepts.useQuery(conceptQueryParams, {
+    enabled: !!selectedSchool && !!selectedCycle,
+    select: useCallback(sortByIsAssigned, []),
+    meta: { logErrorToSentry: true },
+  });
 
   const assignConcept = async () => {
     // IDs of orders that are not selected
@@ -122,7 +143,6 @@ export default function ConceptAssignment(props: IOrderModalForAssignmentsProps)
 
     // Call the API client passing all necessary parameters
     return await ApiClient.postConceptAssignment(
-      session?.token,
       studentId,
       currentConcept?.id,
       isOptional ? selectedOrdersId : noSelectedOrdersId,
@@ -131,23 +151,27 @@ export default function ConceptAssignment(props: IOrderModalForAssignmentsProps)
       endDate
     );
   };
+
   const onClickAssign = () => {
-    sendTrackEventWithUserName('dashboard: Concept | Clicked assign');
+    sendTrackEventWithUserName(Events.concept_click_assign);
     mutation.mutate();
   };
+
   const mutation = useMutation({
     mutationFn: assignConcept,
     async onSuccess() {
       await queryClient.invalidateQueries({ queryKey: [QUERY_KEY_CONCEPTS, studentId] });
       await utils.students.dashboardSchoolDueOrdersStudents.invalidate();
       await utils.manualPayments.fulfillments.invalidate();
-      await utils.manualPayments.optionalOrders.invalidate();
+      await utils.manualPayments.guardianOptionalOrders.invalidate();
       await utils.students.studentsAssignments.invalidate();
       await utils.students.dashboardSchoolDueOrdersStudentDetail.invalidate();
-      await queryClient.invalidateQueries({ queryKey: [QUERY_KEY_DUE_ORDERS_STUDENT], exact: true });
+      await utils.students.studentConceptRetrieve.invalidate();
+
       onClose();
       setAlertState({ open: true, severity: 'success', message: '¡Se asignó el concepto de manera exitosa!' });
-      sendTrackEventWithUserName('dashboard: Concept | Assigned');
+      sendTrackEventWithUserName(Events.concept_assigned);
+
       router.push('#table-for-assignments');
     },
     onError(err: AxiosError | Error) {
@@ -156,7 +180,7 @@ export default function ConceptAssignment(props: IOrderModalForAssignmentsProps)
         severity: 'error',
         message: 'Ocurrió un error inesperado, por favor intenta de nuevo.',
       });
-      sendTrackEventWithUserName('dashboard: Concept | Error when assigning', { error: err.message });
+      sendTrackEventWithUserName(Events.concept_error_assigning, { error: err.message });
       Sentry.captureException(err, (scope) => {
         scope.setContext('state', {
           studentId,
@@ -176,72 +200,109 @@ export default function ConceptAssignment(props: IOrderModalForAssignmentsProps)
 
   return (
     <>
-      <div className="flex flex-col flex-auto px-8 mb-9 min-h-[calc(100vh-135px)]">
-        <SidebarHeader
-          title="Detalle de asignación de concepto"
-          disabled={mutation.isLoading}
-          boxClassName="px-0"
-          onClose={() => {
-            if (currentConcept) {
-              setOpenDialog(true);
-            } else {
-              onClose();
-            }
-          }}
-        />
-        <div className="mt-5 mb-2">
-          <div className="mb-2">
-            <label className="text-[#637381] text-sm">Busca y selecciona el concepto que deseas asignar.</label>
-          </div>
-          <CAutocomplete
-            setSelected={setSelectedCycle}
-            data={schoolarCycles?.sort((a: any, b: any) => b.name.localeCompare(a.name)) || []}
-            placeholder="Ciclo escolar"
-            currentValue={selectedCycle}
-            disabled={mutation.isLoading}
+      <div className="flex flex-col flex-auto px-8 min-h-[calc(100vh-135px)] justify-between">
+        <div>
+          <SidebarHeader
+            title="Detalle de asignación de concepto"
+            disabled={mutation.isPending}
+            boxClassName="px-0"
+            onClose={() => {
+              if (currentConcept) {
+                setOpenDialog(true);
+              } else {
+                onClose();
+              }
+            }}
           />
-          {selectedCycle && (
+          <div className="mt-5 mb-2">
+            <div className="mb-2">
+              <label className="text-[#637381] text-sm">Busca y selecciona el concepto que deseas asignar.</label>
+            </div>
             <CAutocomplete
-              setSelected={setCurrentConcept}
-              data={concepts || []}
-              placeholder="Selecciona un concepto"
-              currentValue={currentConcept}
-              disabled={mutation.isLoading}
+              setSelected={setSelectedCycle}
+              data={schoolarCycles?.sort((a: any, b: any) => b.name.localeCompare(a.name)) || []}
+              placeholder="Ciclo escolar"
+              currentValue={selectedCycle}
+              disabled={mutation.isPending || isLoadingSchoolCycles}
+            />
+            {selectedCycle ? (
+              source === 'student' ? (
+                <>
+                  <CAutocomplete
+                    setSelected={setCurrentConceptType}
+                    data={normalizedSchoolCollectionsConceptTypes || []}
+                    placeholder="Selecciona el tipo de concepto"
+                    currentValue={currentConceptType}
+                    isLoading={isLoadingSchoolCollectionsConceptTypes}
+                    disabled={mutation.isPending || isLoadingSchoolCollectionsConceptTypes}
+                  />
+
+                  <CAutocomplete
+                    setSelected={setCurrentConcept}
+                    data={concepts || []}
+                    placeholder="Selecciona un concepto"
+                    currentValue={currentConcept}
+                    isLoading={isLoadingConcepts}
+                    disabled={mutation.isPending || isLoadingConcepts}
+                  />
+                </>
+              ) : (
+                <Combobox.Root
+                  key={concepts?.length}
+                  selectedOption={currentConcept}
+                  setSelectedOption={setCurrentConcept}
+                  data={concepts || []}
+                  placeholder="Selecciona un concepto"
+                  isLoading={isLoadingConcepts}
+                  disabled={mutation.isPending || isLoadingConcepts}
+                >
+                  {(options: StudentConcept[]) =>
+                    options
+                      .sort((a, b) => +b.is_optional - +a.is_optional)
+                      .map((option) => (
+                        <ComboboxOption key={option.id} option={option} setSelectedOption={setCurrentConcept} />
+                      ))
+                  }
+                </Combobox.Root>
+              )
+            ) : null}
+          </div>
+          {currentConcept && selectedCycle && (
+            <ConceptData
+              concept={concept}
+              selectedOrders={selectedOrders}
+              setSelectedOrders={setSelectedOrders}
+              isLoading={isLoadingConcept}
             />
           )}
         </div>
-        {currentConcept && selectedCycle && (
-          <ConceptData
-            concept={concept}
-            selectedOrders={selectedOrders}
-            setSelectedOrders={setSelectedOrders}
-            isLoading={isLoading}
-          />
-        )}
-      </div>
-      <SidebarActions>
-        <button
-          className="bg-white px-20 py-3 ml-12 text-[#00AB55] hover:text-green-500 text-base font-bold disabled:text-[#919EABCC] rounded-lg"
-          onClick={() => {
-            sendTrackEventWithUserName('dashboard: Concept | Clicked cancel');
-            setOpenDialog(true);
-          }}
-          disabled={mutation.isLoading}
-        >
-          Cancelar
-        </button>
-        <Tooltip message="Tiene que haber al menos una orden seleccionada." disableHover={!noSelectedOrders}>
-          <span>
+        <SidebarActions className="grid grid-cols-2 px-0">
+          <Button
+            className="bg-white px-4 text-[#00AB55] text-base font-bold disabled:text-[#919EABCC] rounded-lg flex-1 hover:bg-[#00AB5514]/8"
+            onClick={() => {
+              sendTrackEventWithUserName(Events.concept_click_cancel);
+              setOpenDialog(true);
+            }}
+            disabled={mutation.isPending}
+            variant="outline"
+          >
+            Cancelar
+          </Button>
+          <Tooltip
+            message="Tiene que haber al menos una orden seleccionada."
+            disableHover={!noSelectedOrders}
+            className="w-full"
+          >
             <button
-              className="text-white text-base font-bold px-12 py-3 rounded-lg bg-[#00AB55] hover:bg-green-500 disabled:bg-[#919EAB3D] disabled:text-[#919EABCC] whitespace-nowrap w-full"
+              className="text-white text-base font-bold px-2 py-3 rounded-lg bg-[#00AB55] hover:bg-green-500 disabled:bg-[#919EAB3D] disabled:text-[#919EABCC] whitespace-nowrap w-full flex-1"
               onClick={onClickAssign}
-              disabled={!currentConcept || mutation.isLoading || noSelectedOrders}
+              disabled={!currentConcept || mutation.isPending || noSelectedOrders}
             >
-              {mutation.isLoading ? 'Asignando...' : 'Asignar'}
+              {mutation.isPending ? 'Asignando...' : 'Asignar'}
             </button>
-          </span>
-        </Tooltip>
-      </SidebarActions>
+          </Tooltip>
+        </SidebarActions>
+      </div>
       <Dialog.Root open={!!openDialog} position="right" classNames="right-16">
         <Dialog.Title>¿Estás seguro que deseas cancelar la asignación?</Dialog.Title>
         <div className="flex justify-center gap-x-10">
@@ -252,7 +313,7 @@ export default function ConceptAssignment(props: IOrderModalForAssignmentsProps)
             variant="cancel"
             size="tooltip"
             onClick={() => {
-              sendTrackEventWithUserName('dashboard: Concept | Assignment cancelled');
+              sendTrackEventWithUserName(Events.concept_assignment_cancelled);
               setOpenDialog(false);
               setTimeout(() => {
                 onClose();
@@ -264,5 +325,37 @@ export default function ConceptAssignment(props: IOrderModalForAssignmentsProps)
         </div>
       </Dialog.Root>
     </>
+  );
+}
+
+function ComboboxOption({
+  option,
+  setSelectedOption,
+}: {
+  option: StudentConcept;
+  setSelectedOption: Dispatch<SetStateAction<StudentConcept | null>>;
+}) {
+  const isDisabled = !option.is_optional && option.type !== ConceptSlimTypeEnum.INSCRIPTION;
+
+  if (isDisabled) {
+    return (
+      <Combobox.Option option={option} setSelectedOption={setSelectedOption} disabled={isDisabled}>
+        <Tooltip
+          message="No puedes asignar conceptos obligatorios hasta que el prospecto sea admitido"
+          side="bottom"
+          disableClick={isDisabled}
+        >
+          <span className="text-base opacity-50">{option.name}</span>
+        </Tooltip>
+      </Combobox.Option>
+    );
+  }
+
+  const isAssigned = !!option.is_assigned;
+  return (
+    <Combobox.Option option={option} setSelectedOption={setSelectedOption} disabled={isAssigned}>
+      <span className={`text-base ${isAssigned ? 'opacity-50' : ''}`}>{option.name}</span>
+      {option.is_assigned ? <SelectChip theme="blue">Ya asignado</SelectChip> : null}
+    </Combobox.Option>
   );
 }

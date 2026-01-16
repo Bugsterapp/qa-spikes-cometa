@@ -1,7 +1,10 @@
 import { z } from 'zod';
-import * as Sentry from '@sentry/nextjs';
 import { createTRPCRouter, protectedProcedure } from '../trpc';
 import { ServiceClient } from '/src/utils/api';
+import handleTRPCError from '/src/utils/trpcErrorHandler';
+import { OfferingType } from '/src/constants/offering';
+import { OrderType } from '/src/constants/orders';
+import { DashboardDependentFulfillment, GuardianDependentOrder, OptionalOrder } from '@cometa/trpc/src/types';
 
 export const manualPaymentsRouter = createTRPCRouter({
   bankAccountList: protectedProcedure.input(z.object({ schoolId: z.string() })).query(async ({ input, ctx }) => {
@@ -19,7 +22,7 @@ export const manualPaymentsRouter = createTRPCRouter({
       //    ^?
       return data;
     } catch (err) {
-      Sentry.captureException(err);
+      handleTRPCError(err);
     }
   }),
   fulfillments: protectedProcedure
@@ -28,6 +31,16 @@ export const manualPaymentsRouter = createTRPCRouter({
         guardian_id: z.string(),
         school_id: z.string(),
       })
+    )
+    .output(
+      z.any().transform((data) => ({
+        ...data,
+        results:
+          data.results?.map((item: DashboardDependentFulfillment) => ({
+            ...item,
+            orderType: OrderType.SCHOLAR as const,
+          })) || [],
+      }))
     )
     .query(async ({ input, ctx }) => {
       try {
@@ -43,30 +56,76 @@ export const manualPaymentsRouter = createTRPCRouter({
         const data = response.data;
         return data;
       } catch (err) {
-        Sentry.captureException(err);
+        handleTRPCError(err);
       }
     }),
-  optionalOrders: protectedProcedure
+  guardianOptionalOrders: protectedProcedure
     .input(
       z.object({
         guardian_id: z.string(),
         multiple_search: z.string().optional(),
         page_size: z.number().optional(),
         school_id: z.string(),
+        offering: z.array(z.enum([OfferingType.SCHOLAR, OfferingType.OPEN_LOOP, OfferingType.MIX])).optional(),
       })
+    )
+    .output(
+      z.any().transform((data) => ({
+        ...data,
+        results:
+          data.results?.map((item: GuardianDependentOrder) => ({ ...item, orderType: OrderType.OPTIONAL as const })) ||
+          [],
+      }))
     )
     .query(async ({ input, ctx }) => {
       try {
         const response = await ServiceClient.apiV1DashboardGuardiansOptionalOrdersList(
           input.guardian_id,
-          // @ts-ignore should fix when this type is correct
-          { multiple_search: input.multiple_search, school: input.school_id, page_size: input.page_size },
+          {
+            multiple_search: input.multiple_search,
+            school: input.school_id,
+            page_size: input.page_size,
+            offering: input.offering,
+          },
           { headers: { Authorization: `Token ${ctx.session.token}` } }
         );
         const data = response.data;
         return data;
       } catch (err) {
-        Sentry.captureException(err);
+        handleTRPCError(err);
+      }
+    }),
+  schoolOptionalOrders: protectedProcedure
+    .input(
+      z.object({
+        school_id: z.string(),
+        multiple_search: z.string().optional(),
+        page_size: z.number().optional(),
+        offering: z.array(z.enum([OfferingType.SCHOLAR, OfferingType.OPEN_LOOP, OfferingType.MIX])).optional(),
+      })
+    )
+    .output(
+      z.any().transform((data) => ({
+        ...data,
+        results:
+          data.results?.map((item: OptionalOrder) => ({ ...item, orderType: OrderType.ONLINE_STORE as const })) || [],
+      }))
+    )
+    .query(async ({ input, ctx }) => {
+      try {
+        const response = await ServiceClient.apiV1DashboardSchoolsOptionalOrdersList(
+          input.school_id,
+          {
+            multiple_search: input.multiple_search,
+            page_size: input.page_size,
+            offering: input.offering,
+          },
+          { headers: { Authorization: `Token ${ctx.session.token}` } }
+        );
+        const data = response.data;
+        return data;
+      } catch (err) {
+        handleTRPCError(err);
       }
     }),
   studentDetails: protectedProcedure.input(z.object({ studentId: z.string() })).query(async ({ input, ctx }) => {
@@ -79,7 +138,7 @@ export const manualPaymentsRouter = createTRPCRouter({
       const data = response.data;
       return data;
     } catch (err) {
-      Sentry.captureException(err);
+      handleTRPCError(err);
     }
   }),
   patchRFC: protectedProcedure
@@ -100,7 +159,7 @@ export const manualPaymentsRouter = createTRPCRouter({
         const data = response.data;
         return data;
       } catch (err) {
-        Sentry.captureException(err);
+        handleTRPCError(err);
       }
     }),
 });

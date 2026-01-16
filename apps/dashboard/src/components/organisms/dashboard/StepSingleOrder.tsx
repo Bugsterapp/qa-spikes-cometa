@@ -8,13 +8,14 @@ import { format, parseISO, isDate } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Button from './Button';
 import { CalendarIcon } from 'lucide-react';
-import { Calendar } from '../../ui/Calendar';
 import { cn } from '/src/utils/cn';
 import useSendTrackEventWithUserName from '/src/hooks/useSendTrackEventWithUserName';
+import { Events } from '/src/constants/events';
+import { Calendar } from '@cometa/recreo';
 
 export function StepSingleOrder({ setData, onNext, onBack, formData }: StepProps<FormValues8>) {
   const sendTrackEventWithUserName = useSendTrackEventWithUserName();
-  sendTrackEventWithUserName('dashboard: Concept | New Concept P2A.1.2 Single Order');
+  sendTrackEventWithUserName(Events.concept_new_p2a1_single_order);
   const formSingleOrderStep = useForm<FormValues8>({
     resolver: zodResolver(schemaStepSingleOrder),
     mode: 'all',
@@ -26,8 +27,8 @@ export function StepSingleOrder({ setData, onNext, onBack, formData }: StepProps
   });
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="min-h-[82vh]">
+    <div className="flex flex-col min-h-[calc(100vh-80px)] justify-between">
+      <div className="min-h-[75vh]">
         <div className="py-6 mb-4 sticky top-0 z-10 bg-white">
           <h1 className="font-bold text-xl text-black">Precio y vencimiento</h1>
           <span className="text-sm text-[#637381] ">Ingresa el precio y fecha de vencimiento del concepto</span>
@@ -67,9 +68,12 @@ export function StepSingleOrder({ setData, onNext, onBack, formData }: StepProps
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0 bg-white shadow-lg rounded-lg">
-                {/* only for testing purposes, this ts ignore will be removed before merging */}
-                {/* @ts-ignore */}
-                <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                <Calendar
+                  mode="single"
+                  selected={field.value as unknown as Date}
+                  onSelect={field.onChange}
+                  initialFocus
+                />
               </PopoverContent>
             </Popover>
           )}

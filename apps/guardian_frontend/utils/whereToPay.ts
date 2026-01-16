@@ -12,12 +12,6 @@ export const commerces = [
     agreement: 'CONVENIO3724',
   },
   {
-    logo: '/images/round-logos/bbva-round-logo.svg',
-    name: 'Bancomer',
-    maxAmountAllowed: 20000,
-    agreement: 'CIE1420712',
-  },
-  {
     logo: '/images/round-logos/bodega-aurrera-round-logo.svg',
     name: 'Bodega Aurrerá',
     maxAmountAllowed: 10000,

@@ -9,6 +9,7 @@ type IDeleteModalSpecialOrder = {
   orderDataValue: number;
   handleDelete: () => void;
   loading: boolean;
+  isSponsoredMode: boolean;
 };
 
 type IDetailsSpecialOrder = {
@@ -16,8 +17,11 @@ type IDetailsSpecialOrder = {
   id: string;
   value?: string;
   is_visible?: boolean;
-  handleDestroyOrder: (orderData_id: string) => void;
+  handleDestroyOrder?: (orderData_id: string, skipValidation?: boolean) => void;
   disableDelete: boolean;
+  onValidateBeforeDelete?: (overcharge_id: string) => Promise<boolean>;
+  paidAmount?: number;
+  pendingAmount?: number;
 };
 
 export const DetailsSpecialOrder = ({
@@ -27,9 +31,37 @@ export const DetailsSpecialOrder = ({
   is_visible,
   handleDestroyOrder,
   disableDelete,
+  onValidateBeforeDelete,
+  paidAmount,
+  pendingAmount,
 }: IDetailsSpecialOrder) => {
-  const [deleteOrder, setDeleteOrder] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [validating, setValidating] = useState(false);
+  const [deletionContext, setDeletionContext] = useState<{ isSponsored: boolean } | null>(null);
+
+  const handleTrashClick = async () => {
+    const overchargeValue = value ? Number(value) : 0;
+
+    let isNowSponsored = false;
+
+    const canSkipValidation =
+      (paidAmount !== undefined && paidAmount > 0) ||
+      (pendingAmount !== undefined && overchargeValue > 0 && pendingAmount > overchargeValue);
+
+    if (!canSkipValidation && onValidateBeforeDelete) {
+      setValidating(true);
+      try {
+        isNowSponsored = await onValidateBeforeDelete(id);
+      } catch (error) {
+        setValidating(false);
+        return;
+      }
+      setValidating(false);
+    }
+
+    setDeletionContext({ isSponsored: isNowSponsored });
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between font-semibold">
@@ -43,19 +75,27 @@ export const DetailsSpecialOrder = ({
                 "{name}"{' '}
                 {!is_visible ? <p className="text-xs text-[#637381]">Recargo no visible para el tutor</p> : <></>}
               </h2>
-              <Tooltip
-                message="No puedes eliminar este recargo porque es mayor al monto pendiente a pagar. Ajusta el precio agregando otros recargos o descuentos."
-                disableHover={!disableDelete}
-              >
-                <button
-                  className="align-middle bg-transparent disabled:cursor-not-allowed"
-                  data-testid={`${name}-trashIcon`}
-                  onClick={() => setDeleteOrder(true)}
-                  disabled={disableDelete}
+              {handleDestroyOrder && (
+                <Tooltip
+                  message="No puedes eliminar este recargo porque es mayor al monto pendiente a pagar. Ajusta el precio agregando otros recargos o descuentos."
+                  disableHover={!disableDelete}
                 >
-                  <IcTrash className={disableDelete ? 'text-gray-400' : 'text-error'} />
-                </button>
-              </Tooltip>
+                  <button
+                    className="align-middle bg-transparent disabled:cursor-not-allowed"
+                    data-testid={`${name}-trashIcon`}
+                    onClick={handleTrashClick}
+                    disabled={disableDelete || validating}
+                  >
+                    {validating ? (
+                      <div className="flex items-center justify-center w-5 h-5 bg-gray-400 rounded-full">
+                        <img src="/assets/oval.svg" alt="loading" className="h-3 w-3" />
+                      </div>
+                    ) : (
+                      <IcTrash className={disableDelete ? 'text-gray-400' : 'text-error'} />
+                    )}
+                  </button>
+                </Tooltip>
+              )}
             </div>
           </div>
         </div>
@@ -66,20 +106,23 @@ export const DetailsSpecialOrder = ({
           </p>
         </div>
       </div>
-      <DeleteModalSpecialOrder
-        openDeleteModal={deleteOrder}
-        setDeleteOrder={setDeleteOrder}
-        orderDataValue={Number(value)}
-        loading={loading}
-        handleDelete={() => {
-          setLoading(true);
-          handleDestroyOrder(id);
-          setTimeout(() => {
-            setDeleteOrder(false);
-            setLoading(false);
-          }, 10000);
-        }}
-      />
+      {deletionContext && (
+        <DeleteModalSpecialOrder
+          openDeleteModal={!!deletionContext}
+          setDeleteOrder={() => setDeletionContext(null)}
+          orderDataValue={Number(value)}
+          loading={loading}
+          isSponsoredMode={deletionContext.isSponsored}
+          handleDelete={() => {
+            setLoading(true);
+            handleDestroyOrder?.(id, deletionContext.isSponsored);
+            setTimeout(() => {
+              setDeletionContext(null);
+              setLoading(false);
+            }, 5000);
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -89,11 +132,25 @@ export const DeleteModalSpecialOrder = ({
   orderDataValue,
   handleDelete,
   loading,
+  isSponsoredMode,
 }: IDeleteModalSpecialOrder) => (
   <>
     <Dialog.Root open={openDeleteModal} position="right" centerWhenSidepanelIsOpen>
-      <Dialog.Title>¿Estás seguro que deseas eliminar este recargo?</Dialog.Title>
-      <Dialog.Description>Se eliminará el recargo de ${orderDataValue}</Dialog.Description>
+      <Dialog.Title>
+        {isSponsoredMode
+          ? '¿Estás seguro que deseas eliminar este recargo y patrocinar la orden?'
+          : '¿Estás seguro que deseas eliminar este recargo?'}
+      </Dialog.Title>
+      <Dialog.Description>
+        {isSponsoredMode ? (
+          <p>
+            Al eliminar el recargo de ${orderDataValue}, esta orden será patrocinada, por lo que este estudiante no
+            tendrá que pagar nada.
+          </p>
+        ) : (
+          <p>Se eliminará el recargo de ${orderDataValue}</p>
+        )}
+      </Dialog.Description>
       <div className="flex justify-center gap-x-10">
         <Dialog.Close
           onClick={() => setDeleteOrder(!openDeleteModal)}
@@ -108,7 +165,7 @@ export const DeleteModalSpecialOrder = ({
           disabled={loading}
           data-testid="delete-button"
         >
-          Eliminar
+          {isSponsoredMode ? 'Eliminar y patrocinar orden' : 'Eliminar'}
         </button>
       </div>
     </Dialog.Root>

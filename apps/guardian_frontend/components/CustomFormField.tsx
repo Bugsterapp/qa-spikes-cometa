@@ -46,7 +46,7 @@ function FormField({
         <label
           htmlFor={htmlFor}
           className={cn(
-            'absolute left-5 text-[16px] top-1/2 -translate-y-1/2 transition-all font-medium text-gray-200', //default
+            'pointer-events-none absolute left-5 text-[16px] top-1/2 -translate-y-1/2 transition-all font-medium text-gray-200', //default
             'peer-disabled:text-[#A6A6A6]', //input is disabled
             'group-data-[error=true]:text-error', //error
             {

@@ -26,7 +26,7 @@ export const Info = ({ title, value }: { title: string; value: string }) => (
 );
 
 const CreditCardIcon = ({ brand }: { brand: keyof typeof creditCardIcon }) => {
-  const Icon = creditCardIcon[brand];
+  const Icon = creditCardIcon[brand] ?? React.Fragment;
   return <Icon />;
 };
 

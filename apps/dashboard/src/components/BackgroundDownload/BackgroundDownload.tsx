@@ -7,12 +7,13 @@ import ApiClient from '../../services/ApiClient';
 import { useSession } from 'next-auth/react';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { ButtonHTMLAttributes, forwardRef, PropsWithChildren, useEffect } from 'react';
+import { ButtonHTMLAttributes, forwardRef, PropsWithChildren, useEffect, useCallback, useMemo } from 'react';
 import cx from 'classnames';
 import IcClose from '/public/assets/icons/ic_close.svg';
 import IcDownload from '/public/assets/icons/ic_download.svg';
 import * as Sentry from '@sentry/nextjs';
-import { ExcelReport } from '@cometa/trpc/src/types';
+import { ExcelReport, StatusFc7Enum } from '@cometa/trpc/src/types';
+import type { Query } from '@tanstack/react-query';
 import { cn } from '/src/utils/cn';
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
@@ -32,78 +33,110 @@ export default function BackgroundDownload({ className }: { className?: string }
   const isIdle = status === 'idle';
   const store = useBackgroundStore;
   const items = useIdsToDownload();
-  const getReportById = (id: string, typeFile: string): ExcelReport =>
-    ApiClient.getReportById(session?.token, id, typeFile);
+  const getReportById = async (id: string, typeFile: string): Promise<ExcelReport> =>
+    await ApiClient.getReportById(id, typeFile);
 
   type SetToFunction = () => void;
 
-  const onDownloadSuccess = async (
-    data: ExcelReport,
-    removeFromQueue: (id: string) => void,
-    setToSuccess: SetToFunction,
-    setToIdle: SetToFunction
-  ): Promise<boolean> => {
-    const { id, url: reportURL } = data;
-    if (!reportURL) return false;
-
-    await downloadReport(reportURL);
-
-    removeFromQueue(id);
-
-    const idState = store.getState().backgroundQueue;
-    if (idState.length === 0) {
-      setToSuccess();
-      setTimeout(() => {
-        setToIdle();
-      }, 2000);
-    }
-
-    return true;
-  };
-
-  const downloadReport = async (reportURL: string): Promise<void> => {
+  const downloadReport = useCallback(async (reportURL: string): Promise<void> => {
     const link = document.createElement('a');
     link.href = reportURL;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
+  }, []);
 
-  useQueries({
+  const onDownloadSuccess = useCallback(
+    async (
+      data: ExcelReport,
+      removeFromQueue: (id: string) => void,
+      setToSuccess: SetToFunction,
+      setToIdle: SetToFunction
+    ): Promise<boolean> => {
+      const { id, url: reportURL } = data;
+      if (!reportURL) return false;
+
+      await downloadReport(reportURL);
+
+      removeFromQueue(id);
+
+      const idState = store.getState().backgroundQueue;
+      if (idState.length === 0) {
+        setToSuccess();
+        setTimeout(() => {
+          setToIdle();
+        }, 2000);
+      }
+
+      return true;
+    },
+    [downloadReport, store]
+  );
+
+  const queries = useQueries({
     queries: items.map((item) => ({
       queryKey: ['report-id', item.id, items] as const,
       queryFn: () => getReportById(item.id, item.typeFile),
-      retries: 100,
-      onSuccess: async (data: ExcelReport) => {
-        if (isIdle) return;
+      enabled: !isIdle && !!item.id,
+      retry: 100,
+      refetchInterval: (query: Query<ExcelReport, Error>) => {
+        const data = query.state.data;
+        // Stop polling if report is completed or failed
+        if (data?.status === StatusFc7Enum.Success || data?.status === StatusFc7Enum.Failed) {
+          return false;
+        }
+        return 1500; // Poll every 1.5 seconds while generating
+      },
+    })),
+  });
 
-        if (data.status === 'failed') {
+  // Extract stable values from queries to avoid infinite loops
+  const queryStatuses = useMemo(() => queries.map((q) => q.data?.status).join(','), [queries]);
+  const queryIds = useMemo(() => queries.map((q) => q.data?.id).join(','), [queries]);
+
+  useEffect(() => {
+    if (isIdle) return;
+
+    const handleQueries = async () => {
+      for (const query of queries) {
+        const data = query.data;
+        if (!data || query.isError) {
+          if (query.isError && query.error) {
+            Sentry.captureException(query.error, (scope) => {
+              scope.setContext('state', {
+                session,
+                status,
+                items,
+              });
+              return scope;
+            });
+          }
+          continue;
+        }
+
+        if (data.status === StatusFc7Enum.Failed) {
           removeFromQueue(data.id);
           setToError();
           setTimeout(() => {
             setToIdle();
           }, 12000);
-          return;
+          continue;
         }
-        const downloadSucceeded = await onDownloadSuccess(data, removeFromQueue, setToSuccess, setToIdle);
-        if (!downloadSucceeded) {
-          // this delay is to keep trying to download the report until it succeeds
-          await sleep(1500);
-          queryClient.invalidateQueries(['report-id', data.id]);
+
+        if (data.status === StatusFc7Enum.Success) {
+          const downloadSucceeded = await onDownloadSuccess(data, removeFromQueue, setToSuccess, setToIdle);
+          if (!downloadSucceeded) {
+            // this delay is to keep trying to download the report until it succeeds
+            await sleep(1500);
+            queryClient.invalidateQueries({ queryKey: ['report-id', data.id] });
+          }
         }
-      },
-      onError: (err: Error) => {
-        Sentry.captureException(err, (scope) => {
-          scope.setContext('state', {
-            session,
-            status,
-            items,
-          });
-          return scope;
-        });
-      },
-    })),
-  });
+      }
+    };
+
+    handleQueries();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryStatuses, queryIds, isIdle]);
 
   useEffect(() => {
     if (!session) {
@@ -241,6 +274,10 @@ export const useBackgroundStore = create<MyState>()(
           addToQueue: (id: string, typeFile = ETypeFile.EXCEL) =>
             set((state) => {
               state.backgroundQueue.push({ id, typeFile });
+              // Automatically set to working when adding to queue
+              if (state.status === 'idle') {
+                state.status = 'working';
+              }
             }),
           removeFromQueue: (id: string) =>
             set((state) => {

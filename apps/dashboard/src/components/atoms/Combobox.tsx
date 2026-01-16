@@ -1,24 +1,27 @@
-import { useCombobox } from 'downshift';
-import React, { useEffect, useState } from 'react';
+import { useCombobox, type UseComboboxProps } from 'downshift';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { cn } from '/src/utils/cn';
-import { createContext, useContext } from 'react';
 
-interface Item {
+export interface Item {
   [key: string]: any;
 }
 
-interface ComboboxProps {
+export interface ComboboxProps<TData extends Item = Item> {
   children: React.ReactNode;
   value: string;
   onChange: (value: string) => void;
-  items: Item[];
+  items: TData[];
   setSearch: (search: string) => void;
   keyLabel: string;
-  handleSelection: (item: Item) => void;
+  handleSelection: (item: TData | null) => void;
+  className?: string;
+  isItemDisabled?: UseComboboxProps<TData>['isItemDisabled'];
+  defaultIsOpen?: UseComboboxProps<TData>['defaultIsOpen'];
 }
 interface ComboboxInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   className?: string;
   icon?: React.ReactNode;
+  onReset?: () => void;
 }
 
 interface ComboboxOptionProps {
@@ -26,6 +29,8 @@ interface ComboboxOptionProps {
   className?: string;
   children: React.ReactNode;
   index: number;
+  isSelected?: boolean;
+  allowHighlight?: boolean;
 }
 // will add type later
 const ComboboxContext = createContext<any>(null);
@@ -38,8 +43,19 @@ export const useComboboxContext = () => {
   return context;
 };
 
-export function Combobox({ children, value, onChange, items, setSearch, keyLabel, handleSelection }: ComboboxProps) {
-  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+export function Combobox<TData extends Item = Item>({
+  children,
+  value,
+  onChange,
+  items,
+  setSearch,
+  keyLabel,
+  handleSelection,
+  className,
+  isItemDisabled = () => false,
+  defaultIsOpen = false,
+}: ComboboxProps<TData>) {
+  const [selectedItem, setSelectedItem] = useState<TData | null>(null);
 
   useEffect(() => {
     const item = items.find((item) => item[keyLabel] === value);
@@ -54,7 +70,8 @@ export function Combobox({ children, value, onChange, items, setSearch, keyLabel
     highlightedIndex,
     getItemProps,
     ...props
-  } = useCombobox({
+  } = useCombobox<TData>({
+    defaultIsOpen,
     selectedItem,
     onSelectedItemChange: ({ selectedItem }) => {
       if (selectedItem !== undefined && selectedItem !== null) {
@@ -75,20 +92,21 @@ export function Combobox({ children, value, onChange, items, setSearch, keyLabel
     onStateChange: ({ type, inputValue }) => {
       if (type === useCombobox.stateChangeTypes.ControlledPropUpdatedSelectedItem) {
         setSelectedItem(null);
-        handleSelection({});
+        handleSelection(null);
       }
       if (type === useCombobox.stateChangeTypes.InputBlur) {
         if (inputValue === '') {
           setSelectedItem(null);
-          handleSelection({});
+          handleSelection(null);
         }
       }
     },
+    isItemDisabled,
   });
   const clearResults = () => {
     setSearch('');
     setSelectedItem(null);
-    handleSelection({});
+    handleSelection(null);
   };
   return (
     <ComboboxProvider
@@ -104,16 +122,20 @@ export function Combobox({ children, value, onChange, items, setSearch, keyLabel
         ...props,
       }}
     >
-      <div className="outline-none w-72">{children}</div>
+      <div className={cn('outline-none w-72', className)}>{children}</div>
     </ComboboxProvider>
   );
 }
 
 export const ComboboxProvider = ComboboxContext.Provider;
 
-export function ComboboxInput({ className, icon, ...props }: ComboboxInputProps) {
+export function ComboboxInput({ className, icon, onReset, ...props }: ComboboxInputProps) {
   const { getInputProps, clearResults, selectedItem } = useComboboxContext();
 
+  const clearInput = () => {
+    clearResults();
+    onReset?.();
+  };
   return (
     <div className="flex border border-[#DDE1E5] rounded-lg items-center">
       {icon && <span className="pr-2 pl-3 text-[#637381]">{icon}</span>}
@@ -122,7 +144,7 @@ export function ComboboxInput({ className, icon, ...props }: ComboboxInputProps)
           ...props,
           onKeyDown: (e: any) => {
             if (e.key === 'Escape') {
-              clearResults();
+              clearInput();
             }
           },
         })}
@@ -133,7 +155,7 @@ export function ComboboxInput({ className, icon, ...props }: ComboboxInputProps)
         )}
       />
       {selectedItem && (
-        <button onClick={clearResults} className="flex items-center justify-center w-6 h-6 mr-2 bg-white">
+        <button onClick={clearInput} type="button" className="flex items-center justify-center w-6 h-6 mr-2 bg-white">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -142,6 +164,7 @@ export function ComboboxInput({ className, icon, ...props }: ComboboxInputProps)
             stroke="currentColor"
             className="w-6 h-6"
           >
+            <title>Clear</title>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
@@ -154,33 +177,32 @@ Combobox.Input = ComboboxInput;
 
 function ComboboxOptions({ children, className }: { children: React.ReactNode; className?: string }) {
   const { isOpen, getMenuProps } = useComboboxContext();
+  const isHidden = !(isOpen && (Array.isArray(children) ? !!children.length : !!children));
+  if (isHidden) return null;
   return (
     <ul
       {...getMenuProps()}
-      className={cn(
-        'z-30 absolute w-72 bg-white mt-1 max-h-80 overflow-scroll p-3 rounded-lg',
-        {
-          hidden: !(isOpen && children),
-        },
-        className
-      )}
+      className={cn('z-30 absolute w-72 bg-white mt-1 max-h-80 overflow-scroll p-3 rounded-lg', className)}
     >
       {isOpen ? children : null}
     </ul>
   );
 }
 
-function ComboboxOption({ value, className, children, index }: ComboboxOptionProps) {
+function ComboboxOption({ value, className, children, index, isSelected, allowHighlight = true }: ComboboxOptionProps) {
   const { highlightedIndex, getItemProps, selectedItem } = useComboboxContext();
-  const optionProps = getItemProps({ item: value, index });
+  const optionProps = getItemProps({ item: value, index, isSelected });
   const optionClassName = cn(
-    selectedItem === value && 'font-bold',
     'grid grid-cols-[85%_1fr] gap-2 items-center justify-between w-full p-3 bg-white border-none rounded-lg outline-none hover:bg-gray-200 cursor-pointer active:bg-[#919EAB29]',
-    highlightedIndex === index && 'bg-blue-300',
+    'aria-disabled:cursor-not-allowed aria-disabled:bg-gray-200',
+    {
+      'font-bold': selectedItem === value,
+      'bg-blue-300': allowHighlight && highlightedIndex === index,
+    },
     className
   );
   return (
-    <li {...optionProps} key={optionProps.index} className={optionClassName}>
+    <li {...optionProps} key={optionProps.id} className={optionClassName}>
       {children}
     </li>
   );
@@ -211,11 +233,11 @@ function highlightMatch(text: string, query: string): React.ReactNode {
   const parts: Array<string> = [];
   let lastIndex = 0;
 
-  matchIndices.forEach(([start, end]) => {
+  for (const [start, end] of matchIndices) {
     parts.push(text.slice(lastIndex, start));
     parts.push(text.slice(start, end));
     lastIndex = end;
-  });
+  }
 
   parts.push(text.slice(lastIndex));
 

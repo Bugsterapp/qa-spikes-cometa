@@ -1,40 +1,75 @@
-import { Typography, Box } from '@mui/material';
 import Image from 'next/image';
 
 function OnlyDesktopPage() {
   return (
-    <Box
-      sx={{
-        width: '100vw',
-        height: '100vh',
-        textAlign: 'center',
+    <div
+      className="w-screen h-screen text-center bg-cover bg-no-repeat"
+      style={{
         backgroundImage: 'url(/assets/background-only-desktop.svg)',
-        backgroundSize: 'cover',
-        backgroundRepeat: 'no-repeat',
       }}
     >
-      <Box sx={{ textAlign: 'center', height: '70vh', pt: '25vh' }}>
+      <div className="text-center h-[70vh] pt-[25vh]">
         <Image src="/assets/computer.svg" width={160} height={112} alt="computer" />
-        <Typography color="#091A7A" variant="h5" marginTop={1}>
+        <h5
+          className="font-normal mt-2"
+          style={{
+            color: '#091A7A',
+            fontSize: '1.5rem',
+            lineHeight: '1.334',
+            letterSpacing: '0em',
+          }}
+        >
           Por favor abre esta página
-        </Typography>
-        <Typography color="#091A7A" variant="h5">
+        </h5>
+        <h5
+          className="font-normal"
+          style={{
+            color: '#091A7A',
+            fontSize: '1.5rem',
+            lineHeight: '1.334',
+            letterSpacing: '0em',
+          }}
+        >
           desde tu laptop o PC.
-        </Typography>
+        </h5>
         <br />
-        <Typography color="#57537A" variant="subtitle1">
+        <p
+          className="font-normal"
+          style={{
+            color: '#57537A',
+            fontSize: '1rem',
+            lineHeight: '1.75',
+            letterSpacing: '0.00938em',
+          }}
+        >
           Aún estamos trabajando en la versión
-        </Typography>
-        <Typography color="#57537A" variant="subtitle1">
+        </p>
+        <p
+          className="font-normal"
+          style={{
+            color: '#57537A',
+            fontSize: '1rem',
+            lineHeight: '1.75',
+            letterSpacing: '0.00938em',
+          }}
+        >
           del Dashboard para celular.
-        </Typography>
-      </Box>
-      <Box sx={{ height: '30vh', pt: '10vh' }}>
-        <Typography color="#57537A" variant="subtitle1">
+        </p>
+      </div>
+      <div className="h-[30vh] pt-[10vh]">
+        <p
+          className="font-normal"
+          style={{
+            color: '#57537A',
+            fontSize: '1rem',
+            lineHeight: '1.75',
+            letterSpacing: '0.00938em',
+          }}
+        >
           ¡Gracias por entender!
-        </Typography>
-      </Box>
-    </Box>
+        </p>
+      </div>
+    </div>
   );
 }
 

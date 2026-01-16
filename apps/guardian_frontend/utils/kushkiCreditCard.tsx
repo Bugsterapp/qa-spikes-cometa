@@ -9,7 +9,7 @@ import LockIcon from '../public/icons/lock-icon.svg';
 import CreditCardIcon from '../public/icons/creditcardicon.svg';
 import Dinners from '../public/icons/dinnersclub.svg';
 import Discover from '../public/icons/discover.svg';
-import { getSchoolCredentials } from '~/components/molecules/common/AuthGlobal';
+import { getSchoolCredentials, shouldUseKushkiSandbox } from '~/stores/globalStore';
 import { PreferenceTypeEnum } from '@cometa/trpc';
 import { ServiceClient } from './api';
 import { getSession } from 'next-auth/react';
@@ -28,9 +28,19 @@ export type KushkiType = Kushki;
 
 export const useKushki = () => {
   const schoolKushkiCredentials = getSchoolCredentials();
+  const useSandbox = shouldUseKushkiSandbox();
+
+  // Determine which credentials to use based on the school's config
+  const merchantId = useSandbox
+    ? process.env.NEXT_PUBLIC_KUSHKI_SANDBOX_MERCHANT_ID || ''
+    : schoolKushkiCredentials?.public_merchant_id || '';
+
+  // Test environment should be enabled if either KUSHKI_TEST is true OR useSandbox is true
+  const inTestEnvironment = Boolean(process.env.NEXT_PUBLIC_KUSHKI_TEST === 'true' || useSandbox);
+
   const kushkiInstance = new Kushki({
-    merchantId: schoolKushkiCredentials?.public_merchant_id || '',
-    inTestEnvironment: Boolean(process.env.NEXT_PUBLIC_KUSHKI_TEST === 'true'),
+    merchantId,
+    inTestEnvironment,
   });
 
   return kushkiInstance;
@@ -47,6 +57,7 @@ export const creditCardIcon = {
   visa: Visa,
   mastercard: MasterCard,
   'american-express': Amex,
+  amex: Amex,
   maestro: Maestro,
   'diners-club': Dinners,
   discover: Discover,

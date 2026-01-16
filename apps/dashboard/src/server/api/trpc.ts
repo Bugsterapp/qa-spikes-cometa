@@ -16,8 +16,9 @@
  * processing a request
  *
  */
-import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
-import { type Session } from 'next-auth';
+import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
+import type { Session } from 'next-auth';
+import * as Sentry from '@sentry/node';
 
 import { getServerAuthSession } from '../auth';
 type CreateContextOptions = {
@@ -73,7 +74,6 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
   transformer: superjson,
   errorFormatter({ shape, error, ctx, input }) {
     const referer = ctx?.req ? getUrlfromHeadersArray(ctx.req.rawHeaders) : null;
-    const userMessage = JSON.parse(error.cause?.message ?? '').error.error;
 
     const formattedError = {
       ...shape,
@@ -81,9 +81,9 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
         ...shape.data,
         zodError: error.code === 'BAD_REQUEST' && error.cause instanceof z.ZodError ? error.cause.flatten() : null,
         cause: error.cause ? error.cause : null,
+        ...((error as any).customData && { customData: (error as any).customData }),
       },
       detail: {
-        message: userMessage,
         input,
         referer,
       },
@@ -104,6 +104,19 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
  */
 export const createTRPCRouter = t.router;
 
+const sentryMiddleware = t.middleware(async (opts) => {
+  const { getRawInput } = opts;
+
+  const rawInput = await getRawInput();
+
+  return Sentry.trpcMiddleware({
+    attachRpcInput: true,
+  })({
+    ...opts,
+    rawInput,
+  });
+});
+
 /**
  * Public (unauthed) procedure
  *
@@ -111,7 +124,7 @@ export const createTRPCRouter = t.router;
  * tRPC API. It does not guarantee that a user querying is authorized, but you
  * can still access user session data if they are logged in
  */
-export const publicProcedure = t.procedure;
+export const publicProcedure = t.procedure.use(sentryMiddleware);
 
 /**
  * Reusable middleware that enforces users are logged in before running the
@@ -137,4 +150,4 @@ const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
  *
  * @see https://trpc.io/docs/procedures
  */
-export const protectedProcedure = t.procedure.use(enforceUserIsAuthed);
+export const protectedProcedure = t.procedure.use(sentryMiddleware).use(enforceUserIsAuthed);

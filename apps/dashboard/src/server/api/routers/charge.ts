@@ -1,58 +1,47 @@
 import { z } from 'zod';
-import { Api } from '@cometa/trpc/src/types';
+import { Api, ConceptTypesEnum } from '@cometa/trpc/src/types';
 import { createTRPCRouter, protectedProcedure } from '../trpc';
-import { ServiceClient } from '/src/utils/api';
+// import { ServiceClient } from '/src/utils/api';
+import { StudentsServiceClient } from '/src/utils/apiStudents';
 import handleTRPCError from '/src/utils/trpcErrorHandler';
 
-enum ConceptTypes {
-  INSCRIPTION = 'INSCRIPTION',
-  MONTHLY_FEE = 'MONTHLY_FEE',
-  OTHER = 'OTHER',
-  PRE_DEBT = 'PRE_DEBT',
-  TRANSPORT = 'TRANSPORT',
-}
+export type ConceptType = { id: ConceptTypesEnum; name: string };
+
+const studentsApiHeaders = { Authorization: `Bearer ${process.env.NEXT_PUBLIC_SCHOOLS_API_TOKEN}` };
 
 export const chargeRouter = createTRPCRouter({
-  generateExcelReport: protectedProcedure
-    .input(
-      z.object({
-        schoolId: z.string(),
-        start_date: z.string().optional(),
-        end_date: z.string().optional(),
-        concepts: z.array(z.string()),
-      })
-    )
-    .mutation(async ({ input, ctx }) => {
-      const response = await ServiceClient.apiV1DashboardSchoolsDelinquencyStudentsExcelCreate(
-        input.schoolId,
-        {
-          start_date: input.start_date,
-          end_date: input.end_date,
-          concepts: input.concepts,
-        },
-        //TODO: Check schema to accept nullish values
-        null as any,
-        {
-          headers: {
-            Authorization: `Token ${ctx.session.token}`,
-          },
-        }
-      );
-      return response.data;
-    }),
+  // schoolCycleList: protectedProcedure
+  //   .input(z.object({ schoolId: z.string(), is_active: z.boolean().optional() }))
+  //   .query(async ({ input, ctx }) => {
+  //     try {
+  //       const response = await ServiceClient.apiV1DashboardSchoolsCyclesList(
+  //         input.schoolId,
+  //         {
+  //           is_active: input.is_active,
+  //         },
+  //         {
+  //           headers: {
+  //             Authorization: `Token ${ctx.session.token}`,
+  //           },
+  //         }
+  //       );
+  //       const data = response.data;
+  //       return data;
+  //     } catch (err) {
+  //       handleTRPCError(err);
+  //     }
+  //   }),
   schoolCycleList: protectedProcedure
     .input(z.object({ schoolId: z.string(), is_active: z.boolean().optional() }))
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input }) => {
       try {
-        const response = await ServiceClient.apiV1DashboardSchoolsCyclesList(
+        const response = await StudentsServiceClient.listApiV1SchoolsSchoolIdSchoolCyclesGet(
           input.schoolId,
           {
             is_active: input.is_active,
           },
           {
-            headers: {
-              Authorization: `Token ${ctx.session.token}`,
-            },
+            headers: studentsApiHeaders,
           }
         );
         const data = response.data;
@@ -66,7 +55,7 @@ export const chargeRouter = createTRPCRouter({
       z.object({
         schoolId: z.string(),
         school_cycles: z.array(z.string()).optional(),
-        type: z.array(z.nativeEnum(ConceptTypes)).optional(),
+        type: z.array(z.nativeEnum(ConceptTypesEnum)).optional(),
       })
     )
     .query(async ({ input, ctx }) => {
@@ -106,7 +95,10 @@ export const chargeRouter = createTRPCRouter({
           },
           baseUrl: process.env.NEXT_PUBLIC_SERVER_API_BASE_URL,
         });
-        const data = response.data;
+        const data = response.data.concepts_types.map((concept) => ({
+          id: concept[0],
+          name: concept[1],
+        })) as ConceptType[];
         return data;
       } catch (err) {
         handleTRPCError(err);

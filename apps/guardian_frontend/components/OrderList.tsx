@@ -28,8 +28,10 @@ const OrderList = ({
     <section className="w-full">
       {title && (
         <div className="mb-4 space-y-2">
-          <h3 className="text-[#14208C] text-xl font-semibold mb-1">{loading ? <OrderListTitleSkeleton /> : title}</h3>
-          <div className="text-[#57537A] text-sm space-y-2">
+          <h3 className="text-[#22283A] text-[20px] font-[600] leading-[40px] mb-1">
+            {loading ? <OrderListTitleSkeleton /> : title}
+          </h3>
+          <div className="text-[#57537A] text-[14px] font-normal leading-[24px] tracking-[0.1px] space-y-2">
             {loading ? (
               <>
                 <OrderListInfoSkeleton />

@@ -1,6 +1,6 @@
 import * as Portal from '@radix-ui/react-portal';
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { useSession } from 'next-auth/react';
@@ -9,7 +9,7 @@ import cx from 'classnames';
 import IcClose from '/public/assets/icons/ic_close.svg';
 import IcDownload from '/public/assets/icons/ic_download.svg';
 import * as Sentry from '@sentry/nextjs';
-import { MassiveConceptAssignmentHistoryStatusEnum } from '@cometa/trpc/src/types';
+import { Status386Enum } from '@cometa/trpc/src/types';
 import { cn } from '/src/utils/cn';
 import { api } from '/src/utils/api';
 import { useSelectedSchoolId } from '/src/guards/AuthGuard';
@@ -47,7 +47,7 @@ export default function BackgroundConceptAssign({
   const isError = status === 'error';
   const isIdle = status === 'idle';
   const item = useIdsToDownload();
-  const utils = api.useContext();
+  const utils = api.useUtils();
 
   const selectedSchoolId = useSelectedSchoolId();
 
@@ -55,62 +55,64 @@ export default function BackgroundConceptAssign({
     { id: item as string, schoolId: selectedSchoolId as string },
     {
       enabled: !!item,
-      onSuccess: async (data) => {
-        if (data?.status === MassiveConceptAssignmentHistoryStatusEnum.PARTIAL_SUCCESS) {
-          setToPartialSuccess();
-          await utils.schools.schoolsStudentsByLevelList.invalidate();
-          await utils.schools.schoolsStudentsByLevelList.invalidate();
-          await utils.schools.schoolsConceptsStudentsAssignedList.invalidate();
-          await utils.schools.schoolsConceptsStudentsAssignedIdsList.invalidate();
-          setTimeout(() => {
-            setToIdle();
-            removeFromQueue();
-          }, 15000);
-        }
-        if (data?.status === MassiveConceptAssignmentHistoryStatusEnum.SUCCESS) {
-          setToSuccess();
-          await utils.schools.schoolsStudentsByLevelList.invalidate();
-          await utils.schools.schoolsConceptsStudentsAssignedList.invalidate();
-          await utils.schools.schoolsConceptsStudentsAssignedIdsList.invalidate();
-          setTimeout(() => {
-            setToIdle();
-            removeFromQueue();
-          }, 15000);
-        }
-        if (data?.status === MassiveConceptAssignmentHistoryStatusEnum.PENDING) {
-          await sleep(2000);
-          await utils.concepts.conceptsGetAssignStatus.invalidate();
-        }
-        if (data?.status === MassiveConceptAssignmentHistoryStatusEnum.FINISHED) {
-          await utils.schools.schoolsStudentsByLevelList.invalidate();
-          await utils.schools.schoolsConceptsStudentsAssignedList.invalidate();
-          await utils.schools.schoolsConceptsStudentsAssignedIdsList.invalidate();
-          // finished
-        }
-        if (data?.status === MassiveConceptAssignmentHistoryStatusEnum.FAILED) {
-          Sentry.captureException(new Error('failed to assign concepts'), (scope) => {
-            scope.setContext('state', {
-              session,
-              status,
-              data,
-            });
-            return scope;
-          });
-          setToError();
-        }
-        if (data?.status === MassiveConceptAssignmentHistoryStatusEnum.CANCELED) {
-          // canceled
-        }
-        if (data?.status === MassiveConceptAssignmentHistoryStatusEnum.FAILED_AND_CANCELED) {
-          // failed and canceled
-        }
-        if (data?.status === MassiveConceptAssignmentHistoryStatusEnum.STARTED) {
-          await utils.concepts.conceptsGetAssignStatus.invalidate();
-        }
-        await utils.schools.schoolsStudentsByLevelList.invalidate();
-      },
     }
   );
+
+  useEffect(() => {
+    const handleAssignStatus = async () => {
+      if (!assignStatus) return;
+
+      if (assignStatus.status === Status386Enum.PARTIAL_SUCCESS) {
+        setToPartialSuccess();
+        await utils.schools.schoolsStudentsByLevelList.invalidate();
+        await utils.schools.schoolsStudentsByLevelList.invalidate();
+        await utils.schools.schoolsConceptsStudentsAssignedList.invalidate();
+        await utils.schools.schoolsConceptsStudentsAssignedIdsList.invalidate();
+        await utils.schools.schoolsConceptDetail.invalidate();
+        setTimeout(() => {
+          setToIdle();
+          removeFromQueue();
+        }, 15000);
+      }
+      if (assignStatus.status === Status386Enum.SUCCESS) {
+        setToSuccess();
+        await utils.schools.schoolsStudentsByLevelList.invalidate();
+        await utils.schools.schoolsConceptsStudentsAssignedList.invalidate();
+        await utils.schools.schoolsConceptsStudentsAssignedIdsList.invalidate();
+        await utils.schools.schoolsConceptDetail.invalidate();
+        setTimeout(() => {
+          setToIdle();
+          removeFromQueue();
+        }, 15000);
+      }
+      if (assignStatus.status === Status386Enum.PENDING) {
+        await sleep(2000);
+        await utils.concepts.conceptsGetAssignStatus.invalidate();
+      }
+      if (assignStatus.status === Status386Enum.FINISHED) {
+        await utils.schools.schoolsStudentsByLevelList.invalidate();
+        await utils.schools.schoolsConceptsStudentsAssignedList.invalidate();
+        await utils.schools.schoolsConceptsStudentsAssignedIdsList.invalidate();
+        await utils.schools.schoolsConceptDetail.invalidate();
+      }
+      if (assignStatus.status === Status386Enum.FAILED) {
+        Sentry.captureException(new Error('failed to assign concepts'), (scope) => {
+          scope.setContext('state', {
+            session,
+            status,
+            assignStatus,
+          });
+          return scope;
+        });
+        setToError();
+      }
+      if (assignStatus.status === Status386Enum.STARTED) {
+        await utils.concepts.conceptsGetAssignStatus.invalidate();
+      }
+    };
+
+    handleAssignStatus();
+  }, [assignStatus]);
 
   const deleteConceptAssignment = api.concepts.conceptsDeleteAssign.useMutation({
     onSuccess: async () => {
@@ -367,7 +369,7 @@ export const useBackgroundConceptAssignStore = create<MyState>()(
         }),
         {
           name: 'background-concept-assign', // name of item in the storage (must be unique)
-          getStorage: () => localStorage, // (optional) by default the 'localStorage' is used
+          storage: createJSONStorage(() => localStorage), // (optional) by default the 'localStorage' is used
         }
       )
     ),

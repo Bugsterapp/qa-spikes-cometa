@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import { cva, VariantProps } from 'class-variance-authority';
-import { cn } from '/src/utils/cn';
+import { cn } from '@cometa/utils/src/cn';
 
 const buttonClasses = cva(
   'flex items-center justify-center rounded-lg leading-tight focus:outline-none focus:ring-0 transition duration-150 ease-in-out cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none active:shadow-inner active:opacity-[0.8]',
@@ -54,7 +54,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(({ children, leftIcon,
       {...props}
       onClick={props.onClick}
       className={cn(styles, props.className)}
-      type={props.type || 'button'}
+      type={props.type ?? 'button'}
     >
       {leftIcon && <span>{leftIcon}</span>}
       {children}

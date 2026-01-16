@@ -1,31 +1,26 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from 'react';
-import { Box, Typography, ListItem } from '@mui/material';
 import SearchAutocomplete from '../../../molecules/dashboard/SearchAutocomplete';
 import ApiClient from '../../../../services/ApiClient';
-import { useSession } from 'next-auth/react';
-import PersonIcon from '@mui/icons-material/Person';
+import { User } from 'lucide-react';
 import { useSelectedSchoolId } from '/src/guards/AuthGuard';
 
 export default function GuardianSelector(props) {
   // eslint-disable-next-line react/prop-types
   const { autocompleteKey, selectedGuardian, setSelectedGuardian, guardianFilterText, width, placeholder } = props;
 
-  const { data: session } = useSession();
   const selectedSchool = useSelectedSchoolId();
   const [guardians, setGuardians] = useState([]);
   const [searchGuardian, setSearchGuardian] = useState('');
 
   const getGuardiansOnSchool = async () => {
     if (searchGuardian.length > 0) {
-      const token = session?.token;
-      const guardiansOnSchool = await ApiClient.getGuardiansOnSchool(token, selectedSchool, searchGuardian);
-      const results = guardiansOnSchool?.data?.results;
+      const guardiansOnSchool = await ApiClient.getGuardiansOnSchool(selectedSchool, searchGuardian);
+      const results = guardiansOnSchool?.results;
       setGuardians(results);
     } else {
-      const token = session?.token;
-      const guardiansOnSchool = await ApiClient.getGuardiansOnSchool(token, selectedSchool);
-      const results = guardiansOnSchool?.data?.results;
+      const guardiansOnSchool = await ApiClient.getGuardiansOnSchool(selectedSchool);
+      const results = guardiansOnSchool?.results;
       setGuardians(results);
     }
   };
@@ -44,21 +39,12 @@ export default function GuardianSelector(props) {
   };
 
   const renderGuardian = (props, guardian) => (
-    <ListItem {...props} key={guardian.id} disablePadding>
-      <Box sx={{ ml: 2 }}>
-        <Typography variant="subtitle1">{`${guardian.first_name} ${guardian.last_name}`}</Typography>
-        <Typography
-          variant="subtitle2"
-          sx={{
-            fontSize: '12px',
-            fontWeight: 400,
-            lineHeight: '18px',
-          }}
-        >
-          Email: {guardian.email}
-        </Typography>
-      </Box>
-    </ListItem>
+    <li {...props} key={guardian.id}>
+      <div className="ml-2">
+        <p className="text-base font-normal">{`${guardian.first_name} ${guardian.last_name}`}</p>
+        <p className="text-xs font-normal leading-[18px]">Email: {guardian.email}</p>
+      </div>
+    </li>
   );
 
   const getFullName = (guardian) => `${guardian?.first_name} ${guardian?.last_name}`;
@@ -91,7 +77,7 @@ export default function GuardianSelector(props) {
       labelTextField={guardianFilterText}
       placeholderTextField={placeholder || 'Buscar por nombre'}
       width={width}
-      icon={<PersonIcon />}
+      icon={<User />}
     />
   );
 }

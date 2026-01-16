@@ -1,25 +1,21 @@
-// --- Imports ---
-
-import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { cn } from '@cometa/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import IcEdit from 'public/assets/icons/ic_edit.svg';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { v4 as uuidv4 } from 'uuid';
-
+import { z } from 'zod';
+import useSendTrackEventWithUserName from '../hooks/useSendTrackEventWithUserName';
+import { Events } from '../constants/events';
+import CustomInput from './CustomInput';
 import Button from './organisms/dashboard/Button';
+import ConceptButton from './organisms/dashboard/ConceptButton';
+import type { FormValues6, StepProps } from './organisms/dashboard/CreationConcepts';
 import NRadioGroup from './organisms/dashboard/RadioGroup';
 import MoneyInput from './ui/MoneyInput';
-import CustomInput from './CustomInput';
-import ConceptButton from './organisms/dashboard/ConceptButton';
-import TextField from '/src/components/CustomFormTexField';
-import { FormValues6, StepProps } from './organisms/dashboard/CreationConcepts';
-
-import TrashIcon from '/public/assets/icons/trash_outline.svg';
-import IcEdit from 'public/assets/icons/ic_edit.svg';
 import PlusIcon from '/public/assets/icons/ic_plus.svg';
-
-import { cn } from '../utils/cn';
-import useSendTrackEventWithUserName from '../hooks/useSendTrackEventWithUserName';
+import TrashIcon from '/public/assets/icons/trash_outline.svg';
+import TextField from '/src/components/CustomFormTexField';
 
 // Type Definitions
 
@@ -67,7 +63,7 @@ const StepAttributesCreate = ({
   isSubmitting: boolean;
 }) => {
   const sendTrackEventWithUserName = useSendTrackEventWithUserName();
-  sendTrackEventWithUserName('dashboard: Concept | New Concept P2B.1 Atributos');
+  sendTrackEventWithUserName(Events.concept_new_p2b1_atributos);
   const [flowDirection, setFlowDirection] = useState('');
   const [createAndEdit, setCreateAndEdit] = useState(false);
   const [selectedType, setSelectedType] = useState('');
@@ -151,14 +147,14 @@ const StepAttributesCreate = ({
   return (
     <>
       <div className="flex flex-col gap-4 min-h-[79vh] mb-6">
-        <div className="pt-5 pb-6 bg-white sticky top-0 z-20">
-          <h6 className="text-black text-2xl font-bold">Atributos y opciones</h6>
+        <div className="sticky top-0 z-20 pt-5 pb-6 bg-white">
+          <h6 className="text-2xl font-bold text-black">Atributos y opciones</h6>
           <span className="text-sm text-[#637381]">
             Agrega atributos como tamaño, color o cualquier característica que tenga tu concepto.
           </span>
           <span id="divider" className="border-b border-[#919EAB3D] w-full block mt-6" />
         </div>
-        <span className="text-black font-semibold">
+        <span className="font-semibold text-black">
           ¿Quieres agregar atributos para este concepto?
           <span className="italic font-normal text-[#637381]"> ejemplo: Tallas, colores, logos, etc.</span>
         </span>
@@ -173,18 +169,17 @@ const StepAttributesCreate = ({
           />
         )}
 
-        {flowDirection === 'Sí' && attributes.length > 0 && attributes.length <= 3 && (
-          <>
-            {attributes.map((attribute) => (
-              <AttributesList
-                key={attribute.type}
-                attribute={attribute}
-                onEdit={handleEdit}
-                createAndEdit={createAndEdit}
-              />
-            ))}
-          </>
-        )}
+        {flowDirection === 'Sí' &&
+          attributes.length > 0 &&
+          attributes.length <= 3 &&
+          attributes.map((attribute) => (
+            <AttributesList
+              key={attribute.type}
+              attribute={attribute}
+              onEdit={handleEdit}
+              createAndEdit={createAndEdit}
+            />
+          ))}
         {flowDirection === 'Sí' && createAndEdit && (
           <AttributesCard
             attributes={formData?.attributes || attributes}
@@ -199,6 +194,7 @@ const StepAttributesCreate = ({
           <button
             className="bg-white w-[210px] h-9 border border-[#00AB557A] rounded-lg flex items-center justify-center gap-2 flex-row px-2 mt-2"
             onClick={() => handleNewAttribute()}
+            type="button"
           >
             <PlusIcon className="w-5 h-5" fill="#00AB55" />
             <span className="text-[#00AB55] text-sm font-bold">Agregar más atributos</span>
@@ -247,7 +243,11 @@ export const AttributesCard = ({
       .object({
         type: z.string().nonempty({ message: 'El tipo de atributo es requerido' }),
         items: z
-          .array(z.object({ id: z.string(), name: z.string() }))
+          .object({
+            id: z.string(),
+            name: z.string(),
+          })
+          .array()
           .nonempty({ message: 'Debe agregar minimo un item' }),
       })
       .refine(
@@ -257,7 +257,8 @@ export const AttributesCard = ({
         { message: 'El tipo de atributo ya existe', path: ['type'] }
       ),
   });
-  const { register, watch, handleSubmit, setValue, formState, clearErrors } = useForm({
+  type TypeSchema = z.infer<typeof schema>;
+  const { register, watch, handleSubmit, setValue, formState, clearErrors } = useForm<TypeSchema>({
     defaultValues: { attribute: currentAttribute },
     resolver: zodResolver(schema),
   });
@@ -270,7 +271,7 @@ export const AttributesCard = ({
     const updatedItems = [...currentAttribute.items, newAttributeItem];
 
     // Update the form state
-    setValue('attribute.items', updatedItems);
+    setValue('attribute.items', updatedItems as TypeSchema['attribute']['items']);
 
     // Update the currentAttribute state
     setCurrentAttribute((prev) => ({
@@ -288,7 +289,7 @@ export const AttributesCard = ({
     setCreateAndEdit?.(!createAndEdit);
   };
 
-  const onFormSubmit = (data: any) => {
+  const onFormSubmit = (data: TypeSchema) => {
     const { attribute } = data;
     setData(attribute.items, attribute.type);
     setCreateAndEdit?.(!createAndEdit);
@@ -297,7 +298,7 @@ export const AttributesCard = ({
   const removeItem = (itemIndex: number) => {
     const updatedItems = [...currentAttribute.items];
     updatedItems.splice(itemIndex, 1);
-    setValue('attribute.items', updatedItems);
+    setValue('attribute.items', updatedItems as TypeSchema['attribute']['items']);
 
     setCurrentAttribute((prev) => ({
       ...prev,
@@ -318,7 +319,7 @@ export const AttributesCard = ({
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}>
       <div className={cn('border rounded-lg border-[#DFE3E8] p-4', className)}>
-        <span className="text-black font-semibold">Selecciona o crea un atributo para el concepto:</span>
+        <span className="font-semibold text-black">Selecciona o crea un atributo para el concepto:</span>
         <TextField
           label="Talla, color, estilo, etc..."
           className={textFieldClasses}
@@ -329,18 +330,17 @@ export const AttributesCard = ({
           <CustomInput autoComplete="off" className="peer" {...register('attribute.type')} />
         </TextField>
         <div className="mb-2">
-          <span className="text-black font-semibold">¿Cuáles son las opciones que tendrá el atributo?</span>
+          <span className="font-semibold text-black">¿Cuáles son las opciones que tendrá el atributo?</span>
         </div>
-        {currentAttribute.items &&
-          currentAttribute.items.map((_, itemIndex) => (
-            <AttributeItem
-              key={itemIndex}
-              register={register}
-              itemIndex={itemIndex}
-              onDelete={removeItem}
-              watch={watch}
-            />
-          ))}
+        {currentAttribute.items?.map((_, itemIndex) => (
+          <AttributeItem
+            key={itemIndex}
+            register={register}
+            itemIndex={itemIndex}
+            onDelete={removeItem}
+            watch={watch}
+          />
+        ))}
         <TextField
           className={textFieldClasses}
           label="Agrega otra opción"
@@ -368,12 +368,12 @@ export const AttributesCard = ({
           />
         )}
 
-        <div className="flex justify-between items-center py-2">
+        <div className="flex items-center justify-between py-2">
           <div className="flex justify-start gap-2">
             <Button
               variant="ghost"
               size="small"
-              className="text-green text-sm"
+              className="text-sm text-green"
               onClick={() => handleCancel()}
               disabled={formState.isSubmitting || attributes.length === 0}
             >
@@ -389,6 +389,7 @@ export const AttributesCard = ({
                 'opacity-[0.6]': attributes.length === 0,
               })}
               onClick={() => removeAttribute(currentAttribute.type)}
+              type="button"
             >
               <span className="text-[13px] font-bold text-red-500 cursor-pointer">Eliminar</span>
               <TrashIcon className={cn('w-5 cursor-pointer text-red-500')} />
@@ -413,7 +414,7 @@ export const AttributeItem = ({ onDelete, register, itemIndex, watch }: Attribut
       >
         <CustomInput autoComplete="off" className="peer" {...register(`attribute.items[${itemIndex}].name`)} />
       </TextField>
-      <div className="p-2 flex items-center justify-center">
+      <div className="flex items-center justify-center p-2">
         <TrashIcon onClick={() => handleDelete()} className={cn('w-5 pb-4 cursor-pointer')} />
       </div>
     </div>
@@ -425,8 +426,9 @@ export const AttributesList = ({ attribute, onEdit, createAndEdit }: AttributesL
     {attribute.type !== '' && (
       <div className="border rounded-lg border-[#DFE3E8] p-4">
         <div className="flex items-center justify-between gap-3 mb-2">
-          <span className="text-black font-semibold">{attribute.type}</span>
+          <span className="font-semibold text-black">{attribute.type}</span>
           <button
+            type="button"
             className={cn('flex flex-row items-center pr-2 text-center bg-transparent', {
               'opacity-[0.6]': createAndEdit,
             })}
@@ -436,10 +438,10 @@ export const AttributesList = ({ attribute, onEdit, createAndEdit }: AttributesL
             <div className="m-2">
               <IcEdit fill="#00AB55" />
             </div>
-            <span className="text-sm font-bold text-green cursor-pointer">Editar</span>
+            <span className="text-sm font-bold cursor-pointer text-green">Editar</span>
           </button>
         </div>
-        <div className="flex flex-row gap-2 flex-wrap">
+        <div className="flex flex-row flex-wrap gap-2">
           {attribute.items?.map((item) => (
             <span key={item.id} className="text-sm py-[5px] px-3 max-h-[32px] bg-[#919EAB29] rounded-[50px]">
               {item.name}

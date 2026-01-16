@@ -1,4 +1,5 @@
-import { Box, Grid, Typography } from '@mui/material';
+import React from 'react';
+import { cn } from '~/lib/cn';
 
 export type DrawerCode = 'success' | 'error' | 'warning';
 
@@ -11,81 +12,55 @@ type Props = {
   icon: React.ReactNode;
 };
 
+const colorMap: Record<DrawerCode, string> = {
+  success: 'bg-green-700',
+  error: 'bg-red-700',
+  warning: 'bg-yellow-700',
+};
+
 const Drawer = ({ title, code, optionMessage, children, information, icon }: Props) => (
   <>
-    <Box
-      sx={{
-        backgroundColor: 'rgba(0,0,0,.5)',
-        top: 0,
-        left: 0,
-        position: 'fixed',
-        zIndex: 9999,
-        height: '100vh',
-        width: '100vw',
-      }}
-      component="div"
-    />
-    <Box
-      bottom={0}
-      margin="0 auto"
-      left={0}
-      right={0}
-      width="100%"
-      maxWidth="sm"
-      paddingTop={3}
-      position="fixed"
-      zIndex="100000"
-      bgcolor={`${code}.dark`}
-      sx={{
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-      }}
+    {/* Backdrop */}
+    <div className="fixed top-0 left-0 w-screen h-screen bg-black/50 z-[9999]" />
+
+    {/* Drawer */}
+    <div
+      className={cn(
+        'fixed bottom-0 left-0 right-0 w-full max-w-sm mx-auto pt-3 z-[100000] rounded-t-3xl',
+        colorMap[code]
+      )}
       data-test-id="footer-payment-result"
     >
-      <Grid spacing={2} container justifyContent="space-around" alignItems="center">
-        <Grid item xs={12} display="flex" justifyContent="center">
-          {icon}
-        </Grid>
-        <Grid item xs={7} display="flex" justifyContent="center">
-          <Typography sx={{ color: 'white.main', fontWeight: 600, fontSize: '1.125rem', textAlign: 'center' }}>
-            {title}
-          </Typography>
-        </Grid>
-        <Grid item xs={12} display="flex" justifyContent="center">
-          <Box
-            bgcolor="white.main"
-            width="100%"
-            p={3}
-            sx={{
-              borderTopLeftRadius: 48,
-              borderTopRightRadius: 48,
-            }}
-          >
-            <Grid
-              spacing={2}
-              container
-              justifyContent="space-around"
-              alignItems="center"
-              direction="column"
-              maxWidth="277px"
-              margin="0 auto"
-            >
-              <Grid item xs={12} display="flex" justifyContent="center">
-                <Typography sx={{ color: 'secondary', fontWeight: 500, fontSize: 14, textAlign: 'center' }}>
-                  {information}
-                </Typography>
-              </Grid>
-              <Grid item xs={10} display="flex" justifyContent="center" mb="1.25rem">
-                <Typography sx={{ color: '#637381', fontWeight: 500, fontSize: 12, textAlign: 'center' }}>
-                  {optionMessage}
-                </Typography>
-              </Grid>
+      <div className="flex flex-col gap-2 items-center justify-around">
+        {/* Icon */}
+        <div className="w-full flex justify-center">{icon}</div>
+
+        {/* Title */}
+        <div className="w-7/12 flex justify-center">
+          <h2 className="text-white font-semibold text-lg text-center">{title}</h2>
+        </div>
+
+        {/* White content box */}
+        <div className="w-full flex justify-center">
+          <div className="bg-white w-full p-3 rounded-t-[3rem]">
+            <div className="flex flex-col gap-2 items-center justify-around max-w-[277px] mx-auto">
+              {/* Information */}
+              <div className="w-full flex justify-center">
+                <p className="text-gray-900 font-medium text-sm text-center">{information}</p>
+              </div>
+
+              {/* Option message */}
+              <div className="w-10/12 flex justify-center mb-5">
+                <p className="text-[#637381] font-medium text-xs text-center">{optionMessage}</p>
+              </div>
+
+              {/* Children (buttons, etc.) */}
               {children}
-            </Grid>
-          </Box>
-        </Grid>
-      </Grid>
-    </Box>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </>
 );
 

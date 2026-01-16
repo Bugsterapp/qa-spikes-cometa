@@ -15,12 +15,12 @@ import { cn } from '/src/utils/cn';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { CalendarIcon } from 'lucide-react';
-import { Calendar } from '../../ui/Calendar';
 import useSendTrackEventWithUserName from '/src/hooks/useSendTrackEventWithUserName';
-
+import { Events } from '/src/constants/events';
+import { Calendar } from '@cometa/recreo';
 export function Step4Form({ setData, onNext, onBack, formData }: StepProps<FormValues4>) {
   const sendTrackEventWithUserName = useSendTrackEventWithUserName();
-  sendTrackEventWithUserName('dashboard: Concept | New Concept P2A.3 Descuentos');
+  sendTrackEventWithUserName(Events.concept_new_p2a3_descuentos);
   const formDiscountStep = useForm<FormDiscount>({
     resolver: zodResolver(schemaStep4),
     mode: 'onSubmit',
@@ -58,7 +58,7 @@ export function Step4Form({ setData, onNext, onBack, formData }: StepProps<FormV
     }
   };
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col min-h-full">
       <div className="min-h-[82vh]">
         <div className="py-6 mb-4 sticky top-0 z-10 bg-white">
           <h1 className="font-bold text-xl text-black">Descuento pronto pago</h1>
@@ -133,7 +133,7 @@ export function Step4Form({ setData, onNext, onBack, formData }: StepProps<FormV
           </button>
         )}
         {showCreateDiscounts && (
-          <form id="discount_form" onSubmit={formDiscountStep.handleSubmit(onSaveDiscount)}>
+          <form id="discount_form" onSubmit={formDiscountStep.handleSubmit(onSaveDiscount)} className="">
             <div className="p-4 border-2 rounded-lg z-30">
               <p className="font-semibold text-base">
                 {needPicker
@@ -273,7 +273,7 @@ export function Step4Form({ setData, onNext, onBack, formData }: StepProps<FormV
                   <CustomInput {...formDiscountStep.register('discount_value')} type="number" step="0.1" />
                 </TextField>
               </div>
-              <div className="pt-10 flex bg-white">
+              <div className="pt-10 flex bg-white pb-4">
                 <button
                   className="bg-white px-6 py-2 text-[#00AB55] hover:text-green-500 text-base font-bold disabled:text-[#919EABCC] rounded-lg"
                   onClick={handleCancel}

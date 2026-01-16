@@ -59,7 +59,7 @@ export default function AssingStudentRFC({
   const utils = api.useUtils();
   const editStudentRFC = useMutation({
     mutationFn: () =>
-      ApiClient.patchStudentViewMoreInfo(session?.token, student?.id, {
+      ApiClient.patchStudentViewMoreInfo(student?.id, {
         billing_guardian: selectedGuardianBilling?.id ?? null,
       }),
     onSuccess: () => {
@@ -268,7 +268,7 @@ export default function AssingStudentRFC({
         <Sheet.Content>
           <RFCDetail
             onClose={onCloseDetailRFC}
-            mutation={mutation}
+            onSubmit={(values) => mutation.mutate({ billing_info: { ...values }, id: guardianDetail?.id ?? '' })}
             guardianDetail={guardianDetail}
             errorsMutation={errorsMutation}
           />

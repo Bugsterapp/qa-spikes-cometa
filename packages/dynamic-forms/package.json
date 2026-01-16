@@ -1,0 +1,23 @@
+{
+  "name": "@cometa/dynamic-forms",
+  "version": "0.0.0",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "scripts": {
+    "lint": "TIMING=1 eslint \"**/*.ts*\""
+  },
+  "devDependencies": {
+    "eslint": "^7.32.0",
+    "eslint-config-custom": "*",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tsconfig-custom": "*",
+    "typescript": "^4.5.2"
+  },
+  "dependencies": {
+    "@cometa/recreo": "*",
+    "@cometa/trpc": "*",
+    "react-hook-form": "^7.54.2",
+    "zod": "^3.24.1"
+  }
+}

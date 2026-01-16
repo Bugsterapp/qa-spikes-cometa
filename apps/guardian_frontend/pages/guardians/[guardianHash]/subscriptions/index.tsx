@@ -1,27 +1,38 @@
-import { useSubscriptionSelection, useStudentStore } from '@cometa/hooks';
-import { useSession } from 'next-auth/react';
+import { useStudentStore, useSubscriptionSelection } from '@cometa/hooks';
+import type { GetServerSideProps } from 'next';
 import Head from 'next/head';
-import { useRouter } from 'next/router';
-import { useState } from 'react';
+import { getSession, useSession } from 'next-auth/react';
+import { useEffect, useState } from 'react';
+import CheckoutFooter, { CheckoutFooterButton, ContainerInfo, LabelItemsCount } from '~/components/CheckoutFooter';
 import { InformationDrawer } from '~/components/Drawer.Variants';
 import Navbar from '~/components/Navbar';
 import { PageHeader } from '~/components/PageHeader';
-import { PayButton } from '~/components/PayButton';
 import { SubscriptionCardActive, SubscriptionCardAvailable } from '~/components/SubscriptionCard.Variants';
 import * as Tabs from '~/components/Tabs';
-import { useSelectedSchool } from '~/components/molecules/common/AuthGlobal';
+import { useUTMRouter as useRouter } from '~/components/UtmNavigation';
+import { PageViewedCategory, TrackEvents } from '~/constants/events';
+import { useSendEvent, useSendPageEvent } from '~/hooks/useSendEvent';
 import { cn } from '~/lib/cn';
 import { useDrawerStore } from '~/stores/drawerStore';
+import { useSelectedSchool } from '~/stores/globalStore';
 import { api } from '~/utils/api';
 import { getDependentColor } from '~/utils/colors';
+import redirectByGuardianFraudStatus from '~/utils/redirectByGuardianFraudStatus';
 
 const SubscriptionPage = () => {
   const router = useRouter();
   const session = useSession();
   const user = session.data?.user;
   const selectedSchool = useSelectedSchool();
-  const { hideDrawer, show, title, description } = useDrawerStore();
+  const { hideDrawer, show, title, description, intent } = useDrawerStore();
   const { setStudentIds } = useStudentStore();
+  const [isLoading, setIsLoading] = useState(false);
+  const sendPageEvent = useSendPageEvent();
+  const sendEvent = useSendEvent();
+
+  useEffect(() => {
+    sendPageEvent(TrackEvents.subscriptions.pageViewed, PageViewedCategory);
+  }, []);
 
   const selectedTab = router.query.selectedTab ?? 'active';
   const [tabValue, setTabValue] = useState(selectedTab as string);
@@ -34,11 +45,13 @@ const SubscriptionPage = () => {
     schoolId: selectedSchool?.id ?? '',
   });
 
-  const { isDisabled, handleItemSelect, resetSelection, selectedItems, totalToPay } = useSubscriptionSelection();
+  const { isDisabled, handleItemSelect, resetSelection, selectedItems } = useSubscriptionSelection();
 
-  const goToResume = () => {
+  const goToSummary = () => {
+    sendEvent(TrackEvents.subscriptions.checkoutOpened);
+    setIsLoading(true);
     router.push({
-      pathname: '/guardians/[guardianHash]/subscriptions/resume',
+      pathname: '/guardians/[guardianHash]/subscriptions/summary',
       query: { ...router.query },
     });
   };
@@ -60,6 +73,12 @@ const SubscriptionPage = () => {
           className="w-full border-b-[#E3E0FF] border-b border-solid border-t-0 border-x-0"
           value={tabValue}
           onValueChange={(value) => {
+            const event =
+              value === 'active'
+                ? TrackEvents.subscriptions.tabs.activeClicked
+                : TrackEvents.subscriptions.tabs.availableClicked;
+
+            sendEvent(event);
             setTabValue(value);
             router.push({ query: { ...router.query, selectedTab: value } }, undefined, { shallow: true });
           }}
@@ -85,10 +104,17 @@ const SubscriptionPage = () => {
                     return (
                       <SubscriptionCardActive
                         key={subscription.id}
-                        onClickInfo={() => onClickInfo(subscription.student.id)}
+                        onClickInfo={() => {
+                          sendEvent(TrackEvents.subscriptions.activeSubscription.clicked);
+                          onClickInfo(subscription.student.id);
+                        }}
                         href={{
                           pathname: '/guardians/[guardianHash]/subscriptions/[id]',
-                          query: { ...router.query, id: subscription.id, school: selectedSchool?.id },
+                          query: {
+                            ...router.query,
+                            id: subscription.id,
+                            school: selectedSchool?.id,
+                          },
                         }}
                         student={{
                           name: subscription.student.full_name.toUpperCase(),
@@ -129,6 +155,17 @@ const SubscriptionPage = () => {
                           query: { guardianHash: router.query.guardianHash },
                         }}
                         onChange={() => {
+                          const selected = selectedItems.some(
+                            (item) =>
+                              item.concept_id === subscribable.concept_id && item.student_id === subscribable.student_id
+                          );
+
+                          const event = selected
+                            ? TrackEvents.subscriptions.subscription.deselected
+                            : TrackEvents.subscriptions.subscription.selected;
+
+                          sendEvent(event);
+
                           handleItemSelect(subscribable);
                         }}
                         selected={selectedItems.some(
@@ -157,18 +194,15 @@ const SubscriptionPage = () => {
             )}
           </Tabs.TabsContent>
         </Tabs.Tabs>
-        {!!selectedItems.length && (
-          <PayButton
-            label="Seleccionadas"
-            hidePrice
-            priceTotal={totalToPay}
-            itemsQuantity={selectedItems.length}
-            buttonText="CONTINUAR"
-            currency="MXN"
-            onClick={goToResume}
-          />
-        )}
-        <InformationDrawer open={show} intent="success" title={title} description={description} onClick={hideDrawer} />
+        <CheckoutFooter open={!!selectedItems.length}>
+          <ContainerInfo>
+            <LabelItemsCount count={selectedItems.length}>SELECCIONADAS</LabelItemsCount>
+          </ContainerInfo>
+          <CheckoutFooterButton onClick={goToSummary} loading={isLoading}>
+            Continuar
+          </CheckoutFooterButton>
+        </CheckoutFooter>
+        <InformationDrawer open={show} intent={intent} title={title} description={description} onClick={hideDrawer} />
       </div>
     </>
   );
@@ -188,5 +222,14 @@ SubscriptionPage.getLayout = function getLayout(page: React.ReactElement) {
   );
 };
 
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const session = await getSession(context);
+  const { guardianHash } = context.query;
+  const redirect = redirectByGuardianFraudStatus(session, guardianHash as string, context.query);
+  if (redirect) return redirect;
+  return {
+    props: {},
+  };
+};
 SubscriptionPage.auth = true;
 export default SubscriptionPage;

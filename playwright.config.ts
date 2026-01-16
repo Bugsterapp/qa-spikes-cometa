@@ -10,21 +10,21 @@ import { defineConfig, devices } from '@playwright/test';
  * See https://playwright.dev/docs/test-configuration.
  */
 // eslint-disable-next-line turbo/no-undeclared-env-vars
-const env = process.env.ENV;
+const env = process.env.ENV_PLAYWRIGHT;
 if (!env) {
   // eslint-disable-next-line turbo/no-undeclared-env-vars
-  process.env.ENV = 'dev';
+  process.env.ENV_PLAYWRIGHT = 'demo';
 }
 
 export default defineConfig({
-  testDir: './apps/dashboard/e2e',
+  testDir: './apps/e2e/',
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
-  retries: 0,
-  timeout: 60000,
+  retries: 1,
+  timeout: 90000,
   /* Opt out of parallel tests on CI. */
   workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
@@ -38,10 +38,23 @@ export default defineConfig({
     video: 'on',
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+    javaScriptEnabled: true,
   },
 
   /* Configure projects for major browsers */
   projects: [
+
+    {
+      name: 'Google Chrome',
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: {
+          args: ['--start-maximized'],
+        },
+        channel: 'chrome',
+      },
+    },
+    /*
     {
       name: 'chromium',
       use: {
@@ -51,17 +64,15 @@ export default defineConfig({
         },
       },
     },
-    /*
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
     },
-
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
     },
-*/
+    */
     /* Test against mobile viewports. */
     // {
     //   name: 'Mobile Chrome',

@@ -1,0 +1,77 @@
+import FileUploader from '@cometa/recreo/components/FileUploader';
+import { ExpandableFieldItem } from '../expandable-field-item';
+import './file-field.css';
+
+function createFileFieldPlaceholder(htmlContent: string): string {
+  return `
+    <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 34 34" fill="none">
+      <path d="M23.0466 13.0508C22.8758 13.0033 22.7198 12.915 22.5929 12.7939C22.4661 12.6729 22.3723 12.5228 22.3202 12.3575C22.031 11.4031 21.5458 10.5158 20.8941 9.74924C20.2423 8.98267 19.4376 8.35278 18.5286 7.89769C17.6195 7.4426 16.6251 7.17176 15.6054 7.10157C14.5857 7.03139 13.562 7.16331 12.5962 7.48935C11.6304 7.8154 10.7426 8.32879 9.98657 8.99845C9.23051 9.66812 8.62188 10.4801 8.19753 11.3854C7.77317 12.2906 7.54191 13.2703 7.51774 14.265C7.49357 15.2598 7.67699 16.2489 8.0569 17.1727C8.14418 17.3671 8.16297 17.5841 8.11035 17.79C8.05773 17.9959 7.93665 18.1791 7.76597 18.311C7.01381 18.8544 6.42658 19.5856 6.06641 20.4273C5.70624 21.2689 5.58654 22.1897 5.71998 23.0922C5.92822 24.3122 6.57892 25.4191 7.55398 26.212C8.52904 27.0049 9.76384 27.4313 11.0343 27.4136H16.0566C16.3072 27.4136 16.5474 27.3168 16.7246 27.1443C16.9017 26.9719 17.0012 26.738 17.0012 26.4942C17.0012 26.2503 16.9017 26.0165 16.7246 25.844C16.5474 25.6716 16.3072 25.5747 16.0566 25.5747H11.0343C10.2184 25.594 9.42243 25.3281 8.79062 24.8253C8.15882 24.3225 7.73297 23.616 7.59027 22.8338C7.49978 22.2589 7.57312 21.6708 7.80231 21.1337C8.03149 20.5966 8.40773 20.131 8.89003 19.7876C9.39663 19.4191 9.7631 18.8972 9.93185 18.3038C10.1006 17.7105 10.0621 17.0795 9.82234 16.5098C9.3483 15.2912 9.32392 13.9502 9.75339 12.7161C10.0965 11.7493 10.7108 10.8954 11.5268 10.2511C12.3429 9.60676 13.328 9.19775 14.3705 9.07041C14.6124 9.0401 14.8559 9.02474 15.0998 9.02443C16.3212 9.02051 17.511 9.40181 18.4912 10.1112C19.4713 10.8206 20.189 11.82 20.5368 12.9597C20.6726 13.394 20.9172 13.7887 21.2487 14.1081C21.5801 14.4275 21.9879 14.6616 22.4355 14.7895C23.5307 15.1048 24.5009 15.7382 25.2161 16.605C25.9312 17.4719 26.3573 18.5307 26.4373 19.6397C26.5172 20.7487 26.2471 21.8551 25.6633 22.8106C25.0794 23.7661 24.2097 24.5252 23.1704 24.9863C23.0165 25.0629 22.888 25.1801 22.7993 25.3245C22.7106 25.4689 22.6654 25.6346 22.6688 25.8028C22.6669 25.9549 22.7044 26.1051 22.7777 26.2394C22.851 26.3738 22.9578 26.4881 23.0883 26.5719C23.2188 26.6556 23.3689 26.7061 23.5246 26.7187C23.6804 26.7313 23.8369 26.7057 23.9799 26.6441C27.8848 24.8171 30.0064 20.0111 26.7003 15.3678C25.79 14.212 24.5006 13.3943 23.0466 13.0508Z" fill="#697086"/>
+      <path d="M23.3365 21.6276C23.5136 21.4552 23.6131 21.2214 23.6131 20.9776C23.6131 20.7338 23.5136 20.4999 23.3365 20.3275L21.8384 18.8692C21.307 18.3521 20.5863 18.0616 19.8349 18.0616C19.0835 18.0616 18.3628 18.3521 17.8314 18.8692L16.3333 20.3275C16.1612 20.5009 16.066 20.7332 16.0682 20.9743C16.0703 21.2153 16.1697 21.4459 16.3448 21.6164C16.52 21.7869 16.7569 21.8836 17.0045 21.8857C17.2522 21.8878 17.4908 21.7951 17.669 21.6276L18.8903 20.4388V27.4138C18.8903 27.6576 18.9898 27.8915 19.167 28.0639C19.3441 28.2364 19.5844 28.3333 19.8349 28.3333C20.0854 28.3333 20.3257 28.2364 20.5028 28.0639C20.68 27.8915 20.7795 27.6576 20.7795 27.4138V20.4388L22.0009 21.6276C22.178 21.8 22.4182 21.8968 22.6687 21.8968C22.9192 21.8968 23.1594 21.8 23.3365 21.6276Z" fill="#697086"/>
+    </svg>
+    <span style="color: #697086; font-size: 14px;">${htmlContent}</span>
+  `;
+}
+
+type FileFieldProps = {
+  id: string;
+  label: string;
+  description?: string;
+  isEnabled: boolean;
+  onToggle: (enabled: boolean) => void;
+  files: File[];
+  onFilesChange: (files: File[]) => void;
+  disabled?: boolean;
+  className?: string;
+  placeholder?: string;
+  acceptedFileTypes?: string[];
+  preview?: boolean;
+  size?: 'small' | 'medium' | 'large';
+  maxFiles?: number;
+  maxFileSize?: number;
+};
+
+export function FileField({
+  id,
+  label,
+  description,
+  isEnabled,
+  onToggle,
+  files,
+  onFilesChange,
+  disabled,
+  className,
+  placeholder = '<span class="text-blue-600 font-bold cursor-pointer underline">Haz click aquí</span> para subir el archivo',
+  preview = false,
+  size = 'medium',
+  acceptedFileTypes = ['image/*'],
+  maxFiles = 1,
+  maxFileSize = 5 * 1024 * 1024,
+}: FileFieldProps) {
+  return (
+    <ExpandableFieldItem
+      id={id}
+      label={label}
+      description={description}
+      isEnabled={isEnabled}
+      onToggle={onToggle}
+      disabled={disabled}
+      className={className}
+    >
+      <FileUploader
+        id={`${id}-uploader`}
+        multiple={false}
+        maxFiles={maxFiles}
+        acceptedFileTypes={acceptedFileTypes}
+        initialFiles={files}
+        onFilesChange={(newFiles) => onFilesChange(newFiles)}
+        disabled={disabled}
+        preview={preview}
+        size={size}
+        maxFileSize={maxFileSize}
+        placeholder={createFileFieldPlaceholder(placeholder)}
+        required={false}
+        className="credential-file-field"
+      />
+    </ExpandableFieldItem>
+  );
+}

@@ -1,15 +1,11 @@
-import { useGetSchools, useSelectedSchool, useSetSelectedSchool } from '~/components/molecules/common/AuthGlobal';
+import { useGetSchools, useSelectedSchool, useSetSelectedSchool } from '~/stores/globalStore';
 import * as SelectPrimitive from '@radix-ui/react-select';
-import Chevron from '/public/icons/chevron.svg';
+import Chevron from '~/public/icons/chevron.svg';
 import { ReactNode } from 'react';
-import Tour from '~/components/atoms/common/Tour';
-import { useTour } from '~/hooks/useTour';
-import { FIRST_SELECT_SCHOOLS_JOYRIDE } from '~/utils/joyride';
-import JoyrideTooltip from '~/components/atoms/common/JoyrideTooltip';
-import { CallBackProps, STATUS } from 'react-joyride';
 import { useSelectionStore } from '@cometa/hooks';
-import Link from 'next/link';
-import { useRouter } from 'next/router';
+import { UTMLink as Link } from '~/components/UtmNavigation';
+import { useUTMRouter as useRouter } from '~/components/UtmNavigation';
+import { useParams } from 'next/navigation';
 
 const SingleTitle = ({ children, disabled = false }: { children: ReactNode; disabled?: boolean }) => {
   const _router = useRouter();
@@ -24,20 +20,44 @@ const SingleTitle = ({ children, disabled = false }: { children: ReactNode; disa
   );
 };
 
-const SelectSchool = ({ disabledTitle = false }: { disabledTitle?: boolean }) => {
+const SingleTitleAppRouter = ({ children, disabled = false }: { children: ReactNode; disabled?: boolean }) => {
+  const params = useParams();
+  const guardianHash = params?.guardianHash;
+  if (disabled) {
+    return <div className="text-sm font-medium text-gray-300">{children}</div>;
+  }
+  return (
+    <Link href={`/guardians/${guardianHash}`} className="text-sm font-medium text-gray-300">
+      {children}
+    </Link>
+  );
+};
+
+const SelectSchool = ({
+  disabledTitle = false,
+  appRouter = false,
+}: {
+  disabledTitle?: boolean;
+  appRouter?: boolean;
+}) => {
   const { clear } = useSelectionStore();
   const schools = useGetSchools();
   const selectedSchool = useSelectedSchool();
   const setSelectedSchool = useSetSelectedSchool();
-  const { showTour, handleShowTour } = useTour();
 
-  if (!schools.length) return <SingleTitle disabled={disabledTitle}>cometa</SingleTitle>;
+  if (!schools.length)
+    return appRouter ? (
+      <SingleTitleAppRouter disabled={disabledTitle}>cometa</SingleTitleAppRouter>
+    ) : (
+      <SingleTitle disabled={disabledTitle}>cometa</SingleTitle>
+    );
 
-  if (schools.length == 1) return <SingleTitle disabled={disabledTitle}>{selectedSchool?.name}</SingleTitle>;
-
-  const changeTour = (callBack: CallBackProps, tour: string) => {
-    if (callBack.status === STATUS.FINISHED) handleShowTour(tour);
-  };
+  if (schools.length == 1)
+    return appRouter ? (
+      <SingleTitleAppRouter disabled={disabledTitle}>{selectedSchool?.name}</SingleTitleAppRouter>
+    ) : (
+      <SingleTitle disabled={disabledTitle}>{selectedSchool?.name}</SingleTitle>
+    );
 
   return (
     <div>
@@ -56,10 +76,7 @@ const SelectSchool = ({ disabledTitle = false }: { disabledTitle?: boolean }) =>
             <SelectPrimitive.Value />
           </div>
           <SelectPrimitive.Icon id="school-select-icon">
-            <Chevron
-              className="w-6 h-5 text-gray-300 transition-transform group-data-[state=open]:rotate-180
-							"
-            />
+            <Chevron className="w-6 h-5 text-gray-300 transition-transform group-data-[state=open]:rotate-180" />
           </SelectPrimitive.Icon>
         </SelectPrimitive.Trigger>
         <SelectPrimitive.Portal>
@@ -81,13 +98,6 @@ const SelectSchool = ({ disabledTitle = false }: { disabledTitle?: boolean }) =>
           </SelectPrimitive.Content>
         </SelectPrimitive.Portal>
       </SelectPrimitive.Root>
-
-      <Tour
-        run={Boolean(showTour !== null && !showTour?.select_schools)}
-        steps={FIRST_SELECT_SCHOOLS_JOYRIDE}
-        tooltipComponent={JoyrideTooltip}
-        callback={(callback) => changeTour(callback, 'select_schools')}
-      />
     </div>
   );
 };

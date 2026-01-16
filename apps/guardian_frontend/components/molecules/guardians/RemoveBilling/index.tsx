@@ -1,82 +1,13 @@
-import { Link } from '@mui/material';
-import { useSession } from 'next-auth/react';
-import { useState } from 'react';
-import { useAlert } from '~/hooks';
-import useUpdateSession from '~/hooks/useUpdateSession';
-import DialogRemoveBilling from '../dialogs/DialogRemoveBilling';
-import { api } from '~/utils/api';
+import { Button } from '@cometa/recreo/v2';
 
-interface RemoveBillingProps {
-  onAgree: () => void;
-}
-
-const RemoveBilling = ({ onAgree }: RemoveBillingProps) => {
-  const [open, setOpen] = useState(false);
-  const { setAlert } = useAlert();
-  const { data: session } = useSession();
-  const updateSession = useUpdateSession();
-  const { mutateAsync } = api.guardian.update.useMutation();
-  const removeBilling = () => {
-    const formValues = {
-      tax_id: '',
-      billing_name: '',
-      taxing_system: '',
-      address_name: '',
-      address_number: '',
-      address_complement: '',
-      postal_code: '',
-      state: '',
-      city: '',
-      district: '',
-      billable_dependents: [],
-      cfdi_config: {
-        monthly_fee: null,
-        inscription: null,
-        transport: null,
-        other: null,
-      },
-    };
-    return mutateAsync({ id: session?.user.id ?? '', data: formValues, query: { force: true } });
-  };
-  const handleAgree = () => {
-    removeBilling()
-      .then(async (res) => {
-        if (res.error) throw res.data;
-
-        await updateSession.mutate();
-        setAlert('Tus datos han sido borrados', 'success');
-        onAgree();
-      })
-      .catch(() => {
-        setAlert('Tus datos no pueden ser borrados en estos momentos');
-      });
-  };
-
-  return (
-    <>
-      <Link
-        id="remove-billing"
-        href="#"
-        color="error.main"
-        fontWeight={500}
-        underline="none"
-        onClick={() => {
-          setOpen(true);
-        }}
-      >
-        Dejar de facturar a mi RFC
-      </Link>
-      <DialogRemoveBilling
-        open={open}
-        onAgree={() => {
-          handleAgree();
-        }}
-        handleClose={() => {
-          setOpen(false);
-        }}
-      />
-    </>
-  );
+type RemoveBillingProps = {
+  onClick: () => void;
 };
 
-export default RemoveBilling;
+export default function RemoveBilling({ onClick }: RemoveBillingProps) {
+  return (
+    <Button onClick={onClick} className="text-[#E65959] bg-transparent  hover:bg-red-50 transition-colors">
+      Eliminar mis datos de facturación
+    </Button>
+  );
+}

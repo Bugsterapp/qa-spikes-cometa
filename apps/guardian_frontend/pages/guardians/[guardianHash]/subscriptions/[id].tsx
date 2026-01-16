@@ -2,16 +2,16 @@ import Head from 'next/head';
 import * as DetailCard from '~/components/SubscriptionCard';
 import Navbar from '~/components/Navbar';
 import Trash from '~/public/icons/trash.svg';
-import { Button } from '~/components/atoms/Button';
+import { Button } from '~/components/ui/Button';
 import { Banner } from '~/components/Banner';
 import Info from '~/public/icons/info_outlined.svg';
 import HelpLink from '~/components/atoms/guardians/HelpLink';
 import IcWhatsApp from '~/public/icons/ic_whatsapp.svg';
 import { WHAT_TALK_TO_US } from '~/utils/linksWhatsapp';
-import { useRouter } from 'next/router';
+import { useUTMRouter as useRouter } from '~/components/UtmNavigation';
 import TitleBackButton from '~/components/molecules/guardians/TitleBackButton';
 import { ServiceClient, api } from '~/utils/api';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ConfirmationDrawer, InformationDrawer } from '~/components/Drawer.Variants';
 import { useDrawerStore } from '~/stores/drawerStore';
 import Warning from '~/public/icons/warning.svg';
@@ -26,6 +26,8 @@ import * as Sentry from '@sentry/nextjs';
 import { RetrieveSubscriptionResponseDTO } from '@cometa/trpc';
 import { VerifyRFCFooter } from '~/components/ResumeCard';
 import dayjs from '~/lib/dayjs';
+import { useSendEvent, useSendPageEvent } from '~/hooks/useSendEvent';
+import { PageViewedCategory, TrackEvents } from '~/constants/events';
 
 interface SubscriptionDetailProps {
   guardianHash: string;
@@ -34,6 +36,8 @@ interface SubscriptionDetailProps {
 }
 
 const SubscriptionDetail = ({ guardianHash, subscription, selectedSchoolId }: SubscriptionDetailProps) => {
+  const sendEvent = useSendEvent();
+  const sendPageEvent = useSendPageEvent();
   const router = useRouter();
   const {
     toggle: isOpenChangeCard,
@@ -56,11 +60,25 @@ const SubscriptionDetail = ({ guardianHash, subscription, selectedSchoolId }: Su
     router.push(`/guardians/${guardianHash}/subscriptions`);
   }
 
-  const { mutate, isLoading } = api.subscriptions.cancelSubscription.useMutation({
+  useEffect(() => {
+    sendPageEvent(TrackEvents.subscriptions.subscriptionDetailPageViewed, PageViewedCategory);
+  }, []);
+
+  const { mutate, isPending: isLoading } = api.subscriptions.cancelSubscription.useMutation({
     onSuccess: () => {
       showDrawer({
         title: 'Tu domiciliación fue dada de baja con éxito',
         description: `La domiciliación de "${subscription?.concept}" de ${subscription?.student.full_name} fue dada de baja correctamente.`,
+        intent: 'success',
+      });
+      router.push(`/guardians/${guardianHash}/subscriptions`);
+    },
+    onError: () => {
+      showDrawer({
+        title: 'Error al dar de baja la domiciliación',
+        description:
+          'Ocurrió un error inesperado. Por favor, intenta nuevamente más tarde o contacta a soporte si el problema persiste.',
+        intent: 'error',
       });
       router.push(`/guardians/${guardianHash}/subscriptions`);
     },
@@ -100,7 +118,10 @@ const SubscriptionDetail = ({ guardianHash, subscription, selectedSchoolId }: Su
           <Button
             variant="ghost"
             className="p-2 bg-transparent rounded-full shadow-none"
-            onClick={() => setIsCanceling(true)}
+            onClick={() => {
+              sendEvent(TrackEvents.subscriptions.activeSubscription.cancelClicked);
+              setIsCanceling(true);
+            }}
             disabled={isLoading}
           >
             <Trash />
@@ -111,12 +132,13 @@ const SubscriptionDetail = ({ guardianHash, subscription, selectedSchoolId }: Su
             description="Cuando des de baja la domiciliación deberás comenzar a pagar manualmente los pagos relacionados a este concepto."
             confirmLabel="Sí, dar de baja"
             cancelLabel="Atrás"
-            onClick={() =>
+            onClick={() => {
+              sendEvent(TrackEvents.subscriptions.activeSubscription.cancelConfirmed);
               mutate({
                 subscriptionId: subscription.id,
                 schoolId: selectedSchoolId,
-              })
-            }
+              });
+            }}
             onCancel={() => setIsCanceling(false)}
             onClose={() => setIsCanceling(false)}
             disabled={isLoading}
@@ -150,7 +172,10 @@ const SubscriptionDetail = ({ guardianHash, subscription, selectedSchoolId }: Su
             size="small"
             variant="clear"
             className="text-[#4A5CFF] font-medium leading-4"
-            onClick={() => onToggleInfoChangeCard()}
+            onClick={() => {
+              sendEvent(TrackEvents.subscriptions.activeSubscription.changeCardClicked);
+              onToggleInfoChangeCard();
+            }}
           >
             CAMBIAR
           </Button>
@@ -159,7 +184,10 @@ const SubscriptionDetail = ({ guardianHash, subscription, selectedSchoolId }: Su
             intent="card"
             title="Cambiar la tarjeta asociada"
             description="Si quieres que tu domiciliación sea cobrada a otra tarjeta, debes dar de baja la domiciliación actual y domiciliarte nuevamente para poder asociar la nueva tarjeta."
-            onClick={onToggleInfoChangeCard}
+            onClick={() => {
+              sendEvent(TrackEvents.subscriptions.activeSubscription.changeCardConfirmed);
+              onToggleInfoChangeCard();
+            }}
             onClose={onCloseInfoChangeCard}
           />
         </DetailCard.Row>

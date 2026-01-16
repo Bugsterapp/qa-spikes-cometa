@@ -8,7 +8,7 @@ import { dataConfig } from '../data/data';
 type Environment = 'local' | 'stage' | 'dev';
 
 // eslint-disable-next-line turbo/no-undeclared-env-vars
-const envVar = process.env.ENV as Environment;
+const envVar = process.env.ENV_PLAYWRIGHT as Environment;
 const url = dataConfig[envVar].ADMIN_URL || 'https://api-cometa.dev.getcometa.com/';
 
 export async function assignGuardianAPI(
@@ -143,13 +143,13 @@ export async function addOtherConceptosOrders(
 }
 
 export async function generateFirstName(): Promise<string> {
-  const firstName = faker.person.firstName().replace(/['-]/g, '');
-  return `${firstName}`;
+  const name = faker.person.firstName().replace(/['-]/g, '').toLowerCase();
+  return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
 export async function generateLastName(): Promise<string> {
-  const lastName = faker.person.lastName().replace(/['-]/g, '');
-  return `${lastName}`;
+  const name = faker.person.lastName().replace(/['-]/g, '').toLowerCase();
+  return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
 export async function generateMatricula(): Promise<string> {

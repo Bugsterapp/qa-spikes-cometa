@@ -1,23 +1,25 @@
-import { useRef, useState } from 'react';
-import { GlobalSearch } from '/src/components/atoms/GlobalSearch';
-import { useSelectedSchool, useSelectedSchoolId } from '/src/guards/AuthGuard';
-import { useRouter } from 'next/router';
-import { api } from '/src/utils/api';
-import { Row, createColumnHelper } from '@tanstack/react-table';
 import { ConceptOrdersListSuccessResponse } from '@cometa/trpc/src/types';
-import { formatDateWithSpanishFormat } from '/src/utils/general';
-import { renderMoney } from '/src/utils/datagridHeaders';
+import { Row, createColumnHelper } from '@tanstack/react-table';
+import { useRouter } from 'next/router';
+import { useRef, useState } from 'react';
+
 import QuestionIcon from '/public/assets/icons/ic_interrogation.svg';
+import { GlobalSearch } from '/src/components/atoms/GlobalSearch';
 import { Tooltip } from '/src/components/atoms/Tooltip';
-import { GenericRowCheckBoxButton } from '../StudentAssignedTable';
 import { FloatingActionOverlay, TableVirtualized } from '/src/components/TableInfinityScroll';
-import useToggle from '/src/hooks/useToggle';
+import { convertToOrdering } from '/src/components/Table';
+import { useSelectedSchoolId } from '/src/guards/AuthGuard';
 import useAlert from '/src/hooks/useAlert';
-import { useFlags } from '/flags/client';
-import { useSession } from 'next-auth/react';
+import useToggle from '/src/hooks/useToggle';
+import { api } from '/src/utils/api';
+import { renderMoney } from '/src/utils/datagridHeaders';
+import { formatDateWithSpanishFormat } from '/src/utils/general';
+
+import { GenericRowCheckBoxButton } from '../StudentAssignedTable';
 
 export const ConceptOrdersTable = () => {
   const [search, setSearch] = useState('');
+  const [ordersSorting, setOrdersSorting] = useState<string>();
   const selectedSchoolId = useSelectedSchoolId();
   const { setAlertState } = useAlert();
 
@@ -30,13 +32,14 @@ export const ConceptOrdersTable = () => {
   const { toggle, onOpen, onClose, setToggle } = useToggle(false);
   const {
     data: orders,
-    isLoading,
+    isPending: isLoading,
     isFetching,
   } = api.schools.schoolsConceptsOrdersRetrive.useQuery(
     {
       concept_id: conceptId as string,
       school_id: selectedSchoolId ?? '',
       search,
+      ordering: ordersSorting ? [ordersSorting] : undefined,
     },
     {
       enabled: !!conceptId,
@@ -97,11 +100,11 @@ export const ConceptOrdersTable = () => {
       price: data.price,
     });
   };
-  const { data: session } = useSession();
-  const selectedSchool = useSelectedSchool();
-  const { flags } = useFlags({ traits: { email: session?.user.email, schoolName: selectedSchool?.name } });
+
+  const { isEnabled: showEditPrices } = useFlagWithVariableMatching('hk_show_edit_prices');
+
   const columns = [
-    ...(flags?.show_edit_prices
+    ...(showEditPrices
       ? [
           {
             id: 'select',
@@ -132,24 +135,31 @@ export const ConceptOrdersTable = () => {
       size: 380,
       header: () => <span className="font-semibold">Orden</span>,
     }),
-    columnHelper.accessor('total_students', {
+    columnHelper.accessor('delinquent_students', {
       cell: (info) => (
         <div className="text-sm text-[#212B36]">
-          <span className="font-bold">{info.row.original.total_students - info.row.original.delinquent_students} </span>
-          de
-          <span className="font-bold"> {info.row.original.total_students} </span>
-          alumnos
+          <span className="font-bold">
+            {isNaN(info.row.original.total_students - info.row.original.delinquent_students)
+              ? 0
+              : info.row.original.total_students - info.row.original.delinquent_students}
+          </span>
+          {' de '}
+          <span className="font-bold">
+            {isNaN(info.row.original.total_students) ? 0 : info.row.original.total_students}
+          </span>
+          {' estudiantes'}
         </div>
       ),
       size: 150,
       header: () => (
         <div className="flex items-center">
           <span className="font-semibold">Cobranza</span>
-          <Tooltip message="Son la cantidad de alumnos que han realizado un pago completo, parcial o en proceso; del total de alumnos asignados.">
+          <Tooltip message="Son la cantidad de estudiantes que han realizado un pago completo, parcial o en proceso; del total de estudiantes asignados.">
             <QuestionIcon className="w-4 h-4 ml-1" />
           </Tooltip>
         </div>
       ),
+      enableSorting: true,
     }),
     columnHelper.accessor('due', {
       cell: (info) => (
@@ -157,6 +167,7 @@ export const ConceptOrdersTable = () => {
       ),
       size: 200,
       header: () => <span className="font-semibold">Vencimiento</span>,
+      enableSorting: true,
     }),
     columnHelper.accessor('price', {
       cell: (info) => <div className="text-sm text-[#212B36]">{renderMoney(info.row.original.price)}</div>,
@@ -174,7 +185,7 @@ export const ConceptOrdersTable = () => {
   });
   return (
     <div>
-      <div className="flex py-8 items-start px-10 sticky top-[220px] z-20 bg-white flex-col -translate-y-3.5">
+      <div className="flex py-8 items-start px-10 sticky top-[135px] z-20 bg-white flex-col ">
         <div className="flex items-center">
           <GlobalSearch
             search={search}
@@ -201,7 +212,7 @@ export const ConceptOrdersTable = () => {
           onSubmit={handleEditPrices}
           open={toggle}
           setOpen={setToggle}
-          isLoading={editPricesMutation.isLoading}
+          isLoading={editPricesMutation.isPending}
           anOrderHasAPayment={anOrderHasAPayment}
         />
         <TableVirtualized
@@ -218,19 +229,24 @@ export const ConceptOrdersTable = () => {
           hasSelectedOrders={selectedOrders?.length > 5 && orders && orders?.length > 5}
           hideSum
           totalCount={orders?.length ?? 0}
+          onSortingChange={(sorting) => {
+            const text = convertToOrdering(sorting);
+            setOrdersSorting(text);
+          }}
         />
       </div>
     </div>
   );
 };
 
-import { Controller, useForm } from 'react-hook-form';
-import Dialog from '/src/components/atoms/Dialog';
-import MoneyInput from '../../../ui/MoneyInput';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
+import MoneyInput from '../../../ui/MoneyInput';
 import Button from '../Button';
 import Warning from '/public/assets/icons/navigation/delinquency_warning.svg';
+import Dialog from '/src/components/atoms/Dialog';
+import { useFlagWithVariableMatching } from '/src/components/flags/FlagsProvider';
 
 type EditPriceFormValues = {
   price: number;

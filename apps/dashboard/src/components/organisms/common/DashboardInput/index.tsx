@@ -1,5 +1,6 @@
 import { forwardRef, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
+import { Tooltip } from '/src/components/atoms/Tooltip';
 import cx from 'classnames';
 
 interface DashboardInputProps {
@@ -13,11 +14,24 @@ interface DashboardInputProps {
   error?: string | boolean;
   onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   maxLength?: number;
+  tooltip?: string;
 }
 
 const DashboardInput = forwardRef<HTMLInputElement, DashboardInputProps>(
   (
-    { value, label, name, placeholder, type, onChange, disabled, onBlur, error, maxLength }: DashboardInputProps,
+    {
+      value,
+      label,
+      name,
+      placeholder,
+      type,
+      onChange,
+      disabled,
+      onBlur,
+      error,
+      maxLength,
+      tooltip,
+    }: DashboardInputProps,
     ref
   ) => {
     const [newValue, setNewValue] = useState(value);
@@ -46,7 +60,7 @@ const DashboardInput = forwardRef<HTMLInputElement, DashboardInputProps>(
             <label
               htmlFor={name}
               className={twMerge(
-                'absolute top-4 left-2 text-[#919EAB] peer-focus:text-secondary group-focus-within:text-green peer-focus-within:bottom-auto group-focus-within:bg-white px-1 group-focus-within:-top-2.5 group-focus-within:left-2 transition-[top,color] group-focus-within:ease-out group-focus-within:text-xs group-focus-within:ease-[cubic-bezier(4, 1, 8, 3)] z-[1]',
+                'absolute top-4 left-2 text-[#919EAB] peer-focus:text-foreground group-focus-within:text-green peer-focus-within:bottom-auto group-focus-within:bg-white px-1 group-focus-within:-top-2.5 group-focus-within:left-2 transition-[top,color] group-focus-within:ease-out group-focus-within:text-xs group-focus-within:ease-[cubic-bezier(4, 1, 8, 3)] z-[1]',
                 labelDinamicStyles,
                 cx({
                   'text-red-500 group-focus-within:text-red-500': error,
@@ -61,7 +75,7 @@ const DashboardInput = forwardRef<HTMLInputElement, DashboardInputProps>(
             role="dashboard-input"
             name={name || label || placeholder}
             ref={ref}
-            className={`outline-none border-none py-4 peer ${disabled ? 'text-[#637381]' : 'text-secondary'}`}
+            className={`outline-none border-none py-4 peer ${disabled ? 'text-[#637381]' : 'text-foreground'}`}
             type={type || 'text'}
             value={newValue}
             onChange={handleChange}
@@ -74,6 +88,7 @@ const DashboardInput = forwardRef<HTMLInputElement, DashboardInputProps>(
         {error && typeof error === 'string' && (
           <span className="text-xs font-semibold text-red-500 mb-4 px-3">{error}</span>
         )}
+        {tooltip && <Tooltip message={tooltip} />}
       </div>
     );
   }

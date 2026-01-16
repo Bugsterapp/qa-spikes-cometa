@@ -1,23 +1,31 @@
+import type { TOrderOnlineStore, TOrderPortal } from '@cometa/hooks';
+import type {
+  DashboardDependentFulfillment,
+  GuardianDependentFulfillment,
+  GuardianDependentOrder,
+  OptionalOrder,
+} from '@cometa/trpc/src/types';
 import currency from 'currency.js';
-// TODO - remove this import and use the one from @cometa/trpc
-import { Order, OrderType } from '~/types/OrdersApi';
 import dayjs from 'dayjs';
-import { DashboardDependentFulfillment } from '@cometa/trpc/src/types';
+// TODO - remove this import and use the one from @cometa/trpc
+import type { Order, OrderType } from '~/types/OrdersApi';
 
 export const formatPrice = (amount: number | string, currency?: string) => {
   if (typeof amount === 'string') amount = parseFloat(amount);
   currency = currency ?? 'MXN';
-  const formatter = Intl.NumberFormat(process.env.NEXT_PUBLIC_MERCADO_PAGO_LOCALE, {
+  const formatter = Intl.NumberFormat(process.env.NEXT_PUBLIC_CURRENCY_LOCALE, {
     style: 'currency',
     currency,
   });
-  return formatter.format(amount);
+  const formatted = formatter.format(amount);
+  // Replace MX$ or MXN with $ and ensure space
+  return formatted.replace(/MX\$\s?|MXN\s?/, '$ ').replace(/\$(?!\s)/, '$ ');
 };
-
+// FIXME: need this?
 export const getFinalPricePending = ({ price, interest, discount }: Order) =>
   currency(price).add(interest).subtract(discount).value;
 
-export const defineTypeForOder = (order: Order | DashboardDependentFulfillment): OrderType => {
+export const defineTypeForOder = (order: DashboardDependentFulfillment | GuardianDependentFulfillment): OrderType => {
   const typesByStatus: Record<string, OrderType> = {
     PAID: 'paid', // payed orders
     DUE: 'due', // orders that have expired
@@ -38,3 +46,24 @@ export const defineTypeForOder = (order: Order | DashboardDependentFulfillment):
     return typesByStatus['FUTURE'];
   }
 };
+
+export const typeOfOrdersInStore = (selectedItems: (TOrderPortal | TOrderOnlineStore)[]) => {
+  const hasMandatoryOrders = selectedItems.some((item) => !item.concept.optional);
+  const hasOptionalOrders = selectedItems.some((item) => item.concept.optional);
+
+  return {
+    optional: hasOptionalOrders,
+    mandatory: hasMandatoryOrders,
+  };
+};
+
+export function extractConceptTypesFromOrders(orders: (GuardianDependentOrder | OptionalOrder)[]) {
+  return orders.reduce((previousExtractedTypes, order) => {
+    if (!previousExtractedTypes.find((previousExtractedTypes) => previousExtractedTypes.value === order.concept.type))
+      previousExtractedTypes.push({
+        value: order.concept.type,
+        displayValue: order.concept.display_type,
+      });
+    return previousExtractedTypes;
+  }, [] as { value: string; displayValue: string }[]);
+}

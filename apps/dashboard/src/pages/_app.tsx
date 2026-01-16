@@ -1,30 +1,29 @@
-import '../global_styles.css';
-import { SessionProvider } from 'next-auth/react';
-import PropTypes from 'prop-types';
-import Head from 'next/head';
-import React, { useEffect, useLayoutEffect } from 'react';
-import { CollapseDrawerProvider } from '../contexts/CollapseDrawerContext';
-import ThemeProvider from '../theme';
-import ProgressBar from '../components/ProgressBar';
-import AuthGuard from '../guards/AuthGuard';
-import { LicenseInfo } from '@mui/x-license-pro';
-import { hotjar } from 'react-hotjar';
-import { AlertProvider } from '../contexts/AlertContext';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { api } from '../utils/api';
-import type { AppProps } from 'next/app';
-import { Session } from 'next-auth';
-import { SheetProvider } from '../components/atoms/Sheet';
 import { useSendTrackEvent } from '@cometa/utils';
-import { CacheProvider, EmotionCache } from '@emotion/react';
-import createEmotionCache from '../utils/createEmotionCache';
+import { CacheProvider, type EmotionCache } from '@emotion/react';
+import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import SchoolSwitcherContextProvider from '../contexts/SchoolSwitcherProvider';
+import type { Session } from 'next-auth';
+import { SessionProvider } from 'next-auth/react';
+import type { AppProps } from 'next/app';
+import Head from 'next/head';
+import PropTypes from 'prop-types';
+import { type ReactNode, useEffect, useLayoutEffect } from 'react';
+import { hotjar } from 'react-hotjar';
+import { SheetProvider } from '../components/atoms/Sheet';
+import ProgressBar from '../components/ProgressBar';
+import { AlertProvider } from '../contexts/AlertContext';
+import { CollapseDrawerProvider } from '../contexts/CollapseDrawerContext';
 import { RouteProvider } from '../contexts/RoutesProvider';
-import { SentryProvider } from '../contexts/SentryContext';
-LicenseInfo.setLicenseKey(
-  'b5a7fc53eaade0e5941df724b2289710Tz00ODYzMyxFPTE2OTEzNDcyMDc3MDgsUz1wcm8sTE09c3Vic2NyaXB0aW9uLEtWPTI='
-);
+import SchoolSwitcherContextProvider from '../contexts/SchoolSwitcherProvider';
+import '../global_styles.css';
+import AuthGuard from '../guards/AuthGuard';
+import { api } from '../utils/api';
+import createEmotionCache from '../utils/createEmotionCache';
+
+import { DownloadProvider } from '../components/DownloadManager';
+import { Toaster } from '../components/molecules/dashboard/Toast/Toaster';
+import TokenWatcher from '../components/TokenWatcher';
+import { Events } from '../constants/events';
 
 MyApp.propTypes = {
   Component: PropTypes.func,
@@ -38,7 +37,7 @@ const clientSideEmotionCache = createEmotionCache();
 export interface MyAppProps extends AppProps {
   Component: AppProps['Component'] & {
     auth: boolean;
-    getLayout(component: JSX.Element): React.ReactNode;
+    getLayout(component: JSX.Element): ReactNode;
   };
   pageProps: AppProps['pageProps'] & { session: Session };
   emotionCache?: EmotionCache;
@@ -52,11 +51,11 @@ function MyApp(props: MyAppProps) {
   const sendTrackEvent = useSendTrackEvent();
 
   useEffect(() => {
-    hotjar.initialize(parseInt(hjid), parseInt(hjsv));
+    hotjar.initialize(Number.parseInt(hjid), Number.parseInt(hjsv));
   }, []);
 
   const trackSupportButtonClicked = () => {
-    sendTrackEvent('dashboard: Support Requested');
+    sendTrackEvent(Events.support_requested);
   };
 
   useLayoutEffect(() => {
@@ -66,30 +65,33 @@ function MyApp(props: MyAppProps) {
   return (
     <SchoolSwitcherContextProvider>
       <CacheProvider value={emotionCache}>
-        <SessionProvider session={pageProps.session} refetchOnWindowFocus={false}>
+        <SessionProvider session={pageProps.session} refetchOnWindowFocus>
+          <TokenWatcher />
           <Head>
             <meta name="viewport" content="initial-scale=1, width=device-width" />
           </Head>
-          <SentryProvider>
+
+          <DownloadProvider>
             <CollapseDrawerProvider>
               <RouteProvider>
-                <ThemeProvider>
-                  <AlertProvider>
-                    <ProgressBar />
-                    <SheetProvider>
-                      {Component.auth ? (
-                        <AuthGuard>{getLayout(<Component {...pageProps} />)}</AuthGuard>
-                      ) : (
-                        getLayout(<Component {...pageProps} />)
-                      )}
-                    </SheetProvider>
-                    <SpeedInsights />
-                  </AlertProvider>
-                </ThemeProvider>
+                <AlertProvider>
+                  <ProgressBar />
+                  <SheetProvider>
+                    {Component.auth ? (
+                      <AuthGuard>{getLayout(<Component {...pageProps} />)}</AuthGuard>
+                    ) : (
+                      getLayout(<Component {...pageProps} />)
+                    )}
+                    <Toaster />
+                  </SheetProvider>
+                </AlertProvider>
               </RouteProvider>
             </CollapseDrawerProvider>
-          </SentryProvider>
-          <ReactQueryDevtools initialIsOpen={false} />
+          </DownloadProvider>
+
+          <SpeedInsights />
+          <Analytics />
+          {/* <ReactQueryDevtools initialIsOpen={false} /> */}
         </SessionProvider>
       </CacheProvider>
     </SchoolSwitcherContextProvider>

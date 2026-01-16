@@ -1,9 +1,23 @@
 import React from 'react';
 
-export function HighlightMatch({ children, query }: { children: React.ReactNode; query: string }) {
+export function HighlightMatch({
+  children,
+  query,
+  className,
+  title,
+}: {
+  children: React.ReactNode;
+  query: string;
+  className?: string;
+  title?: string;
+}) {
   const highlight = (text: string) => highlightMatch(text, query);
 
-  return <span>{React.Children.map(children, (child) => (typeof child === 'string' ? highlight(child) : child))}</span>;
+  return (
+    <span className={className} title={title}>
+      {React.Children.map(children, (child) => (typeof child === 'string' ? highlight(child) : child))}
+    </span>
+  );
 }
 function highlightMatch(text: string, query: string): React.ReactNode {
   if (!query) return text;

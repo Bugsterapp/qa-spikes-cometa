@@ -1,6 +1,7 @@
 {
   "extends": "tsconfig-custom/nextjs.json",
   "include": [
+    "types/files.d.ts",
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
@@ -11,7 +12,8 @@
     "tailwind.config.js",
     "next.config.js",
     "**/*.cjs",
-    "**/*.mjs"
+    "**/*.mjs",
+    "build/types/**/*.ts"
   ],
   "exclude": ["node_modules"],
   "compilerOptions": {
@@ -25,6 +27,11 @@
       "*": ["*"],
       "react": ["./node_modules/@types/react"],
       "react-dom": ["./node_modules/@types/react-dom"]
-    }
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   }
 }

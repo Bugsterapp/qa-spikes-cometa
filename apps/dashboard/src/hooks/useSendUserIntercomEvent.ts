@@ -5,6 +5,7 @@ import { sendIntercomUserEvent } from '../utils/events';
 
 const useSendUserIntercomEvent = (school: DashboardSchool) => {
   const { data: session } = useSession();
+
   useEffect(() => {
     if (school && session) {
       sendIntercomUserEvent(session?.user?.id, {
@@ -17,6 +18,8 @@ const useSendUserIntercomEvent = (school: DashboardSchool) => {
         staff: session?.user?.is_staff,
         active: (session as any)?.user?.is_active,
         superuser: (session as any)?.user?.is_superuser,
+        job_title: school.job_title,
+        school_status: school.status,
       });
     }
   }, [school, session]);

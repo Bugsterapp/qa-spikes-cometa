@@ -1,5 +1,5 @@
+import { cn } from '@cometa/utils';
 import React, { forwardRef, DetailedHTMLProps, InputHTMLAttributes } from 'react';
-import { twMerge } from 'tailwind-merge';
 
 export type CustomInputProps = DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> & {
   endAdornment?: React.ReactNode;
@@ -9,9 +9,12 @@ const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(({ className,
   <>
     <input
       ref={ref}
-      className={twMerge(
+      className={cn(
         'w-full text-[#1D2939] placeholder-transparent focus:placeholder-gray-500 outline-none focus:outline-none border-none text-base peer rounded-lg relative z-[2] bg-transparent focus:ring-0 h-[25px] px-0',
-        className
+        className,
+        {
+          'disabled:opacity-50 disabled:cursor-not-allowed': props.disabled,
+        }
       )}
       {...props}
     />

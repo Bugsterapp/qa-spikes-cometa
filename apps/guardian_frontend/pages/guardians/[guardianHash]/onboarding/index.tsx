@@ -1,4 +1,4 @@
-import { useRouter } from 'next/router';
+import { useUTMRouter as useRouter } from '~/components/UtmNavigation';
 import React, { useEffect, useState } from 'react';
 import { getSession } from 'next-auth/react';
 import Head from 'next/head';
@@ -23,7 +23,8 @@ import { api } from '~/utils/api';
 import taxRegimeValues from '~/utils/static_data/taxRegimeValues';
 import { personTypeDefault } from '~/utils/static_data/personTypesTaxRegimen';
 import { taxingTypeValues } from '~/server/api/routers/guardian';
-import { useGetSchools } from '~/components/molecules/common/AuthGlobal';
+import { useGetSchools } from '~/stores/globalStore';
+import { appendUtmParameters } from '~/lib/destinationWithUTM';
 
 interface OnboardingProps {
   session: Session;
@@ -223,7 +224,7 @@ function Onboarding({ session, guardianHash }: OnboardingProps) {
           <OnboardingGuardianInfo
             school={session.user.schools[0]}
             key={`${guardianData?.first_name}_${guardianData?.last_name}_${guardianData?.email}_${guardianData?.phone}`}
-            isLoading={guardianMutation.isLoading}
+            isLoading={guardianMutation.isPending}
             disabled={!allowStudentEdit}
             onSubmit={async (values) => {
               try {
@@ -234,6 +235,10 @@ function Onboarding({ session, guardianHash }: OnboardingProps) {
                     last_name: values.last_name,
                     first_name: values.name,
                     phone: values.phone,
+                    terms_acceptance: {
+                      amount: 0,
+                      signed_site: _router.pathname,
+                    },
                     ...(!summaryEdit ? { onboarding_stage: allowStudentEdit ? 'STUDENTS' : 'BILLING' } : undefined),
                   },
                   query: { force: true },
@@ -281,7 +286,7 @@ function Onboarding({ session, guardianHash }: OnboardingProps) {
             allowEdit={allowStudentEdit}
             allowAdd={guardianData?.schools.length === 1 && Boolean(guardianData.schools[0].is_provider)}
             schoolId={guardianData?.schools[0].id ?? ''}
-            isLoading={studentMutation.isLoading || isLoadingStudents}
+            isLoading={studentMutation.isPending || isLoadingStudents}
             onSubmit={async ({ id, birthdate, ...values }) => {
               const manageResponse = (res: Record<string, any>) => {
                 if (res.error) {
@@ -346,7 +351,7 @@ function Onboarding({ session, guardianHash }: OnboardingProps) {
         )}
         {step === 'BILLING' && (
           <OnboardingBillingInfo
-            isLoading={guardianMutation.isLoading || isLoadingStudents}
+            isLoading={guardianMutation.isPending || isLoadingStudents}
             onSubmit={(values) =>
               guardianMutation
                 .mutateAsync({
@@ -431,14 +436,25 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   const session = await getSession(context);
   const { guardianHash } = context?.query || { guardianHash: '' };
 
-  if (session && session.user?.onboarding_stage === 'COMPLETED')
+  const hasProviderSchool = Boolean(session?.user.schools.some((s) => s.is_provider));
+
+  if (session && session.user?.onboarding_stage === 'COMPLETED') {
     return {
       redirect: {
         permanent: false,
-        destination: `/guardians/${guardianHash}/`,
+        destination: appendUtmParameters(`/guardians/${guardianHash}/`, context.query),
       },
     };
+  }
 
+  if (!hasProviderSchool) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: appendUtmParameters(`/onboarding`, context.query),
+      },
+    };
+  }
   return {
     props: {
       session,

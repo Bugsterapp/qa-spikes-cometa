@@ -42,7 +42,7 @@ const CAlert: React.FC<IAlertProps> = forwardRef<HTMLDivElement, IAlertProps>((p
   return (
     <div className={cn(variants({ type }), className)} role="alert" ref={ref}>
       {type ? <span>{iconType[type]}</span> : null}
-      <div className="flex flex-col pl-4 2xl:flex-row">
+      <div className="flex flex-col pl-4">
         <p
           className={cn({
             'whitespace-nowrap': !props.action,

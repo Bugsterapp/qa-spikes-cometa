@@ -49,9 +49,12 @@ const TextField = ({
     <>
       <div
         className={cn(
-          'flex gap-2 bg-white rounded-2xl px-5 py-3 shadow-inputShadow hover:shadow-inputHoverShadow text-base items-center relative mb-2',
+          'flex gap-2 bg-white rounded-2xl px-5 py-3 shadow-inputShadow hover:shadow-inputHoverShadow text-base items-center relative mb-2 border border-transparent',
           className,
-          { 'bg-[#e4e5f4] cursor-not-allowed': disabled }
+          {
+            'bg-[#e4e5f4] cursor-not-allowed': disabled,
+            'border border-solid border-red-500': error,
+          }
         )}
       >
         {LeftIcon && <LeftIcon />}
@@ -71,15 +74,15 @@ const TextField = ({
           <label
             htmlFor={name}
             className={cn(
-              `block transform font-normal pointer-events-none text-[#7E83B0] origin-top-left 
-              absolute text-sm cursor-text 
-              peer-focus-within:-translate-y-3 peer-focus-within:transition-all 
-              peer-focus-within:ease-out peer-focus-within:scale-[0.75] 
+              `block transform font-normal pointer-events-none text-[#7E83B0] origin-top-left
+              absolute text-sm cursor-text
+              peer-focus-within:-translate-y-3 peer-focus-within:transition-all
+              peer-focus-within:ease-out peer-focus-within:scale-[0.75]
               peer-focus-within:ease-[cubic-bezier(4, 1, 8, 3)]`,
               {
                 '-translate-y-3 scale-[0.75] ': value,
-                'transition-all ease-out text-red-500 ease-[cubic-bezier(4, 1, 8, 3)]': value && error,
                 'transition-all ease-out  text-blue-600 ease-[cubic-bezier(4, 1, 8, 3)]': value || (value && !error),
+                'transition-all ease-out text-red-500 ease-[cubic-bezier(4, 1, 8, 3)]': value && error,
               }
             )}
           >
@@ -88,7 +91,7 @@ const TextField = ({
         </div>
         {RightIcon && <RightIcon className="h-10 mr-3" />}
         {error && (
-          <div className="flex gap-1 items-start text-xs font-thin text-red-500 absolute bottom-[-1.2rem] max-h-4">
+          <div className="flex gap-1 items-start text-xs  text-red-500 absolute bottom-[-1.2rem] max-h-4">
             <InfoOutlined className="w-[10px] h-[10px] mt-[3px]" />
             <span className="flex-1 text-elipsis">{error}</span>
           </div>

@@ -16,7 +16,7 @@ export const StockErrorAlert = ({
   <DrawerAlert open={stockError}>
     <DrawerAlertContent>
       <div className="mb-10 mx-[49.5px] mt-6 flex flex-col items-center text-white space-y-6">
-        <IcInfo />
+        <IcInfo className="w-12 h-12" />
         <p className="text-lg font-semibold text-center">
           Alguno de los conceptos a pagar ya no tienen stock disponible.
         </p>

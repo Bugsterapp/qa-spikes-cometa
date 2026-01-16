@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
 import { useState } from 'react';
 import ScholarshipData from '/src/components/molecules/dashboard/ScholarshipData';
 import ApiClient from '/src/services/ApiClient';
@@ -10,11 +9,13 @@ import { useRouter } from 'next/router';
 import Delete from 'public/assets/images/delete.svg';
 import SidebarHeader from '/src/components/molecules/dashboard/SidebarHeader';
 import useSendTrackEventWithUserName from '/src/hooks/useSendTrackEventWithUserName';
+import { Events } from '/src/constants/events';
 import { useGetPermissions } from '/src/guards/AuthGuard';
 import Dialog from '/src/components/atoms/Dialog';
 import Button from '../Button';
 import CAlert from '/src/components/atoms/CAlert';
 import { api } from 'src/utils/api';
+import { useFlagWithVariableMatching } from '/src/components/flags/FlagsProvider';
 
 interface ScholarshipAssignmentDetailProps {
   onClose: () => void;
@@ -37,22 +38,18 @@ const ScholarshipAssignmentDetail = ({
 }: ScholarshipAssignmentDetailProps) => {
   const permissions = useGetPermissions();
   const queryClient = useQueryClient();
-  const { data: session } = useSession();
   const [openDialog, setOpenDialog] = useState(false);
   const { setAlertState } = useAlert();
   const router = useRouter();
   const sendTrackEventWithUserName = useSendTrackEventWithUserName();
+  const { isEnabled: scholarshipsFlag } = useFlagWithVariableMatching('hk_scholarships');
+  const unassignConcept = async () => await ApiClient.deleteScholarshipAssignment(studentId, scholarshipId);
 
-  const unassignConcept = async () =>
-    await ApiClient.deleteScholarshipAssignment(session?.token, studentId, scholarshipId);
-
-  const { data: scholarshipDetail, isLoading } = api.scholarships.scholarshipDetails.useQuery(
+  const { data: scholarshipDetail, isPending: isLoading } = api.scholarships.scholarshipDetails.useQuery(
     { scholarshipId, studentId },
     {
       enabled: !!scholarshipId,
-      onError(err) {
-        Sentry.captureException(err);
-      },
+      meta: { logErrorToSentry: true },
     }
   );
 
@@ -67,7 +64,7 @@ const ScholarshipAssignmentDetail = ({
       await queryClient.invalidateQueries({ queryKey: [QUERY_KEY_DUE_ORDERS_STUDENT] });
       onClose();
       setAlertState({ open: true, severity: 'success', message: `Se desasignó la Beca ${scholarshipName}.` });
-      sendTrackEventWithUserName('dashboard: Scolarship | Unassigned');
+      sendTrackEventWithUserName(Events.scholarship_unassigned);
       router.push('#table-for-scholarships');
     },
     onError(err) {
@@ -89,7 +86,7 @@ const ScholarshipAssignmentDetail = ({
       <div className="flex flex-col flex-auto  px-9 mb-9">
         <SidebarHeader
           title={isOld ? 'Detalle de beca pasada' : 'Detalle de asignación de Beca'}
-          disabled={mutation.isLoading}
+          disabled={mutation.isPending}
           onClose={onClose}
         />
         <div className="flex flex-row justify-between mt-5 mb-4">
@@ -97,11 +94,11 @@ const ScholarshipAssignmentDetail = ({
             {!isOld && <label className="text-sm text-gray-600">Beca asignada:</label>}
             <h2 className="text-xl font-semibold text-gray-700">{scholarshipName}</h2>
           </div>
-          {!isOld && permissions?.can_deassign_scholarship && (
+          {!isOld && permissions?.can_deassign_scholarship && scholarshipsFlag && (
             <button
               className="flex flex-row items-center pr-2 text-center bg-transparent"
               onClick={() => {
-                sendTrackEventWithUserName('dashboard: Scolarship | Click Unassign');
+                sendTrackEventWithUserName(Events.scholarship_click_unassign);
                 setOpenDialog(true);
               }}
             >

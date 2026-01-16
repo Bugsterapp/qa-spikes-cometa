@@ -1,0 +1,17 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "ZTH42B8BVB.com.cometa.app",
+        "paths": ["/a/*"]
+      }
+    ]
+  },
+  "activitycontinuation": {
+    "apps": ["ZTH42B8BVB.com.cometa.app"]
+  },
+  "webcredentials": {
+    "apps": ["ZTH42B8BVB.com.cometa.app"]
+  }
+}

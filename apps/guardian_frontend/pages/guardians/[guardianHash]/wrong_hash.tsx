@@ -1,7 +1,6 @@
 import { getSession, signOut } from 'next-auth/react';
-import { useRouter } from 'next/router';
+import { useUTMRouter as useRouter } from '~/components/UtmNavigation';
 import Head from 'next/head';
-import { Button, Container, Grid, Typography } from '@mui/material';
 import { useEffect } from 'react';
 import { GetServerSideProps } from 'next';
 import { Session } from 'next-auth';
@@ -17,68 +16,46 @@ function WrongHash({ session, guardianHash }: { session: Session; guardianHash: 
       <Head>
         <title>Otra cuenta</title>
       </Head>
-      <Container
-        maxWidth={false}
-        sx={{
+      <div
+        className="min-h-screen w-full"
+        style={{
           background:
-            'linear-gradient(179.6deg, rgba(211, 239, 255, 0.4) 0.34%, rgba(190, 189, 255, 0.4) 99.68%), #FFFFFF;',
+            'linear-gradient(179.6deg, rgba(211, 239, 255, 0.4) 0.34%, rgba(190, 189, 255, 0.4) 99.68%), #FFFFFF',
         }}
       >
-        <Grid
-          maxWidth="sm"
-          container
-          px={2}
-          gap={6}
-          direction="column"
-          height="100vh"
-          alignItems="center"
-          justifyContent="center"
-          sx={{ margin: 'auto' }}
-        >
-          <Typography variant="h6" fontWeight={700} color="neutralDark.main" textAlign="center">
-            Estás tratando de entrar a otra cuenta
-          </Typography>
-          <Typography color="neutralDark.main" textAlign="center">
+        <div className="max-w-sm mx-auto px-2 flex flex-col gap-6 h-screen items-center justify-center">
+          <h1 className="text-xl font-bold text-gray-900 text-center">Estás tratando de entrar a otra cuenta</h1>
+          <p className="text-gray-900 text-center">
             Actualmente, tienes una sesión abierta para{' '}
             <strong>
               {session?.user?.first_name} {session?.user?.last_name}
             </strong>
             .
-          </Typography>
-          <Grid
-            container
-            direction="row"
-            spacing={2}
-            sx={{
-              display: 'flex',
-              justifyContent: 'center',
-            }}
-          >
-            <Grid item>
-              <Button
-                onClick={() => {
-                  _router.push({
-                    pathname: `/guardians/${session?.user?.hash}/`,
-                    query: _router.query,
-                  });
-                }}
-              >
-                Continuar con sesión actual
-              </Button>
-            </Grid>
-            <Grid item>
-              <Button
-                name="onboarding-3-submit"
-                onClick={() => {
-                  signOut({ callbackUrl: `/guardians/${guardianHash}/login` });
-                }}
-              >
-                Cerrar sesión actual
-              </Button>
-            </Grid>
-          </Grid>
-        </Grid>
-      </Container>
+          </p>
+          <div className="flex flex-row gap-2 justify-center">
+            <button
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              onClick={() => {
+                _router.push({
+                  pathname: `/guardians/${session?.user?.hash}/`,
+                  query: _router.query,
+                });
+              }}
+            >
+              Continuar con sesión actual
+            </button>
+            <button
+              name="onboarding-3-submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              onClick={() => {
+                signOut({ callbackUrl: `/guardians/${guardianHash}/login` });
+              }}
+            >
+              Cerrar sesión actual
+            </button>
+          </div>
+        </div>
+      </div>
     </>
   );
 }

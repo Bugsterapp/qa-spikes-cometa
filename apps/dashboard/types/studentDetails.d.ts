@@ -61,7 +61,7 @@ declare namespace StudentDetails {
     last_name: string;
     guardians: Array<Guardian>;
     billing_guardian_info: BillingGuardianInfo;
-    section: Section;
+    section: Section | string;
     due_orders: number;
     due_total_price: number;
     identifier: string;
@@ -70,5 +70,8 @@ declare namespace StudentDetails {
     entry_date: string;
     has_partial_payins: boolean;
     school_cycle_id: string;
+    level: string;
+    grade: string;
+    group: string;
   }
 }

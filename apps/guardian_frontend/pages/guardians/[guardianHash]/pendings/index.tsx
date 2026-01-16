@@ -1,36 +1,37 @@
 import { useSession } from 'next-auth/react';
 import PendingCardAccordion from '~/components/molecules/guardians/PendingCardAccordion';
 import Navbar from '~/components/Navbar';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Head from 'next/head';
 import { WHAT_PAYMENT } from '~/utils/linksWhatsapp';
 import HelpLink from '~/components/atoms/guardians/HelpLink';
 import TitleBackButton from '~/components/molecules/guardians/TitleBackButton';
-import useSendPageViewedEvent from '~/hooks/useSendPageViewedEvent';
 import { PartialPayin, Dependent, DiscountBreakdown, Guardian, Order } from '~/types/OrdersApi';
-import Link from 'next/link';
+import { UTMLink as Link } from '~/components/UtmNavigation';
 import { cn } from '~/lib/cn';
 import { BillingGuardian, GuardianDependentPayin, GuardianStudent, StatusDc1Enum } from '@cometa/trpc/src/types';
-import { useSelectedSchoolId } from '~/components/molecules/common/AuthGlobal';
+import { useSelectedSchoolId } from '~/stores/globalStore';
 import dayjs from '~/lib/dayjs';
 import { formatPrice } from '~/utils/orders';
-import { Button } from '~/components/atoms/Button';
+import { Button } from '~/components/ui/Button';
 import ClockIcon from '~/public/icons/clock.svg';
 import Trash from '~/public/icons/trash.svg';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/components/Accordion';
 import ExpandMore from '/public/icons/ic_expand_more.svg';
 import BoxColorText from '~/components/Tag';
-import { api } from '~/utils/api';
+import { api, ServiceClient } from '~/utils/api';
 import { Color } from '~/utils/colors';
 import useCheckoutStore from '~/stores/checkoutStore';
-import { useRouter } from 'next/router';
+import { useUTMRouter as useRouter } from '~/components/UtmNavigation';
 import { useAlert } from '~/hooks';
-import { useSendTrackEvent } from '@cometa/utils';
-import LoadingButton from '~/components/molecules/LoadingButton';
+import LoadingButton from '~/components/ui/LoadingButton';
 import { DeletePendingDrawer } from '~/components/atoms/guardians/DeletePendingDrawer';
 import Box from '~/components/atoms/common/Box';
 import { OrderCardSkeleton } from '~/components/molecules/guardians/OrderCardSkeleton';
 import AlertSmall from '~/public/icons/alert-small.svg';
+import { useSendEvent, useSendPageEvent } from '~/hooks/useSendEvent';
+import { PageViewedCategory, TrackEvents } from '~/constants/events';
+import UploadProofOfPayment from '~/components/Payments/UploadProofOfPayment';
 
 export interface Payment {
   id: string;
@@ -95,6 +96,7 @@ interface CardTicketProps {
 }
 
 const CardTicket = ({ payment, onDeleted, dependents, disabled }: CardTicketProps) => {
+  const { data: session } = useSession();
   const [openAccordion, setOpenAccordion] = useState(false);
   const _router = useRouter();
   const { guardianHash } = _router.query;
@@ -104,13 +106,12 @@ const CardTicket = ({ payment, onDeleted, dependents, disabled }: CardTicketProp
   const { setCashInData } = useCheckoutStore();
   const pdfURL = (payment.transaction?.details as any)?.pdfUrl || '';
   const isExpiredTicket = !dayjs(payment.created).isToday();
-  const { data: session } = useSession({ required: true });
   const utils = api.useUtils();
   const { setAlert } = useAlert();
-  const sendTrackEvent = useSendTrackEvent();
   const selectedSchoolId = useSelectedSchoolId();
+  const sendEvent = useSendEvent();
 
-  const { mutate, isLoading: isLoadingReportAsPaid } = api.payin.reportAsPaid.useMutation({
+  const { mutate, isPending: isLoadingReportAsPaid } = api.payin.reportAsPaid.useMutation({
     onSuccess() {
       utils.payin.getGuardianPayins.invalidate({ schoolId: selectedSchoolId ?? '' });
     },
@@ -121,7 +122,7 @@ const CardTicket = ({ payment, onDeleted, dependents, disabled }: CardTicketProp
 
   const {
     mutate: mutateCheckoutCashIn,
-    isLoading: isLoadingCheckoutCashIn,
+    isPending: isLoadingCheckoutCashIn,
     isError: isErrorCheckoutCashIn,
     isIdle: isIdleCheckoutCashIn,
   } = api.kushki.checkoutCashIn.useMutation({
@@ -141,12 +142,11 @@ const CardTicket = ({ payment, onDeleted, dependents, disabled }: CardTicketProp
 
   const {
     mutate: mutateDeletePayin,
-    isLoading: isLoadingDeletePayin,
+    isPending: isLoadingDeletePayin,
     isIdle,
     isError,
   } = api.payin.deletePayin.useMutation({
     onSuccess() {
-      sendTrackEvent('portal: Pending Payment Deleted', session, { payinId: payment.id });
       const storedCheckoutOrders = (payment.orders as any).map((order: any) => ({
         order: order.id,
         student: order.dependent.id,
@@ -163,12 +163,15 @@ const CardTicket = ({ payment, onDeleted, dependents, disabled }: CardTicketProp
   const isLoading = (!isErrorCheckoutCashIn && !isIdleCheckoutCashIn) || (!isIdle && !isError);
 
   const handleClickPaymentOrder = () => {
+    sendEvent(TrackEvents.pending.viewDetails);
     const dataCashIn = {
       expiration_date: payment.expiration ?? (payment.transaction?.details as any)?.payment_expiry_formatted,
       ticket_number: (payment.transaction?.details as any)?.ticketNumber,
       pin: (payment.transaction?.details as any)?.pin,
       pdf_url: pdfURL,
-      pin_barcode: (payment.transaction?.details as any)?.getPinBarCode,
+      pin_barcode:
+        (payment.transaction?.details as any)?.getPinBarCode ??
+        (payment.transaction.details as any)?.details?.getPinBarCode,
       total: totalAmount,
       currency: payment.total_currency ?? 'MXN',
     };
@@ -187,6 +190,20 @@ const CardTicket = ({ payment, onDeleted, dependents, disabled }: CardTicketProp
   };
   const reportAsPaid = (payment?.user_reports_as_paid as any)?.is_paid ?? false;
   const reported48HoursAgo = dayjs().diff(dayjs((payment?.user_reports_as_paid as any)?.updated_at), 'hour') >= 48;
+
+  const handleFileUpload = async (file: File) => {
+    if (file && session?.token) {
+      await ServiceClient.apiV1SchoolsPayinsUploadProofOfPaymentUpdate(
+        payment.id,
+        selectedSchoolId ?? '',
+        { proof_of_payment: file as unknown as string },
+        {
+          headers: { token: session?.token },
+        }
+      );
+      utils.payin.getGuardianPayins.invalidate({ schoolId: selectedSchoolId ?? '' });
+    }
+  };
 
   return (
     <div
@@ -349,6 +366,11 @@ const CardTicket = ({ payment, onDeleted, dependents, disabled }: CardTicketProp
                   </span>
                 </div>
               </div>
+              <UploadProofOfPayment
+                payment={payment}
+                disabled={isLoading || isLoadingReportAsPaid || (disabled ?? false)}
+                onUploadFile={handleFileUpload}
+              />
               <div className="pl-8 justify-center items-start gap-2.5 inline-flex self-stretch">
                 <div className="w-full h-px border-b border-zinc-300" />
               </div>
@@ -375,6 +397,10 @@ const CardTicket = ({ payment, onDeleted, dependents, disabled }: CardTicketProp
             className="self-stretch px-8 py-3 text-sm font-medium"
             disabled={isLoading || isLoadingReportAsPaid || disabled}
             onClick={() => {
+              sendEvent(TrackEvents.pending.alreadyPaidClicked, {
+                payment_type: payment.type,
+                payment_method: payment.method,
+              });
               mutate({
                 payinId: payment.id,
                 schoolId: selectedSchoolId ?? '',
@@ -449,6 +475,8 @@ function Pendings() {
   const selectedSchoolId = useSelectedSchoolId();
   const { data: dependents } = api.guardian.studentList.useQuery();
   const _router = useRouter();
+  const sendEvent = useSendEvent();
+  const sendPageEvent = useSendPageEvent();
 
   const {
     data: payments,
@@ -465,7 +493,9 @@ function Pendings() {
     }
   );
 
-  useSendPageViewedEvent('Pagos en Proceso');
+  useEffect(() => {
+    sendPageEvent(TrackEvents.pending.pageViewed, PageViewedCategory);
+  }, []);
 
   const handleSelected = (paymentId: string) => {
     setOpen({ open: true, type: 'transfer' });
@@ -478,10 +508,12 @@ function Pendings() {
     setPaymentId(paymentId);
   };
   const handleClose = () => {
+    sendEvent(TrackEvents.pending.cancelDeletion);
     setOpen({ open: false, type: null });
   };
 
   const handleDeleted = async () => {
+    sendEvent(TrackEvents.pending.confirmDeletion);
     refetch();
   };
 
@@ -500,6 +532,7 @@ function Pendings() {
       <TitleBackButton
         title="Pagos en proceso"
         onClick={() => {
+          sendEvent(TrackEvents.global.back);
           _router.push(`/guardians/${session?.user?.hash}`);
         }}
       />
@@ -545,6 +578,7 @@ function Pendings() {
                     payment={payment}
                     dependents={dependents ?? []}
                     onDeleted={(id) => {
+                      sendEvent(TrackEvents.pending.deletePayment);
                       handleSelectedToDeleteTicket(id);
                     }}
                     disabled={isFetchingPayments}
@@ -566,6 +600,7 @@ function Pendings() {
                   commission={commission as string}
                   payinExpirationDate={expiration ?? payment_expiry_formatted ?? ''}
                   onSelected={() => {
+                    sendEvent(TrackEvents.pending.deletePayment);
                     handleSelected(id);
                   }}
                   payment={payment}
@@ -587,6 +622,9 @@ function Pendings() {
               'disabled:shadow-none disabled:bg-[#EBEBEB] disabled:text-[#A6A6A6]',
               'w-full max-w-[17.3rem] text-center'
             )}
+            onClick={() => {
+              sendEvent(TrackEvents.pending.backToHome);
+            }}
             href={`/guardians/${session?.user?.hash}`}
           >
             Volver al Home

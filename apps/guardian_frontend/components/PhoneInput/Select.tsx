@@ -21,7 +21,6 @@ const SelectTrigger = React.forwardRef<
     {...props}
   >
     {children}
-    {/* <ChevronDown className="w-4 h-4 opacity-50" /> */}
   </SelectPrimitive.Trigger>
 ));
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;

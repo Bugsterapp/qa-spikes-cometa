@@ -1,24 +1,23 @@
-import { Grid, Typography } from '@mui/material';
-import { useState } from 'react';
-import useToggle from '/src/hooks/useToggle';
-import { sendTrackEvent } from '/src/utils/events';
-import { formatDateMonthYear } from '/src/utils/datagridHeaders';
-import AddIcon from '/public/assets/icons/ic_plus.svg';
-import { Events } from '/src/constants/events';
-import { Table } from '/src/components/Table';
 import { createColumnHelper } from '@tanstack/react-table';
+import { useState } from 'react';
+
+import IcArrowRight from '/public/assets/icons/ic_arrow_right.svg';
+import AddIcon from '/public/assets/icons/ic_plus.svg';
+import Sheet from '/src/components/atoms/Sheet';
+import { Table } from '/src/components/Table';
+import { TabsWrapper as Tabs } from '/src/components/ui/Tabs';
+import { Events } from '/src/constants/events';
+import { useGetPermissions, useSelectedSchool } from '/src/guards/AuthGuard';
+import useSendTrackEventWithUserName from '/src/hooks/useSendTrackEventWithUserName';
+import { useFlagWithVariableMatching } from '/src/components/flags/FlagsProvider';
+import useToggle from '/src/hooks/useToggle';
+import { api } from '/src/utils/api';
+import { formatDateMonthYear } from '/src/utils/datagridHeaders';
+
+import Button from '../Button';
 import ConceptAssignment from '../ConceptAssignment';
 import ConceptAssignmentEdit from '../ConceptAssignmentEdit';
-import IcArrowRight from '/public/assets/icons/ic_arrow_right.svg';
-import useSendTrackEventWithUserName from '../../../../hooks/useSendTrackEventWithUserName';
-import { useGetPermissions, useSelectedSchool } from '/src/guards/AuthGuard';
-import Button from '../Button';
-import Sheet from '/src/components/atoms/Sheet';
-import { TabsWrapper as Tabs } from '/src/components/atoms/Tabs';
-import { api } from '/src/utils/api';
 import ConceptAssignmentOptional from '../ConceptAssignmentOptional';
-import { useFlags } from '/flags/client';
-import { useSession } from 'next-auth/react';
 
 interface Concept {
   id: string;
@@ -48,9 +47,7 @@ export default function OrderTableForAssignments(props: OrderTableForAssignments
   const { student, studentId } = props;
   const sendTrackEventWithUserName = useSendTrackEventWithUserName();
   const [tab, setTab] = useState('active');
-  const { data: session } = useSession();
-  const flags = useFlags({ traits: { email: session?.user.email } }).flags;
-  const isConceptActive = flags?.concepts ?? false;
+  const { isEnabled: isConceptActive } = useFlagWithVariableMatching('hk_concepts');
   const [assignment, setAssignment] = useState<{ conceptId: string; assigmentId: string } | null>(null);
   const selectedSchool = useSelectedSchool();
   const {
@@ -67,13 +64,13 @@ export default function OrderTableForAssignments(props: OrderTableForAssignments
 
   const handlerOpenAssignment = () => {
     onOpenConceptAssignment();
-    sendTrackEventWithUserName('dashboard: Concept | Clicked assignment');
+    sendTrackEventWithUserName(Events.concept_click_assignment);
   };
   const ended = tab === 'inactive';
 
   const {
     data: assignments,
-    isLoading,
+    isPending: isLoading,
     isFetching,
   } = api.students.studentsAssignments.useQuery({
     studentId,
@@ -82,10 +79,10 @@ export default function OrderTableForAssignments(props: OrderTableForAssignments
   });
 
   const handleOpen = (row: any) => {
-    sendTrackEvent(Events.concept_detail, { source: document.title.split(' | ')[0] });
+    sendTrackEventWithUserName(Events.concept_detail, { source: document.title.split(' | ')[0] });
     setAssignment({ conceptId: row.concept.id, assigmentId: row.id });
     onOpenConceptAssignmentEdit();
-    sendTrackEventWithUserName('dashboard: Concept | Detail viewed', { conceptName: row.concept.name });
+    sendTrackEventWithUserName(Events.concept_detail_viewed, { conceptName: row.concept.name });
   };
 
   const { data: conceptsData } = api.charge.conceptTypesList.useQuery(
@@ -95,15 +92,7 @@ export default function OrderTableForAssignments(props: OrderTableForAssignments
     {
       enabled: Boolean(selectedSchool),
     }
-  ) as any;
-
-  const createObjectFromArray = (array: any) =>
-    array?.reduce((acc: any, [key, value]: any) => {
-      acc[key] = value;
-      return acc;
-    }, {});
-
-  const renderCategory = (type: string) => createObjectFromArray(conceptsData && conceptsData.concepts_types)[type];
+  );
 
   const columnHelper = createColumnHelper<AssignmentsTableResponse['data'][number]>();
   const columns = [
@@ -115,16 +104,11 @@ export default function OrderTableForAssignments(props: OrderTableForAssignments
     columnHelper.accessor('concept.type', {
       cell: (info) => (
         <span className="whitespace-nowrap">
-          {conceptsData ? renderCategory(info.row.original.concept.type) : null}
+          {conceptsData?.find((concept) => concept.id === info.row.original.concept.type)?.name || ''}
         </span>
       ),
       size: 380,
       header: () => <span>Categoría</span>,
-    }),
-    columnHelper.accessor('concept.payday', {
-      cell: (info) => <div className="text-center">{info.row.original.concept.payday}</div>,
-      size: 180,
-      header: () => <span>Día de vcto</span>,
     }),
     columnHelper.accessor('start_date', {
       cell: (info) => (
@@ -162,8 +146,8 @@ export default function OrderTableForAssignments(props: OrderTableForAssignments
   };
   return (
     <div id="table-for-assignments">
-      <Grid item xs={12} p={3} pl={6} display="flex" justifyContent="space-between">
-        <Typography variant="h6">Conceptos asignados</Typography>
+      <div className="p-3 pl-6 flex justify-between items-center">
+        <h6 className="text-lg font-medium">Conceptos asignados</h6>
         {permissions?.can_add_concept_assignment && (
           <Button
             onClick={handlerOpenAssignment}
@@ -172,7 +156,7 @@ export default function OrderTableForAssignments(props: OrderTableForAssignments
             Asignar concepto
           </Button>
         )}
-      </Grid>
+      </div>
       <Tabs tabs={tabsConceptsData} tab={tab} handleChangeTab={handleChangeConceptsTab} defaultValue="active" />
       <Table
         data={assignments || []}

@@ -7,31 +7,58 @@ type Props = PropsWithChildren<{
   disableHover?: boolean;
   theme?: string | null;
   disableClick?: boolean;
+  delayDuration?: number;
+  side?: 'top' | 'right' | 'bottom' | 'left';
+  fullWidth?: boolean;
+  className?: string;
 }>;
 
-export const Tooltip = ({ children, message, disableHover = false, theme = null, disableClick = true }: Props) => {
-  const triggerRef = useRef<HTMLButtonElement>(null);
+export const Tooltip = ({
+  children,
+  message,
+  disableHover = false,
+  theme = null,
+  disableClick = true,
+  delayDuration,
+  side,
+  fullWidth,
+  className,
+}: Props) => {
+  const triggerRef = useRef<HTMLDivElement>(null);
+
   return (
     <RTooltip.Provider>
-      <RTooltip.Root delayDuration={300}>
+      <RTooltip.Root delayDuration={delayDuration || 300}>
         <RTooltip.Trigger
-          ref={triggerRef}
-          onClick={(e) => disableClick && e.preventDefault()}
-          className={cn('w-fit', { 'bg-white': theme === 'white' })}
           asChild
+          onClick={(event) => {
+            if (disableClick) event.preventDefault();
+          }}
         >
-          <div className={`${theme === 'white' ? 'bg-white' : ''}`}>{children}</div>
+          <div
+            ref={triggerRef}
+            className={cn(
+              'w-fit',
+              { 'bg-white': theme === 'white' },
+              {
+                'w-full': fullWidth,
+              },
+              className
+            )}
+          >
+            {children}
+          </div>
         </RTooltip.Trigger>
         {!disableHover && message && (
           <RTooltip.Portal>
             <RTooltip.Content
               onPointerDownOutside={(event) => {
                 assertIsElement(event.target);
-                // We transform the `HTMLCollection` to an array to efficently check if the target is a Trigger's child
                 if ([...(triggerRef.current?.children || [])].includes(event.target)) event.preventDefault();
               }}
               className="max-w-[164px] rounded-md text-white text-xs text-center bg-[#212B36] px-2 py-1.5 z-[9999]"
               sideOffset={4}
+              side={side}
             >
               <p>{message}</p>
               <RTooltip.Arrow asChild>

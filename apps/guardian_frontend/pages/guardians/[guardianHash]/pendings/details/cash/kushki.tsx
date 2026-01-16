@@ -1,11 +1,9 @@
-import { Container, Box, Typography, Divider, IconButton } from '@mui/material';
 import { getSession } from 'next-auth/react';
 import Head from 'next/head';
-import { useRouter } from 'next/router';
+import { useUTMRouter as useRouter } from '~/components/UtmNavigation';
 import { useEffect } from 'react';
 import KushkiCashInPayOrderCard from '~/components/molecules/guardians/KushkiCashInPayOrderCard';
 import PoweredByKushki from '~/components/atoms/guardians/PoweredByKushki';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import useCheckoutStore from '~/stores/checkoutStore';
 import { GetServerSideProps } from 'next';
 
@@ -31,39 +29,24 @@ function CashInPayOrder() {
       <Head>
         <title>Orden de pago</title>
       </Head>
-      <Divider />
-      <Container maxWidth="sm" disableGutters>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            mt: 2,
-            mb: 2,
-          }}
-        >
-          <IconButton
-            onClick={goBack}
-            sx={{
-              backgroundColor: 'white.main',
-              m: 2,
-            }}
-          >
-            <ChevronLeftIcon color="primary" />
-          </IconButton>
-          <Typography variant="heading2" color="#091A7A">
-            Orden de pago
-          </Typography>
-        </Box>
-        <Divider orientation="horizontal" sx={{ mb: 4 }} />
-        <Box mb={4} ml={2} mr={2}>
-          <Typography color="#57537A" fontWeight={600} mb={1}>
-            Orden de pago creada.
-          </Typography>
-          <Typography color="#57537A">
+      <hr className="border-gray-200" />
+      <div className="max-w-sm mx-auto px-0">
+        <div className="flex items-center mt-2 mb-2">
+          <button onClick={goBack} className="bg-white m-2 p-2 rounded-full hover:bg-gray-50 transition-colors">
+            <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+            </svg>
+          </button>
+          <h1 className="text-2xl font-semibold text-[#091A7A]">Orden de pago</h1>
+        </div>
+        <hr className="border-gray-200 mb-4" />
+        <div className="mb-4 ml-2 mr-2">
+          <p className="text-[#57537A] font-semibold mb-1">Orden de pago creada.</p>
+          <p className="text-[#57537A]">
             Ya puedes acercarte a pagar a la sucursal de tu preferencia usando estos datos.
-          </Typography>
-        </Box>
-        <Box ml={2} mr={2}>
+          </p>
+        </div>
+        <div className="ml-2 mr-2">
           {cashIn && (
             <KushkiCashInPayOrderCard
               currency={cashIn.currency ?? ''}
@@ -74,11 +57,11 @@ function CashInPayOrder() {
               pinBarCode={cashIn.pin_barcode ?? ''}
             />
           )}
-        </Box>
-        <Box mt={6} mb={6}>
+        </div>
+        <div className="mt-6 mb-6">
           <PoweredByKushki />
-        </Box>
-      </Container>
+        </div>
+      </div>
     </>
   );
 }

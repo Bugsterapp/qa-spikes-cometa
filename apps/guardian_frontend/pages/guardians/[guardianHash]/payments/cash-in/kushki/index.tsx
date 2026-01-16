@@ -1,25 +1,30 @@
-import { Container, Box, Typography, IconButton, Divider } from '@mui/material';
 import Head from 'next/head';
-import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useUTMRouter as useRouter } from '~/components/UtmNavigation';
+import { useEffect, useState, useRef } from 'react';
 import KushkiCashInCard from '~/components/molecules/guardians/KushkiCashInCard';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import { useAlert } from '~/hooks';
 import PoweredByKushki from '~/components/atoms/guardians/PoweredByKushki';
 import useCheckoutStore from '~/stores/checkoutStore';
 import { RATED_CSAT_PAYMENT } from '~/utils/storesKeys';
-import useSendPageViewedEvent from '~/hooks/useSendPageViewedEvent';
 import { GetServerSideProps } from 'next';
+import { InformationDrawer } from '~/components/Drawer.Variants';
 import { catchPaymentPage } from '~/utils/processCatch';
-import { useSelectionStore } from '@cometa/hooks';
-import LoadingButton from '~/components/molecules/LoadingButton';
+import { ProjectEnum } from '@cometa/hooks';
+import LoadingButton from '~/components/ui/LoadingButton';
 import { DrawerAlert, DrawerAlertContent } from '~/components/organisms/guardians/DrawerAlert';
 import IcClockBig from '~/public/icons/clock-big.svg';
-import { Button } from '~/components/atoms/Button';
+import { Button } from '~/components/ui/Button';
 import { api } from '~/utils/api';
-import { useSelectedSchoolId } from '~/components/molecules/common/AuthGlobal';
-import { PreferenceTypeEnum, StatusDc1Enum } from '@cometa/trpc';
+import { useSelectedSchoolId } from '~/stores/globalStore';
+import { PreferenceTypeEnum, StatusDc1Enum, CreateRefundDashboardRequestDTOPaymentMethodEnum } from '@cometa/trpc';
 import { getCommissionValues } from '~/utils/kushkiCreditCard';
+import { useCartItems, useSelectionStore } from '~/stores/selectionStorePersisted';
+import { useSendEvent, useSendPageEvent } from '~/hooks/useSendEvent';
+import { PageViewedCategory, TrackEvents } from '~/constants/events';
+import { appendUtmParameters } from '~/lib/destinationWithUTM';
+import { useCheckoutPayment } from '~/hooks/usePayment';
+import { useFlag } from '~/components/flags/FlagsProvider';
+import { useSession } from 'next-auth/react';
 
 interface KushkiCashInProps {
   commissionValues: {
@@ -37,6 +42,7 @@ function KushkiCashIn({ commissionValues }: KushkiCashInProps) {
   const _router = useRouter();
   const { guardianHash } = _router.query;
   const { selectedItems, setTotalToPay } = useSelectionStore();
+  const cartItems = useCartItems<ProjectEnum.PORTAL>();
   const currency = selectedItems?.[0]?.currency || 'MXN';
   const itemsQuantity = selectedItems?.length;
   const { setCashInData } = useCheckoutStore();
@@ -44,15 +50,92 @@ function KushkiCashIn({ commissionValues }: KushkiCashInProps) {
   const [open, setOpen] = useState(false);
   const utils = api.useUtils();
   const selectedSchoolId = useSelectedSchoolId();
+  const sendPageEvent = useSendPageEvent();
+  const sendEvent = useSendEvent();
+  const { data: session } = useSession();
+  const [displayAlert, setDisplayAlert] = useState(false);
+
+  // Add feature flag
+  const [newCheckoutFlag] = useFlag('new-checkout-method');
+  const useNewCheckoutMethod = newCheckoutFlag?.variationKey === 'on';
+
+  // Add the checkout payment hook
+  const { checkoutMutation, pollPaymentStatus, isProcessing, getTimeToComplete, setPaymentInitiationTime } =
+    useCheckoutPayment({
+      onError() {
+        setAlert('No es posible realizar esta acción en este momento');
+      },
+      onTimeout() {
+        setDisplayAlert(true);
+      },
+    });
+
+  useEffect(() => {
+    sendPageEvent(TrackEvents.checkout.cash.pageViewed, PageViewedCategory);
+  }, []);
 
   useEffect(() => {
     if (!itemsQuantity) _router.push(`/guardians/${guardianHash}`);
   }, [itemsQuantity, _router, guardianHash]);
 
-  useSendPageViewedEvent('Metodo de pago - Efectivo');
+  const handlePaymentStatusChange = useRef<() => void>(() => undefined);
+
+  handlePaymentStatusChange.current = () => {
+    if (pollPaymentStatus.data?.status === 'pending') {
+      if (!pollPaymentStatus.data?.content) {
+        setAlert('No es posible realizar esta acción en este momento');
+        return;
+      }
+      const content = pollPaymentStatus.data.content as Record<string, any>;
+      const timeToComplete = getTimeToComplete();
+      const payinId = content.payin_id || checkoutMutation.data?.payment_id;
+
+      sendEvent(TrackEvents.checkout.payment.success, {
+        payin_id: payinId,
+        amount: commissionValues.CASH_IN.total,
+        payment_method: CreateRefundDashboardRequestDTOPaymentMethodEnum.Cash,
+        time_to_complete_seconds: timeToComplete,
+        items_count: itemsQuantity,
+      });
+
+      setCashInData(content);
+      utils.orders.getSchoolOrders.prefetch(
+        {
+          schoolId: selectedSchoolId ?? '',
+          status: [StatusDc1Enum.NOT_PAID, StatusDc1Enum.WAITING_PAID, StatusDc1Enum.PARTIAL_PAID],
+        },
+        {
+          retry: 3,
+        }
+      );
+      utils.orders.getGuardiansOptionalOrders.prefetch({
+        schoolId: selectedSchoolId ?? '',
+      });
+      _router.push({
+        pathname: `/guardians/${guardianHash}/payments/cash-in/kushki/cash-in-pay-order`,
+      });
+    } else if (pollPaymentStatus.data?.status === 'rejected') {
+      const timeToComplete = getTimeToComplete();
+
+      sendEvent(TrackEvents.checkout.payment.failed, {
+        failure_reason: 'Cash payment rejected',
+        error_code: 'cash_payment_rejected',
+        amount: commissionValues.CASH_IN.total,
+        payment_method: CreateRefundDashboardRequestDTOPaymentMethodEnum.Cash,
+        time_to_complete_seconds: timeToComplete,
+      });
+
+      setAlert('No es posible realizar esta acción en este momento');
+    }
+  };
+
+  // Monitor payment status and redirect when payment is successful
+  useEffect(() => {
+    handlePaymentStatusChange.current();
+  }, [pollPaymentStatus.data?.status]);
 
   const {
-    isLoading,
+    isPending: isLoading,
     isSuccess,
     mutate: mutateCheckoutCashIn,
   } = api.kushki.checkoutCashIn.useMutation({
@@ -82,15 +165,29 @@ function KushkiCashIn({ commissionValues }: KushkiCashInProps) {
   });
 
   const onClickIWantToPay = () => {
+    sendEvent(TrackEvents.checkout.cash.confirmCashPayment);
     setOpen(false);
     if (itemsQuantity) {
-      const storedCheckoutOrders = selectedItems?.map((item) => ({
-        order: item.order_id,
-        student: item.student.id,
-      }));
-      mutateCheckoutCashIn({
-        items: storedCheckoutOrders,
-      });
+      setPaymentInitiationTime();
+
+      if (useNewCheckoutMethod) {
+        sendEvent(TrackEvents.checkout.payment.initiated, {
+          guardian_id: session?.user.id,
+          payment_method: CreateRefundDashboardRequestDTOPaymentMethodEnum.Cash,
+          amount: commissionValues.CASH_IN.total,
+          session_id: session?.user.id,
+          items_count: itemsQuantity,
+        });
+        checkoutMutation.mutate({
+          items: cartItems,
+          preferenceType: PreferenceTypeEnum.CASH_IN,
+          guardian: session?.user.id || '',
+        });
+      } else {
+        mutateCheckoutCashIn({
+          items: cartItems,
+        });
+      }
     }
   };
 
@@ -98,41 +195,49 @@ function KushkiCashIn({ commissionValues }: KushkiCashInProps) {
 
   return (
     <>
+      <InformationDrawer
+        intent="error"
+        open={displayAlert}
+        title="Se produjo un error al procesar la operación"
+        description=""
+        onClick={() => {
+          setDisplayAlert(false);
+          _router.push(`/guardians/${guardianHash}`);
+        }}
+      />
       <Head>
         <title>Pago en efectivo</title>
       </Head>
-      <Container maxWidth="sm" disableGutters>
-        <Divider />
-        <Box display="flex" ml={2}>
-          <IconButton
-            onClick={() => _router.back()}
-            sx={{
-              backgroundColor: 'white.main',
-              mr: 2,
-              mt: 2,
-              mb: 2,
-            }}
+      <div className="max-w-sm mx-auto px-0">
+        <hr className="border-gray-200" />
+        <div className="flex ml-2">
+          <button
+            onClick={() => _router.push(`/guardians/${guardianHash}/payments`)}
+            className="bg-white mr-2 mt-2 mb-2 p-2 rounded-full hover:bg-gray-50 transition-colors"
           >
-            <ChevronLeftIcon color="primary" />
-          </IconButton>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              mt: 2,
-              mb: 2,
-              justifyContent: 'center',
-            }}
-          >
-            <Box>
-              <Typography variant="heading2" color="#091A7A">
-                Pago en efectivo
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-        <Divider sx={{ mb: 4 }} />
-        <Box sx={{ ml: 2, mr: 2 }}>
+            <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+            </svg>
+          </button>
+          <div className="flex items-center mt-2 mb-2 justify-center">
+            <div>
+              <h1 className="text-2xl font-semibold text-[#091A7A]">Pago en efectivo</h1>
+            </div>
+          </div>
+        </div>
+        <hr className="border-[#E3E0FF]" />
+
+        <div className="mb-4 bg-[#ffecb2] px-5 py-3 flex flex-col gap-1 ">
+          <p className="text-sm font-semibold text-[#212b36] leading-5">
+            Aviso: Ya no aceptamos pagos en efectivo en BBVA
+          </p>
+          <p className="text-sm font-normal text-[#212b36] leading-5">
+            Debido a incidencias con la verificación de estos pagos, esta opción fue desactivada. Para un pago seguro,
+            consulta más opciones en "¿Dónde pagar?"
+          </p>
+        </div>
+
+        <div className="ml-2 mr-2">
           {Boolean(itemsQuantity) && (
             <KushkiCashInCard
               currency={currency}
@@ -143,24 +248,25 @@ function KushkiCashIn({ commissionValues }: KushkiCashInProps) {
               }}
             />
           )}
-        </Box>
-        <Box display="flex" justifyContent="center" p={4} mb={12}>
-          <Box mt={6}>
+        </div>
+        <div className="flex justify-center p-4 mb-12">
+          <div className="mt-6">
             <PoweredByKushki />
-          </Box>
+          </div>
           <div className="fixed bottom-0 inset-x-0 m-auto w-full max-w-[600px] py-9 px-8 flex justify-center items-center">
             <LoadingButton
               className="w-full mt-auto font-medium"
               onClick={() => {
+                sendEvent(TrackEvents.checkout.cash.cashPaymentInitiated);
                 setOpen(true);
               }}
-              disabled={isLoading || isSuccess}
-              loading={isLoading}
+              disabled={isLoading || isSuccess || isProcessing}
+              loading={isLoading || isProcessing}
             >
               Quiero pagar
             </LoadingButton>
           </div>
-        </Box>
+        </div>
         <DrawerAlert open={open}>
           <DrawerAlertContent className="inline-flex flex-col items-center justify-start w-full gap-10 px-5 py-6 bg-white shadow max-w-[600px] rounded-tl-3xl rounded-tr-3xl">
             <div className="flex flex-col items-center self-stretch justify-start gap-10 ">
@@ -186,7 +292,7 @@ function KushkiCashIn({ commissionValues }: KushkiCashInProps) {
               <Button
                 className="self-stretch px-8 py-3 text-sm font-medium"
                 onClick={onClickIWantToPay}
-                disabled={isLoading}
+                disabled={isLoading || isProcessing}
               >
                 Entendido, generar orden
               </Button>
@@ -201,7 +307,7 @@ function KushkiCashIn({ commissionValues }: KushkiCashInProps) {
             </div>
           </DrawerAlertContent>
         </DrawerAlert>
-      </Container>
+      </div>
     </>
   );
 }
@@ -222,7 +328,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     return {
       redirect: {
         permanent: false,
-        destination: `/guardians/${guardianHash}`,
+        destination: appendUtmParameters(`/guardians/${guardianHash}`, context.query),
       },
     };
   }

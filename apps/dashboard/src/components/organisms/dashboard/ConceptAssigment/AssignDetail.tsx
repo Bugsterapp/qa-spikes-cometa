@@ -145,7 +145,9 @@ export function Step3AssignDetail({
           <p className="font-semibold text-base">Órdenes a cobrar</p>
           <p className="text-sm font-normal">({formData?.orders?.length} órdenes)</p>
         </div>
-        <p className="text-xs text-[#637381]">Puedes revisar las órdenes que estarán disponibles para los alumnos.</p>
+        <p className="text-xs text-[#637381]">
+          Puedes revisar las órdenes que estarán disponibles para los estudiantes.
+        </p>
         <div className="mt-8 border border-[#3366FF] rounded-lg">
           {formData?.orders?.map((order, index) => (
             <div
@@ -169,11 +171,11 @@ export function Step3AssignDetail({
       </div>
       <div className="py-8 gap-2 flex flex-col">
         <div className="flex gap-2 items-center">
-          <p className="font-semibold text-base">Alumnos seleccionados</p>
-          <p className="text-sm font-normal">({studentsSelectedForm?.length} alumnos)</p>
+          <p className="font-semibold text-base">Estudiantes seleccionados</p>
+          <p className="text-sm font-normal">({studentsSelectedForm?.length} estudiantes)</p>
         </div>
         <p className="text-xs text-[#637381] pb-7">
-          Puedes revisar los alumnos a los que se les asignará este concepto.
+          Puedes revisar los estudiantes a los que se les asignará este concepto.
         </p>
         <GlobalSearch search={search} setSearch={handleSearch} placeholder="Buscar estudiantes" typeButton="button" />
         <div className="mt-8 border border-[#3366FF] rounded-lg">
@@ -211,7 +213,7 @@ export function Step3AssignDetail({
           onClick={onNext}
           disabled={saving}
         >
-          {saving ? 'Guardando...' : `Asignar ${studentsSelectedForm?.length} alumnos`}
+          {saving ? 'Guardando...' : `Asignar ${studentsSelectedForm?.length} estudiantes`}
         </button>
       </div>
     </div>

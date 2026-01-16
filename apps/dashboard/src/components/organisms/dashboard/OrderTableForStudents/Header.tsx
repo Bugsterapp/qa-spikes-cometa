@@ -170,7 +170,7 @@ export default function HeaderTable(headerProps: HeaderTableProps) {
         </div>
         <div className="w-full">
           <StudentSelector
-            placeholder="Buscar por alumno/matricula"
+            placeholder="Buscar por estudiante/matricula"
             selectedStudent={selectedStudent}
             setSelectedStudent={setSelectedStudent}
             width="100%"

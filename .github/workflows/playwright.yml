@@ -1,36 +1,168 @@
 name: Playwright Tests
 on:
   schedule:
-    - cron: '0 6 * * 1,5' # Ejecutar a medianoche (hora local) todos los días
-  workflow_dispatch: # Permitir activación manual
+    - cron: '0 12,18 * * 1-5'
+  workflow_dispatch: # Allow manual triggering
+permissions:
+  contents: read  
+  actions: write
 
 jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    env:
+      VERCEL: 1
+      CI: true
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Check disk space before
+        run: |
+          echo "=== Disk Space Before ==="
+          df -h
+          
+      - name: Free up disk space
+        run: |
+          echo "=== Freeing up disk space ==="
+          # Remove unnecessary packages
+          sudo apt-get autoremove -y
+          sudo apt-get clean
+          # Remove Android SDK
+          sudo rm -rf /usr/local/lib/android
+          # Remove .NET
+          sudo rm -rf /usr/share/dotnet
+          # Remove large tool caches
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo rm -rf /opt/hostedtoolcache/go
+          sudo rm -rf /opt/hostedtoolcache/PyPy
+          # Docker cleanup
+          docker system prune -af || true
+          echo "=== Disk space after cleanup ==="
+          df -h
+
       - uses: actions/setup-node@v4
         with:
-          node-version: 18
-      - name: Cache dependencies
+          node-version: '22'
+          cache: 'npm'
+          
+      - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-v2-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-npm-
+            ${{ runner.os }}-playwright-v2-
+            
       - name: Install dependencies
         run: npm ci
+        
       - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
-      - name: Cambiar al directorio apps/dashboard
-        run: cd apps/dashboard
+        run: node .github/scripts/install-browsers.js
+        
+      - name: Check disk space after setup
+        run: |
+          echo "=== Disk Space After Setup ==="
+          df -h
+          echo ""
+          echo "=== Playwright cache size ==="
+          du -sh ~/.cache/ms-playwright 2>/dev/null || echo "Not found"
+          
       - name: Run Playwright tests
-        run: ENV=demo npx playwright test --grep=@sanity
+        run: ENV_PLAYWRIGHT=demo npx playwright test --grep=@sanity
+        
+      - name: Check disk space after tests
+        run: |
+          echo "=== Disk Space After Tests ==="
+          df -h
+          echo ""
+          echo "=== Size of playwright-report ==="
+          du -sh playwright-report 2>/dev/null || echo "Not found"
+          
+      - name: Clean up before artifact upload
+        if: always()
+        run: |
+          # Remove videos if they exist (they consume a lot of space)
+          find . -name "*.webm" -delete 2>/dev/null || true
+          find . -name "*.mp4" -delete 2>/dev/null || true
+          
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: playwright-report
           path: playwright-report/
-          retention-days: 30
+          retention-days: 7
+          
+      - name: Slack Notification (Even on Failure)
+        uses: slackapi/slack-github-action@v2.1.1
+        if: always()
+        with:
+          webhook: ${{ secrets.PLAYWRIGHT_SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "Playwright Tests - ${{ job.status == 'success' && '✅ Success' || '❌ Failed' }}",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "${{ job.status == 'success' && '✅' || '❌' }} Playwright Tests - ${{ job.status }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Workflow:*\n${{ github.workflow }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Status:*\n${{ job.status }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Repository:*\n${{ github.repository }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch:*\n${{ github.ref_name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Author:*\n${{ github.actor }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Event:*\n${{ github.event_name }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Run"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    },
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Commit"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+                    }
+                  ]
+                }
+              ]
+            }
+            
+      - name: Set date
+        id: set_date
+        run: echo "RUN_DATE=$(date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_ENV

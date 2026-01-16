@@ -1,27 +1,32 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { getSession } from 'next-auth/react';
 import Head from 'next/head';
-import { useRouter } from 'next/router';
+import { useUTMRouter as useRouter } from '~/components/UtmNavigation';
 import { useEffect } from 'react';
 import KushkiCashInPayOrderCard from '~/components/molecules/guardians/KushkiCashInPayOrderCard';
 import PoweredByKushki from '~/components/atoms/guardians/PoweredByKushki';
 import useCheckoutStore from '~/stores/checkoutStore';
-import useSendPageViewedEvent from '~/hooks/useSendPageViewedEvent';
 import { GetServerSideProps } from 'next';
-import { useSelectionStore } from '@cometa/hooks';
 import ClockIcon from '~/public/icons/clock.svg';
-import { Button } from '~/components/atoms/Button';
+import { Button } from '~/components/ui/Button';
+import { useSelectionStore } from '~/stores/selectionStorePersisted';
+import { useSendPageEvent } from '~/hooks/useSendEvent';
+import { PageViewedCategory, TrackEvents } from '~/constants/events';
 
 function CashInPayOrder() {
   const _router = useRouter();
   const { guardianHash, back = '' } = _router.query;
   const { selectedItems, totalToPay, clear: clearSelected } = useSelectionStore();
   const currency = selectedItems?.[0]?.currency || 'MXN';
+  const sendPageEvent = useSendPageEvent();
 
   const [cashIn, clear] = useCheckoutStore((state) => [state.cashIn, state.clear]);
 
   useEffect(() => {
-    if (!cashIn) _router.push(`/guardians/${guardianHash}/${back}`);
+    sendPageEvent(TrackEvents.checkout.cash.payOrderPageViewed, PageViewedCategory);
+  }, []);
+
+  useEffect(() => {
+    if (!cashIn) _router.push(`/guardians/${guardianHash}/payments`);
   }, [cashIn]);
 
   const goToHome = (withoutQuery = false) => {
@@ -36,8 +41,6 @@ function CashInPayOrder() {
       });
     }
   };
-
-  useSendPageViewedEvent('Efectivo - Orden de pago');
 
   useEffect(() => {
     const storedCashInData = Object.keys(cashIn).length;

@@ -1,7 +1,7 @@
 import { Meta, StoryObj } from '@storybook/react';
 import { Drawer } from '~/components/Drawer';
 import { useArgs } from '@storybook/preview-api';
-import { Button } from '~/components/atoms/Button';
+import { Button } from '~/components/ui/Button';
 import { expect, userEvent, within } from '@storybook/test';
 
 const meta: Meta = {

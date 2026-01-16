@@ -1,33 +1,36 @@
+import { ConceptStudent, StudentStatusSummary } from '@cometa/trpc/src/types';
 import { Row, createColumnHelper } from '@tanstack/react-table';
+import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import MultipleFilters, {
-  FormFilterData,
-  formFilterDataToParams,
-  normalizeFilters,
-  MultipleFiltersChips,
-} from '/src/components/MultipleFilters';
+
 import { GlobalSearch } from '/src/components/atoms/GlobalSearch';
-import { api } from '/src/utils/api';
-import { useGetPermissions, useSelectedSchool, useSelectedSchoolId } from '/src/guards/AuthGuard';
-import { FloatingActionOverlay, TableVirtualized } from '/src/components/TableInfinityScroll';
-import { useRouter } from 'next/router';
-import { ConceptStudent, StudentStatusSummary } from '@cometa/trpc/src/types';
 import { HighlightMatch } from '/src/components/atoms/HighlightMatch';
 import { Checkbox } from '/src/components/atoms/RadixCheckbox';
-import DesassingModal from '/src/components/DesassignModal';
-import { formatPrice } from '/src/utils/general';
-import { extractPageFromURL } from '/src/utils/object-util';
-import useAlert from '/src/hooks/useAlert';
-import { useFlags } from '/flags/client';
+import Sheet from '/src/components/atoms/Sheet';
 import { Tooltip } from '/src/components/atoms/Tooltip';
 import { useBackgroundConceptDeassignStore } from '/src/components/BackgroundDownload/BackgroundDeassignConcepts';
-import { useSession } from 'next-auth/react';
-import { cn } from '/src/utils/cn';
+import DesassingModal from '/src/components/DesassignModal';
+import MultipleFilters, {
+  FormFilterData,
+  MultipleFiltersChips,
+  formFilterDataToParams,
+  normalizeFilters,
+} from '/src/components/MultipleFilters';
+import { FloatingActionOverlay, TableVirtualized } from '/src/components/TableInfinityScroll';
+import { convertToOrdering } from '/src/components/Table';
+import { useGetPermissions, useSelectedSchoolId } from '/src/guards/AuthGuard';
+import useAlert from '/src/hooks/useAlert';
+import { useFlagWithVariableMatching } from '/src/components/flags/FlagsProvider';
 import useToggle from '/src/hooks/useToggle';
-import Sheet from '/src/components/atoms/Sheet';
+import { api } from '/src/utils/api';
+import { cn } from '/src/utils/cn';
+import { formatPrice } from '/src/utils/general';
+import { extractPageFromURL } from '/src/utils/object-util';
+
 import ConceptAssignmentEdit from '../ConceptAssignmentEdit';
 import ConceptAssignmentOptional from '../ConceptAssignmentOptional';
+import { LeadLabel } from '/src/components/admissions/labels';
 
 export const StudentAssignedTable = ({
   setStudentsAssignedCount,
@@ -42,6 +45,7 @@ export const StudentAssignedTable = ({
   const [formFilterData, setFormFilterData] = useState<FormFilterData>({});
   const paramsFromForm = useMemo(() => formFilterDataToParams(formFilterData), [formFilterData]);
   const [search, setSearch] = useState('');
+  const [studentsSorting, setStudentsSorting] = useState<string>();
   const [openDeassignModal, setOpenDeassignModal] = useState(false);
   const [itemsCount, setItemsCount] = useState<{ watchKey: string; count: number }[]>([]);
   const { setAlertState } = useAlert();
@@ -49,7 +53,7 @@ export const StudentAssignedTable = ({
   const utils = api.useUtils();
   const {
     data: studentsAssigned,
-    isLoading,
+    isPending: isLoading,
     isFetching,
     fetchNextPage,
     hasNextPage,
@@ -61,12 +65,13 @@ export const StudentAssignedTable = ({
       query: {
         page_size: 100,
         search,
+        ordering: studentsSorting ? [studentsSorting] : undefined,
         ...paramsFromForm,
       },
     },
     {
       getNextPageParam: (lastPage) => extractPageFromURL(lastPage?.next as string) ?? undefined,
-      getPreviousPageParam: (firstPage) => firstPage ?? undefined,
+      getPreviousPageParam: (firstPage) => extractPageFromURL((firstPage as any)?.previous as string) ?? undefined,
       refetchOnWindowFocus: false,
       staleTime: 60 * 1000 * 60,
     }
@@ -96,36 +101,29 @@ export const StudentAssignedTable = ({
   const [selectedStudents, setSelectedStudents] = useState<ConceptStudent[]>([]);
   const [deselectedStudents, setDeselectedStudents] = useState<ConceptStudent[]>([]);
   const [selectedAll, setSelectedAll] = useState(false);
+  const [visibleStudentIds, setVisibleStudentIds] = useState<string[]>([]);
   const [isDeletingFromColumn, setIsDeletingFromColumn] = useState(false);
-  const selectedSchool = useSelectedSchool();
-  const { data: session } = useSession();
-  const { flags } = useFlags({
-    traits: { schoolName: selectedSchool?.name || '', email: session?.user.email || '' },
-  });
-  const handleOnSelectRow = useCallback(
-    (row: ConceptStudent) => {
-      if (selectedAll) {
-        setDeselectedStudents((prev) => {
-          const isStudentDeselected = prev.some((student) => student.id === row.id);
-          if (isStudentDeselected) {
-            return prev.filter((student) => student.id !== row.id);
-          } else {
-            return [...prev, row];
-          }
-        });
+  const { isEnabled: showDeassignStudents } = useFlagWithVariableMatching('hk_show_deassign_students');
+
+  useEffect(() => {
+    if (flatData) {
+      const currentlyVisibleIds = flatData.map((student) => student.id);
+      setVisibleStudentIds(currentlyVisibleIds);
+    }
+  }, [flatData]);
+
+  const handleOnSelectRow = useCallback((row: ConceptStudent) => {
+    setSelectedStudents((prev) => {
+      const isStudentSelected = prev.some((student) => student.id === row.id);
+
+      if (isStudentSelected) {
+        return prev.filter((student) => student.id !== row.id);
       } else {
-        setSelectedStudents((prev) => {
-          const isStudentSelected = prev.some((student) => student.id === row.id);
-          if (isStudentSelected) {
-            return prev.filter((student) => student.id !== row.id);
-          } else {
-            return [...prev, row];
-          }
-        });
+        return [...prev, row];
       }
-    },
-    [selectedAll]
-  );
+    });
+  }, []);
+
   const selectedElementsWithoutDeselected = useMemo(
     () =>
       studentIds?.results?.filter((student) => !deselectedStudents.some((deselected) => deselected.id === student.id)),
@@ -210,15 +208,17 @@ export const StudentAssignedTable = ({
       setDeselectedStudents([]);
     },
   });
+
   const handleDeassign = async (keepDebt: boolean) => {
     await deassignMutation.mutateAsync({
       school_id: selectedSchoolId || '',
       concept_id: conceptId as string,
       students_ids: selectedStudents.map((student) => student.id),
       keep_debt: keepDebt || false,
-      delete_all: selectedAll && deselectedStudents.length === 0,
+      delete_all: false,
     });
   };
+
   const handleOpenDeassignModal = async () => {
     await studentStatusMutation.mutate({
       concept_id: conceptId as string,
@@ -231,53 +231,63 @@ export const StudentAssignedTable = ({
   };
 
   const handleSelectAll = () => {
-    const newSelectedAll = !selectedAll;
-    setSelectedAll(newSelectedAll);
+    if (!flatData) return;
 
-    if (newSelectedAll) {
-      const newDeselectedStudents = studentIds?.results?.filter((item) => !item.can_be_deassigned) ?? [];
-      const newSelectedStudents = studentIds?.results?.filter(
-        (student) => !newDeselectedStudents.some((deselected) => deselected.id === student.id)
-      ) as ConceptStudent[];
-
-      setDeselectedStudents(newDeselectedStudents);
-      setSelectedStudents(newSelectedStudents);
+    if (allVisibleSelected) {
+      const visibleIds = new Set(visibleStudentIds);
+      setSelectedStudents((prev) => prev.filter((student) => !visibleIds.has(student.id)));
     } else {
-      setSelectedStudents([]);
-      setDeselectedStudents([]);
+      const selectableVisibleStudents = flatData.filter((student) => student.can_be_deassigned);
+
+      setSelectedStudents((prev) => {
+        const combinedSelection = [...prev];
+
+        selectableVisibleStudents.forEach((student) => {
+          if (!combinedSelection.some((s) => s.id === student.id)) {
+            combinedSelection.push(student);
+          }
+        });
+
+        return combinedSelection;
+      });
     }
   };
+
+  const allVisibleSelected = useMemo(() => {
+    if (!flatData || flatData.length === 0) return false;
+
+    const selectableVisibleStudents = flatData.filter((student) => student.can_be_deassigned);
+    if (selectableVisibleStudents.length === 0) return false;
+
+    return selectableVisibleStudents.every((student) =>
+      selectedStudents.some((selected) => selected.id === student.id)
+    );
+  }, [flatData, selectedStudents]);
 
   const columnHelper = createColumnHelper<ConceptStudent>();
   const permissions = useGetPermissions();
 
   const columns = [
-    ...(flags?.show_deassign_students && permissions?.can_add_concept_assignment
+    ...(showDeassignStudents && permissions?.can_add_concept_assignment
       ? [
           {
             header: () => (
               <span className="flex items-center">
-                <GenericRowCheckBoxButton onClick={handleSelectAll} checked={selectedAll} />
+                <GenericRowCheckBoxButton onClick={handleSelectAll} checked={allVisibleSelected} />
               </span>
             ),
             id: 'select',
             cell: ({ row }: { row: Row<ConceptStudent> }) => (
               <div>
                 <Tooltip
-                  message="No se puede desasignar este alumno porque todos sus meses se encuentran pagados"
+                  message="No se puede desasignar este estudiante porque todos sus meses se encuentran pagados"
                   disableHover={row.original.can_be_deassigned as unknown as boolean}
                 >
                   <GenericRowCheckBoxButton
                     key={row.original.id}
                     onClick={() => handleOnSelectRow(row.original)}
                     disabled={!row.original.can_be_deassigned}
-                    checked={
-                      !row.original.can_be_deassigned
-                        ? false
-                        : selectedAll
-                        ? !deselectedStudents.some((student) => student.id === row.original.id)
-                        : selectedStudents.some((student) => student.id === row.original.id)
-                    }
+                    checked={selectedStudents.some((student) => student.id === row.original.id)}
                   />
                 </Tooltip>
               </div>
@@ -293,8 +303,9 @@ export const StudentAssignedTable = ({
             className="text-sm text-[#212B36] truncate"
             title={`${info.row.original.first_name} ${info.row.original.last_name}`}
           >
-            <HighlightMatch query={search}>
+            <HighlightMatch query={search} className="flex gap-2">
               {info.row.original.first_name} {info.row.original.last_name}
+              <LeadLabel state={info.row.original.state} />
             </HighlightMatch>
           </span>
           <span className="text-xs text-[#454D64]">
@@ -304,6 +315,7 @@ export const StudentAssignedTable = ({
       ),
       size: 250,
       header: () => <span className="font-semibold">Estudiante</span>,
+      enableSorting: true,
     }),
     columnHelper.accessor('section', {
       cell: (info) => (
@@ -316,6 +328,7 @@ export const StudentAssignedTable = ({
       ),
       size: 150,
       header: () => <span>Sección actual</span>,
+      enableSorting: true,
     }),
     columnHelper.accessor('orders_payed', {
       cell: (info) => (
@@ -338,7 +351,7 @@ export const StudentAssignedTable = ({
       header: () => <span>Órdenes pagadas</span>,
     }),
     columnHelper.accessor('amount_paid', {
-      cell: (info) => <span className="text-right pr-6">{formatPrice(info.row.original.amount_paid || 0)}</span>,
+      cell: (info) => <span className="pr-6 text-right">{formatPrice(info.row.original.amount_paid || 0)}</span>,
       size: 150,
       header: () => <span>Total pagado</span>,
       meta: {
@@ -347,7 +360,7 @@ export const StudentAssignedTable = ({
     }),
     ...(!hasAttributes
       ? [
-          columnHelper.accessor('orders_to_pay', {
+          columnHelper.accessor('amount_to_pay', {
             cell: (info) => (
               <>
                 <span className="text-right">{formatPrice(info.row.original.amount_to_pay || 0)}</span>
@@ -359,6 +372,7 @@ export const StudentAssignedTable = ({
             meta: {
               numeric: true,
             },
+            enableSorting: true,
           }),
         ]
       : []),
@@ -368,6 +382,11 @@ export const StudentAssignedTable = ({
     {
       refetchOnWindowFocus: false,
       staleTime: 60 * 1000 * 60,
+      trpc: {
+        context: {
+          skipBatch: true,
+        },
+      },
     }
   );
 
@@ -421,7 +440,7 @@ export const StudentAssignedTable = ({
   };
   return (
     <div className="bg-white">
-      <div className="flex pt-4 pb-2 items-start px-10 sticky top-[220px] z-20 bg-white flex-col -translate-y-3.5">
+      <div className="flex pt-4 pb-2 items-start px-10 sticky top-[135px] z-20 bg-white flex-col">
         <div className="flex items-center">
           <MultipleFilters
             filterItems={filterItems}
@@ -443,7 +462,7 @@ export const StudentAssignedTable = ({
           </div>
         </div>
       </div>
-      <div className="px-4 bg-white sticky top-0">
+      <div className="sticky top-0 px-4 bg-white">
         <MultipleFiltersChips
           onChange={handleChangeChipFilter}
           formFilterData={formFilterData}
@@ -452,21 +471,13 @@ export const StudentAssignedTable = ({
         />
       </div>
       <div
-        className={cn('relative h-[calc(100vh-280px)]', { 'h-[calc(100vh-325px)]': hasElementsChecked.length > 0 })}
+        className={cn('relative h-[calc(100vh-205px)]', { 'h-[calc(100vh-290px)]': hasElementsChecked.length > 0 })}
         ref={wrapperRef}
       >
-        {!isDeletingFromColumn && (selectedStudents?.length > 0 || selectedAll) ? (
+        {!isDeletingFromColumn && selectedStudents.length > 0 ? (
           <FloatingActionOverlay
-            itemCount={selectedAll ? totalCount - deselectedStudents.length : selectedStudents.length}
-            itemLabel={
-              selectedAll
-                ? totalCount - deselectedStudents.length === 1
-                  ? 'estudiante seleccionado'
-                  : 'estudiantes seleccionados'
-                : selectedStudents.length === 1
-                ? 'estudiante seleccionado'
-                : 'estudiantes seleccionados'
-            }
+            itemCount={selectedStudents.length}
+            itemLabel={selectedStudents.length === 1 ? 'estudiante seleccionado' : 'estudiantes seleccionados'}
             actionContent="Desasignar"
             buttonType="red"
             onAction={() => setOpenDeassignModal(true)}
@@ -486,8 +497,8 @@ export const StudentAssignedTable = ({
           students={selectedStudents}
           onDesassign={handleDeassign}
           studentStatus={studentStatusMutation.data as StudentStatusSummary}
-          isLoading={studentStatusMutation.isLoading}
-          isMutating={deassignMutation.isLoading || assignmentDelay}
+          isLoading={studentStatusMutation.isPending}
+          isMutating={deassignMutation.isPending || assignmentDelay}
         />
         <div>
           <TableVirtualized
@@ -502,8 +513,8 @@ export const StudentAssignedTable = ({
             totalCount={totalCount}
             hideSum
             onRowClick={handleOpenConceptDetail}
-            emptyStateText="No hay ningún alumno asignado"
-            emptyEndText="No hay más alumnos asignados." // ¿Esto es necesario? Iteracion en el PR please @Kev
+            emptyStateText="No hay ningún estudiante asignado"
+            emptyEndText="No hay más estudiantes asignados." // ¿Esto es necesario? Iteracion en el PR please @Kev
             totalFetched={studentsAssigned?.pages.flatMap((page) => page?.results ?? []).length || 0}
             selectedRowsToHighlight={
               selectedAll
@@ -514,6 +525,10 @@ export const StudentAssignedTable = ({
                     .map((student) => student.id)
                 : selectedStudents.map((student) => student.id)
             }
+            onSortingChange={(sorting) => {
+              const text = convertToOrdering(sorting);
+              setStudentsSorting(text);
+            }}
           />
         </div>
       </div>
@@ -550,6 +565,7 @@ export type GenericRowCheckBoxButtonProps = {
   checked?: boolean | 'indeterminate';
   onClick?: (e?: React.MouseEvent<HTMLButtonElement>) => void;
   className?: string;
+  checkboxClassName?: string;
 } & React.ComponentProps<typeof Checkbox>;
 
 export const GenericRowCheckBoxButton: React.FC<GenericRowCheckBoxButtonProps> = ({
@@ -557,6 +573,7 @@ export const GenericRowCheckBoxButton: React.FC<GenericRowCheckBoxButtonProps> =
   checked,
   onClick,
   className,
+  checkboxClassName,
   ...props
 }) => (
   <button
@@ -565,6 +582,6 @@ export const GenericRowCheckBoxButton: React.FC<GenericRowCheckBoxButtonProps> =
     disabled={disabled}
     onClick={onClick}
   >
-    <Checkbox checked={checked} disabled={disabled} {...props} />
+    <Checkbox checked={checked} disabled={disabled} className={checkboxClassName} {...props} />
   </button>
 );

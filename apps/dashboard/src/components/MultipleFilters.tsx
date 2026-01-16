@@ -3,14 +3,19 @@ import * as PopoverPrimitive from '@radix-ui/react-popover';
 import { matchSorter } from 'match-sorter';
 import { Tooltip } from '/src/components/atoms/Tooltip';
 
-import Filter from 'public/assets/images/filter.svg';
+import { Button } from '@cometa/recreo';
 import Exclamation from 'public/assets/icons/ic_exclamation_solid.svg';
+import Filter from 'public/assets/images/filter.svg';
+import React, { ReactElement, useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm, UseFormReturn } from 'react-hook-form';
-import { ReactElement, useEffect, useMemo, useRef, useState } from 'react';
+import { Events } from '../constants/events';
+import useSendTrackEventWithUserName from '../hooks/useSendTrackEventWithUserName';
+import { cn } from '../utils/cn';
 import CheckBox from './atoms/CheckBox';
 import IcCircleClose from '/public/assets/icons/ic_circle_close.svg';
-import React from 'react';
-import { cn } from '../utils/cn';
+import { useSelectedSchool } from '/src/guards/AuthGuard';
+import { useTableConfig } from '/src/hooks/useTableConfig';
+
 type FormFilterDataValue = { checked: boolean };
 export type FormFilterData = Record<string, { checked: boolean; name: string }>;
 export type FormFilterDataWithId = Record<string, FormFilterData>;
@@ -34,13 +39,10 @@ export type Props<T> = {
   setItemsCount: (items: { watchKey: string; count: number }[]) => void;
   postFixElement?: JSX.Element | ReactElement<any, any> | ((elementId: string) => JSX.Element | null) | undefined;
   selectedItems?: FormFilterData;
+  isLegacy?: boolean;
+  tableName?: string;
 };
-interface MultipleFiltersChipsProps {
-  onChange: (formFilterData: FormFilterData) => void;
-  formFilterData: FormFilterData;
-  setItemsCount: (items: { watchKey: string; count: number }[]) => void;
-  itemsCount: { watchKey: string; count: number }[];
-}
+
 const RowCheckBox = ({
   id,
   name,
@@ -48,6 +50,7 @@ const RowCheckBox = ({
   watchKey,
   methods,
   postFixElement,
+  schoolId,
 }: {
   id: string | number;
   name: string;
@@ -55,37 +58,45 @@ const RowCheckBox = ({
   watchKey: string;
   methods: UseFormReturn<FormFilterData, any>;
   postFixElement?: JSX.Element | ReactElement<any, any> | ((elementId: string) => JSX.Element | null) | undefined;
-}) => (
-  <Controller
-    control={methods.control}
-    name={`${watchKey}$${id}`}
-    defaultValue={{ checked: false, name }}
-    render={({ field: { onChange, value } }) => (
-      <label
-        htmlFor={String(id)}
-        className="min-h-[56px] flex items-center h-full gap-3 py-2 group cursor-pointer hover:bg-[#EBF8F1] px-4 rounded-lg curso"
-      >
-        <CheckBox
-          id={String(id)}
-          onChange={(event) => {
-            value.checked = event.target.checked;
-            onChange(value);
-          }}
-          checked={value.checked}
-        />
-        <div className={cn('flex flex-col gap-2', { 'flex-row items-center': postFixElement })}>
-          <span className="text-sm font-light select-none text-secondary" data-testid={`${name}-filterOption`}>
-            {name}
-          </span>
-          {postFixElement && <>{typeof postFixElement === 'function' ? postFixElement(String(id)) : postFixElement}</>}
-          {description && (
-            <span className="text-xs font-normal select-none text-[#637381] my-[2px]">{description}</span>
-          )}
-        </div>
-      </label>
-    )}
-  />
-);
+  schoolId: string;
+}) => {
+  const fieldName = `${watchKey}$${id}`;
+  const checkboxId = `${schoolId}-${id}`;
+
+  return (
+    <Controller
+      control={methods.control}
+      name={fieldName}
+      defaultValue={{ checked: false, name }}
+      render={({ field: { onChange, value } }) => (
+        <label
+          htmlFor={checkboxId}
+          className="min-h-[56px] flex items-center h-full gap-3 py-2 group cursor-pointer hover:bg-[#EBF8F1] px-4 rounded-lg"
+        >
+          <CheckBox
+            id={checkboxId}
+            onChange={(event) => {
+              value.checked = event.target.checked;
+              onChange(value);
+            }}
+            checked={value?.checked || false}
+          />
+          <div className={cn('flex flex-col gap-2', { 'flex-row items-center': postFixElement })}>
+            <span className="text-sm font-light select-none text-foreground" data-testid={`${name}-filterOption`}>
+              {name}
+            </span>
+            {postFixElement && (
+              <>{typeof postFixElement === 'function' ? postFixElement(String(id)) : postFixElement}</>
+            )}
+            {description && (
+              <span className="text-xs font-normal select-none text-[#637381] my-[2px]">{description}</span>
+            )}
+          </div>
+        </label>
+      )}
+    />
+  );
+};
 
 const handleIsActive = (isActiveValues: boolean[], key: string, value: FormFilterDataValue): boolean[] => {
   if (value.checked) {
@@ -99,7 +110,7 @@ export const formFilterDataToParams = (formFilterData: FormFilterData) => {
   let hasDebtValues: boolean[] = [];
 
   const result = Object.entries(formFilterData || {}).reduce((acc, [key, value]) => {
-    if (key.startsWith('is_active')) {
+    if (key.startsWith('is_active') || key.startsWith('active')) {
       isActiveValues = handleIsActive(isActiveValues, key, value);
     } else if (key.startsWith('has_debt')) {
       hasDebtValues = handleIsActive(hasDebtValues, key, value);
@@ -125,7 +136,19 @@ export const formFilterDataToParams = (formFilterData: FormFilterData) => {
   return result;
 };
 
-const generateRandomId = () => Math.random().toString(36).substr(2, 9);
+const generateDeterministicId = (schoolId: string, prefix = '', watchKey?: string, itemId?: string | number) => {
+  const parts = [prefix, schoolId];
+
+  if (watchKey) {
+    parts.push(watchKey);
+  }
+  if (itemId !== undefined) {
+    parts.push(String(itemId));
+  }
+
+  return parts.filter(Boolean).join('-').replace(/\W+/g, '-');
+};
+
 interface Item {
   checked: boolean;
   name: string;
@@ -140,7 +163,7 @@ function transformItem(item: Content | [string | number, string, string | undefi
   }
 }
 
-type JsonData<T> = Record<keyof T, Content[] | [string | number, string][]>;
+export type JsonData<T> = Record<keyof T, Content[] | [string | number, string][]>;
 
 export function normalizeFilters<T>(jsonData: JsonData<T>): Record<keyof T, Content[]> {
   return Object.entries(jsonData).reduce((acc: Record<keyof T, Content[]>, [key, value]) => {
@@ -156,6 +179,39 @@ export function normalizeFilters<T>(jsonData: JsonData<T>): Record<keyof T, Cont
     return acc;
   }, {} as Record<keyof T, Content[]>);
 }
+
+interface FilterFiltersConfig {
+  filters: FormFilterData;
+}
+
+const extractHeaderText = (header: string | React.ReactElement): string => {
+  if (typeof header === 'string') {
+    return header;
+  }
+
+  if (!React.isValidElement(header)) {
+    return 'Unknown';
+  }
+
+  const children = (header.props as { children?: React.ReactNode })?.children;
+
+  if (!children) {
+    return 'Unknown';
+  }
+
+  const textParts = React.Children.map(children, (child) => {
+    if (typeof child === 'string') {
+      return child;
+    }
+    if (React.isValidElement(child)) {
+      return extractHeaderText(child);
+    }
+    return '';
+  });
+
+  return textParts?.join('').trim() || '';
+};
+
 const MultipleFilters = <T extends FilterItems>({
   filterItems,
   handleFilter,
@@ -164,8 +220,15 @@ const MultipleFilters = <T extends FilterItems>({
   setItemsCount,
   postFixElement,
   selectedItems,
+  isLegacy = true,
+  tableName,
 }: Props<T>) => {
-  const methods = useForm<FormFilterData>();
+  const methods = useForm<FormFilterData>({
+    mode: 'onBlur',
+  });
+
+  methods.watch();
+
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [scrollingTop, setScrollingTop] = useState(false);
@@ -175,26 +238,167 @@ const MultipleFilters = <T extends FilterItems>({
   const formRef = useRef<HTMLFormElement>(null);
   const scrollingContentRef = useRef<HTMLDivElement>(null);
 
-  const onSubmit = (data: FormFilterData) => {
-    const values = methods.getValues();
-    const mappedFilteredItems = filterItems.map(({ watchKey }) => {
-      const count = countCheckedByKey(values, watchKey);
-      return {
-        watchKey,
-        count,
-      };
-    });
-    setItemsCount(mappedFilteredItems);
-    handleFilter(data, methods);
-    setOpen(false);
+  const sendTrackEventWithUserName = useSendTrackEventWithUserName();
+
+  const selectedSchool = useSelectedSchool();
+  const schoolId = selectedSchool?.id as string;
+
+  const {
+    shouldUseApi,
+    isLoading,
+    initializedRef: tableInitializedRef,
+    previousSchoolIdRef: tablePreviousSchoolIdRef,
+    upsertConfig,
+    processTableConfig,
+  } = useTableConfig<FilterFiltersConfig>({ tableName });
+
+  useEffect(() => {
+    if (tablePreviousSchoolIdRef.current && tablePreviousSchoolIdRef.current !== schoolId) {
+      methods.reset({});
+
+      setSearch('');
+      setOpen(false);
+
+      tableInitializedRef.current = false;
+
+      setItemsCount(itemsCount.map((item) => ({ ...item, count: 0 })));
+      onClearFilter();
+
+      formRef.current?.reset();
+    }
+  }, [schoolId, setItemsCount, itemsCount, onClearFilter, methods, tableInitializedRef, tablePreviousSchoolIdRef]);
+
+  const processedTableConfig = useMemo(
+    () => processTableConfig<FormFilterData | null>((filtersConfig) => filtersConfig?.filters || null),
+    [processTableConfig]
+  );
+
+  useEffect(() => {
+    if (tableInitializedRef.current) {
+      return;
+    }
+
+    if (shouldUseApi && isLoading) {
+      return;
+    }
+
+    if (processedTableConfig) {
+      methods.reset({});
+
+      setTimeout(() => {
+        methods.reset(processedTableConfig);
+
+        const mappedFilteredItems = filterItems.map(({ watchKey }) => {
+          const count = countCheckedByKey(processedTableConfig, watchKey);
+          return { watchKey, count };
+        });
+
+        setItemsCount(mappedFilteredItems);
+        handleFilter(processedTableConfig, methods);
+        tableInitializedRef.current = true;
+      }, 0);
+      return;
+    }
+
+    if (selectedItems && Object.entries(selectedItems).length > 0) {
+      methods.reset({});
+
+      setTimeout(() => {
+        methods.reset(selectedItems);
+        const mappedFilteredItems = filterItems.map(({ watchKey }) => {
+          const count = countCheckedByKey(selectedItems, watchKey);
+          return { watchKey, count };
+        });
+        setItemsCount(mappedFilteredItems);
+        tableInitializedRef.current = true;
+      }, 0);
+      return;
+    }
+
+    tableInitializedRef.current = true;
+  }, [
+    processedTableConfig,
+    isLoading,
+    filterItems,
+    selectedItems,
+    shouldUseApi,
+    handleFilter,
+    methods,
+    setItemsCount,
+    schoolId,
+    tableInitializedRef,
+  ]);
+
+  const sendSectionsTrackEvent = (
+    mappedFilteredItems: {
+      watchKey: string;
+      count: number;
+      header: string | React.ReactElement<any, string | React.JSXElementConstructor<any>>;
+    }[],
+    itemsCount: {
+      watchKey: string;
+      count: number;
+    }[]
+  ) => {
+    const previewSectionsSet = new Set(itemsCount.filter((item) => item.count > 0).map((item) => item.watchKey));
+
+    const sections = mappedFilteredItems.filter((item) => item.count > 0 && !previewSectionsSet.has(item.watchKey));
+
+    if (sections.length > 0) {
+      sendTrackEventWithUserName(Events.multiple_filters_applied, {
+        tableName: tableName,
+        is_legacy: isLegacy,
+        url: window?.location?.href,
+        sections_watchKey: sections.map((item) => item.watchKey),
+        sections_name: sections.map((item) => extractHeaderText(item.header)),
+      });
+    }
   };
+
+  const onSubmit = (data: FormFilterData) => {
+    setOpen(false);
+
+    const cleanData: FormFilterData = Object.entries(data).reduce((acc, [key, value]) => {
+      if (value && (value.checked || value.checked === false)) {
+        acc[key] = { ...value };
+      }
+      return acc;
+    }, {} as FormFilterData);
+
+    const mappedFilteredItems = filterItems.map(({ watchKey, header }) => ({
+      watchKey,
+      count: countCheckedByKey(cleanData, watchKey),
+      header,
+    }));
+
+    setItemsCount(mappedFilteredItems);
+    handleFilter(cleanData, methods);
+
+    sendSectionsTrackEvent(mappedFilteredItems, itemsCount);
+
+    if (shouldUseApi) {
+      setTimeout(() => {
+        upsertConfig({
+          filters: cleanData,
+        });
+      }, 10);
+    }
+  };
+
   const handleClear = () => {
     const items = itemsCount.map((item) => ({ watchKey: item.watchKey, count: 0 }));
     methods.reset({});
     onClearFilter();
     formRef.current?.reset();
     setItemsCount(items);
+
+    if (shouldUseApi) {
+      upsertConfig({
+        filters: {},
+      });
+    }
   };
+
   const handleScroll = () => {
     const currentScrollPosition = scrollingRef.current?.scrollTop || 0;
     const scrollBottom =
@@ -233,6 +437,7 @@ const MultipleFilters = <T extends FilterItems>({
       }),
     [filterItems, search, itemsCount]
   );
+
   function countCheckedByKey(
     objects: {
       [key: string]: Item;
@@ -241,8 +446,10 @@ const MultipleFilters = <T extends FilterItems>({
   ) {
     let count = 0;
 
+    if (!objects) return count;
+
     for (const prop in objects) {
-      if (prop.startsWith(key) && objects[prop].checked) {
+      if (prop.startsWith(key) && objects[prop]?.checked) {
         count++;
       }
     }
@@ -254,6 +461,7 @@ const MultipleFilters = <T extends FilterItems>({
     setSearch(str);
     scrollingRef?.current?.scrollTo(0, 0);
   };
+
   const handleContentScroll = () => {
     const currentScrollPosition: number = scrollingContentRef.current?.scrollTop || 0;
     if (currentScrollPosition > 30) {
@@ -262,8 +470,9 @@ const MultipleFilters = <T extends FilterItems>({
       setScrollingContentTop(false);
     }
   };
+
   useEffect(() => {
-    if (selectedItems && Object.entries(selectedItems).length > 0) {
+    if (selectedItems && Object.entries(selectedItems).length > 0 && schoolId === tablePreviousSchoolIdRef.current) {
       Object.keys(selectedItems).map((key) => {
         methods.setValue(key, { ...selectedItems[key] });
       });
@@ -275,25 +484,29 @@ const MultipleFilters = <T extends FilterItems>({
         };
       });
       setItemsCount(mappedFilteredItems);
-    } else {
-      methods.reset({});
-      setItemsCount([]);
     }
-  }, [selectedItems]);
+  }, [selectedItems, schoolId]);
+
   return (
     <>
-      <div className="relative inline-block text-left">
+      <div className="inline-block relative text-left">
         <DropdownMenuPrimitive.Root onOpenChange={setOpen} open={open}>
           <DropdownMenuPrimitive.Trigger asChild className="mb-1">
-            <FilterButton>
-              <Filter />
-              <span className="font-bold">Filtrar</span>
-            </FilterButton>
+            {isLegacy ? (
+              <FilterButton isLegacy={isLegacy}>
+                <Filter />
+                <span className="font-bold">Filtrar</span>
+              </FilterButton>
+            ) : (
+              <Button variant="solid-light" color="black" size="medium" leftIcon={<FilterIcon />}>
+                Filtrar
+              </Button>
+            )}
           </DropdownMenuPrimitive.Trigger>
 
           <DropdownMenuPrimitive.Portal>
             <DropdownMenuPrimitive.Content
-              id="content"
+              id={`content-${schoolId}`}
               align="start"
               sideOffset={3}
               className="w-64 rounded-2xl shadow-md bg-white overflow-x-scroll max-h-[350px] pt-2 z-30"
@@ -304,7 +517,7 @@ const MultipleFilters = <T extends FilterItems>({
                 onSubmit={methods.handleSubmit(onSubmit)}
                 className="flex flex-col justify-between h-full"
                 ref={formRef}
-                key={`${itemsCount?.length} `}
+                key={`form-${schoolId}-${itemsCount?.length}`}
               >
                 <div
                   className={`w-full h-full max-h-[56px] bg-white flex items-center justify-between px-6 sticky top-0 py-4 ${
@@ -318,15 +531,16 @@ const MultipleFilters = <T extends FilterItems>({
                     (filterItems?.find((item) => item?.watchKey === watchKey)?.contents?.length ?? 0) > 5;
                   const count = itemsCount?.find((item) => item && item?.watchKey === watchKey)?.count || 0;
                   return (
-                    <Popover key={`header-${watchKey}-${index}`}>
+                    <Popover key={`header-${schoolId}-${watchKey}-${index}`}>
                       <PopoverTrigger asChild>
                         <button
                           className="w-full h-full max-h-[56px] bg-white flex items-center justify-between px-6 border-t border-[#919EAB3D] py-4"
                           type="button"
                           onClick={() => setSearch('')}
+                          data-testid={`trigger-${schoolId}-${watchKey}`}
                         >
-                          <div className="flex items-center gap-2" data-testid={`${header}-filterBy`}>
-                            <div className="flex gap-1 items-center justify-center">
+                          <div className="flex gap-2 items-center" data-testid={`${header}-filterBy`}>
+                            <div className="flex gap-1 justify-center items-center">
                               <p>{header}</p>
                               {message && (
                                 <Tooltip message={message} disableHover={!message}>
@@ -360,12 +574,12 @@ const MultipleFilters = <T extends FilterItems>({
                           {shouldDisplaySearch && (
                             <div
                               className={cn(
-                                'h-full min-h-[56px] w-full flex items-center justify-center px-3 gap-2 sticky top-0 z-50 bg-white',
+                                'flex sticky top-0 z-50 gap-2 justify-center items-center px-3 w-full h-full bg-white min-h-[56px]',
                                 {
                                   'shadow-card': scrollingTop,
                                 }
                               )}
-                              key={`header-${watchKey}-${index}`}
+                              key={`header-${schoolId}-${watchKey}-${index}`}
                             >
                               <svg
                                 width="24"
@@ -386,6 +600,7 @@ const MultipleFilters = <T extends FilterItems>({
                                 className="w-full h-[56px] focus:ring-0 focus:outline-none focus:border-0 focus-within:border-0 border-none"
                                 onChange={(e) => handleSearch(e.target.value)}
                                 value={search}
+                                data-testid="inputText"
                               />
                               <button
                                 onClick={() => setSearch('')}
@@ -409,23 +624,27 @@ const MultipleFilters = <T extends FilterItems>({
                             </div>
                           )}
                           <div
-                            className={cn('flex flex-col justify-between min-h-[140px] pt-2', {
+                            className={cn('flex flex-col justify-between pt-2 min-h-[140px]', {
                               'min-h-[390px]': shouldDisplaySearch,
                             })}
                           >
                             <div className="px-2">
                               <div className="w-full h-full text-sm text-gray-700">
                                 {(contents?.length || [].length) > 0 ? (
-                                  <div className="flex flex-col" key={generateRandomId()}>
+                                  <div
+                                    className="flex flex-col"
+                                    key={generateDeterministicId(schoolId, 'contents', watchKey)}
+                                  >
                                     {contents?.map((item) => (
                                       <RowCheckBox
-                                        key={item.id}
+                                        key={generateDeterministicId(schoolId, 'rowcheck', watchKey, item.id)}
                                         id={item.id}
                                         name={item.name}
                                         watchKey={watchKey}
                                         methods={methods}
                                         description={item.description}
                                         postFixElement={postFixElement}
+                                        schoolId={schoolId}
                                       />
                                     ))}
                                   </div>
@@ -437,7 +656,7 @@ const MultipleFilters = <T extends FilterItems>({
                               </div>
                             </div>
                             <div
-                              className={cn('w-full sticky bottom-0 min-h-[56px] bg-white flex items-center py-4', {
+                              className={cn('flex sticky bottom-0 items-center py-4 w-full bg-white min-h-[56px]', {
                                 'shadow-cardBottom': scrollingBottom,
                               })}
                             >
@@ -475,6 +694,17 @@ const MultipleFilters = <T extends FilterItems>({
   );
 };
 
+function FilterIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path
+        d="M9.00085 14C8.89263 14 8.78733 13.9649 8.70075 13.9L6.70011 12.4C6.63799 12.3534 6.58758 12.293 6.55285 12.2236C6.51813 12.1542 6.50005 12.0776 6.50005 12V9.19L2.99093 5.2435C2.74171 4.96244 2.57898 4.61541 2.52232 4.24412C2.46565 3.87283 2.51745 3.49308 2.67149 3.15051C2.82552 2.80794 3.07525 2.51713 3.39064 2.31303C3.70604 2.10894 4.07369 2.00024 4.44939 2H11.5517C11.9273 2.00044 12.2949 2.10932 12.6102 2.31355C12.9254 2.51779 13.175 2.80869 13.3289 3.15129C13.4827 3.4939 13.5344 3.87364 13.4776 4.24487C13.4208 4.61611 13.2579 4.96305 13.0086 5.244L9.50101 9.19V13.5C9.50101 13.6326 9.44831 13.7598 9.35451 13.8536C9.26072 13.9473 9.1335 14 9.00085 14V14ZM7.50037 11.75L8.50069 12.5V9C8.50079 8.87758 8.54581 8.75945 8.62723 8.668L12.2624 4.5795C12.3836 4.44254 12.4627 4.27352 12.4902 4.09273C12.5177 3.91193 12.4924 3.72705 12.4173 3.56028C12.3423 3.39351 12.2207 3.25193 12.0671 3.15254C11.9136 3.05316 11.7346 3.00019 11.5517 3H4.44939C4.26656 3.00028 4.08769 3.05327 3.93423 3.15263C3.78077 3.25199 3.65924 3.3935 3.58422 3.56018C3.5092 3.72685 3.48386 3.91163 3.51126 4.09234C3.53865 4.27305 3.61761 4.44203 3.73867 4.579L7.37433 8.668C7.45556 8.75952 7.50041 8.87764 7.50037 9V11.75Z"
+        fill="#1C1C1D"
+      />
+    </svg>
+  );
+}
+
 interface TooltipIconProps {
   message: string;
   children: React.ReactNode;
@@ -496,19 +726,37 @@ export const TooltipIcon: React.FC<TooltipIconProps> = ({ message, children }) =
   </div>
 );
 
+interface MultipleFiltersChipsProps {
+  onChange: (formFilterData: FormFilterData) => void;
+  formFilterData: FormFilterData;
+  setItemsCount: (items: { watchKey: string; count: number }[]) => void;
+  itemsCount: { watchKey: string; count: number }[];
+  className?: string;
+  tableName?: string;
+}
 export const MultipleFiltersChips = ({
   onChange,
   formFilterData,
   setItemsCount,
   itemsCount,
+  className,
+  tableName,
 }: MultipleFiltersChipsProps) => {
+  const { shouldUseApi, upsertConfig } = useTableConfig<FilterFiltersConfig>({ tableName });
+
   const handleCleanFilters = () => {
     const newFormFilterData: FormFilterData = {};
     onChange(newFormFilterData);
-
     const prev = itemsCount.map((item) => ({ ...item, count: 0 }));
     setItemsCount(prev);
+
+    if (shouldUseApi) {
+      upsertConfig({
+        filters: {},
+      });
+    }
   };
+
   const handleRemove = (keyToRemove: string) => {
     const newFormFilterData: FormFilterData = {
       ...formFilterData,
@@ -523,17 +771,24 @@ export const MultipleFiltersChips = ({
     });
     setItemsCount(newItemsCount);
     onChange(newFormFilterData);
+
+    if (shouldUseApi) {
+      upsertConfig({
+        filters: newFormFilterData,
+      });
+    }
   };
+
   const formFilterDataChecked = useMemo(
     () => Object.entries(formFilterData || {}).filter(([_, value]) => value.checked),
     [formFilterData]
   );
+
   return (
-    <div className={cn({ 'flex flex-wrap gap-4 px-6 py-2': formFilterDataChecked?.length > 0 })}>
-      {/* map object and array inside and show name as a div test */}
+    <div className={cn({ 'flex flex-wrap gap-4 px-6 py-2': formFilterDataChecked?.length > 0 }, className)}>
       {formFilterDataChecked.map(([key, value]) => (
         <button
-          className="flex items-center gap-2 px-2 py-1 text-sm transition-colors duration-300 bg-white border rounded-full text-blue-secondary-300 border-blue-secondary-300 hover:text-white hover:bg-blue-secondary-300"
+          className="flex gap-2 items-center px-2 py-1 text-sm bg-white rounded-full border transition-colors duration-300 text-blue-secondary-300 border-blue-secondary-300 hover:text-white hover:bg-blue-secondary-300"
           onClick={() => {
             handleRemove(key);
           }}
@@ -588,7 +843,6 @@ export const MultipleFiltersChipsShorted = ({
     let newOverflowCount = 0;
 
     formFilterDataChecked.forEach(([_, value], index) => {
-      // Assuming an average character is 8px wide, and adding some extra pixels for padding and icon
       const estimatedWidth = value.name.length * 8 + chipSpaceWidth;
 
       if (totalWidth + estimatedWidth <= chipWidth) {
@@ -604,14 +858,14 @@ export const MultipleFiltersChipsShorted = ({
   }, [formFilterDataChecked]);
 
   return (
-    <div className={cn('flex justify-between gap-4 py-2 min-h-[20px]')}>
+    <div className={cn('flex gap-4 justify-between py-2 min-h-[20px]')}>
       <div className="flex gap-3">
         {formFilterDataChecked.map(
           ([key, value], index) =>
             visibleItems.includes(index) && (
               <button
                 key={key}
-                className="flex items-center gap-2 px-2 py-1 text-sm transition-colors duration-300 bg-white border rounded-full text-blue-secondary-300 border-blue-secondary-300 hover:text-white hover:bg-blue-secondary-300"
+                className="flex gap-2 items-center px-2 py-1 text-sm bg-white rounded-full border transition-colors duration-300 text-blue-secondary-300 border-blue-secondary-300 hover:text-white hover:bg-blue-secondary-300"
                 onClick={() => handleRemove(key)}
               >
                 {value.name} <IcCircleClose />
@@ -619,7 +873,7 @@ export const MultipleFiltersChipsShorted = ({
             )
         )}
         {overflowCount > 0 && (
-          <button className="flex items-center gap-2 px-2 py-1 text-sm transition-colors duration-300 bg-white border rounded-full text-blue-secondary-300 border-blue-secondary-300 hover:text-white hover:bg-blue-secondary-300">
+          <button className="flex gap-2 items-center px-2 py-1 text-sm bg-white rounded-full border transition-colors duration-300 text-blue-secondary-300 border-blue-secondary-300 hover:text-white hover:bg-blue-secondary-300">
             {overflowCount}+
           </button>
         )}
@@ -640,7 +894,7 @@ const DropdownMenuSeparator = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Separator>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Separator>
 >(({ className, ...props }, ref) => (
-  <DropdownMenuPrimitive.Separator ref={ref} className={cn('-mx-1 my-1 h-px bg-slate-100 ', className)} {...props} />
+  <DropdownMenuPrimitive.Separator ref={ref} className={cn('-mx-1 my-1 h-px bg-slate-100', className)} {...props} />
 ));
 DropdownMenuSeparator.displayName = DropdownMenuPrimitive.Separator.displayName;
 
@@ -678,7 +932,6 @@ export const DropdownMenuSubTrigger = React.forwardRef<
     {...props}
   >
     {children}
-    {/* <ChevronRight className="w-4 h-4 ml-auto" /> */}
   </DropdownMenuPrimitive.SubTrigger>
 ));
 export const DropdownMenuSub = DropdownMenuPrimitive.Sub;
@@ -692,7 +945,7 @@ const DropdownMenuSubContent = React.forwardRef<
   <DropdownMenuPrimitive.SubContent
     ref={ref}
     className={cn(
-      'animate-in slide-in-from-left-1 z-50 min-w-[8rem] overflow-hidden rounded-md border border-slate-100 bg-white p-1 text-slate-700 shadow-md',
+      'overflow-hidden z-50 p-1 bg-white rounded-md border shadow-md animate-in slide-in-from-left-1 min-w-[8rem] border-slate-100 text-slate-700',
       className
     )}
     {...props}
@@ -705,7 +958,6 @@ DropdownMenuSubContent.displayName = DropdownMenuPrimitive.SubContent.displayNam
 //
 
 const Popover = PopoverPrimitive.Root;
-// const PopoverAnchor = PopoverPrimitive.Anchor;
 
 const PopoverTrigger = PopoverPrimitive.Trigger;
 
@@ -724,22 +976,30 @@ const PopoverContent = React.forwardRef<
     {...props}
   />
 ));
+
 PopoverContent.displayName = PopoverPrimitive.Content.displayName;
 
-type IFilterButtonProps = Omit<React.ComponentProps<'button'>, 'className'>;
+type IFilterButtonProps = Omit<React.ComponentProps<'button'>, 'className'> & {
+  isLegacy?: boolean;
+};
 
-const FilterButton = React.forwardRef<HTMLButtonElement, IFilterButtonProps>(({ children, ...props }, ref) => (
-  <button
-    ref={ref}
-    {...props}
-    className="inline-flex select-none items-center justify-center rounded-xl p-2 w-[102px] gap-x-[10.5px] text-sm font-medium border border-blue-secondary-200 border-solid text-blue-secondary-200 hover:bg-gray-50 focus:outline-none focus-visible:ring focus-visible:ring-blue-500 focus-visible:ring-opacity-75 bg-white h-[40px]"
-    data-testid="filterBtn"
-  >
-    {children}
-  </button>
-));
+const FilterButton = React.forwardRef<HTMLButtonElement, IFilterButtonProps>(
+  ({ children, isLegacy = true, ...props }, ref) => (
+    <button
+      ref={ref}
+      {...props}
+      className={cn(
+        'inline-flex select-none items-center justify-center rounded-lg p-2 w-[102px] gap-x-[10.5px] text-sm font-medium border border-blue-secondary-200 border-solid text-blue-secondary-200 hover:bg-gray-50 focus:outline-none focus-visible:ring focus-visible:ring-blue-500 focus-visible:ring-opacity-75 bg-white h-[40px]',
+        { 'bg-neutral-100 border-none rounded-full text-neutral-900': !isLegacy }
+      )}
+      data-testid="filterBtn"
+    >
+      {children}
+    </button>
+  )
+);
 
 FilterButton.displayName = 'FilterButton';
 
-export { Popover, PopoverTrigger, PopoverContent };
+export { Popover, PopoverContent, PopoverTrigger };
 export default MultipleFilters;

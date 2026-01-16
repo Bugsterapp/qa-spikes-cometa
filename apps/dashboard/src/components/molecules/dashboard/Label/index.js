@@ -1,68 +1,52 @@
 import PropTypes from 'prop-types';
-// @mui
-import { alpha, styled } from '@mui/material/styles';
-import { Box } from '@mui/material';
+import { cva } from 'class-variance-authority';
 
 // ----------------------------------------------------------------------
 
-const RootStyle = styled('span')(({ theme, ownerState }) => {
-  const isLight = theme.palette.mode === 'light';
-  const { color, variant, styledColor, styledBackground, backgroundColor } = ownerState;
-
-  const styleFilled = (color, styledColor, styledBackground, backgroundColor) => ({
-    color: styledColor ? color : theme.palette[color]?.contrastText,
-    backgroundColor: styledBackground ? backgroundColor : theme.palette[color]?.main,
-  });
-
-  const styleOutlined = (color) => ({
-    color: theme.palette[color].main,
-    backgroundColor: 'transparent',
-    border: `1px solid ${theme.palette[color].main}`,
-  });
-
-  const styleGhost = (color) => ({
-    color: theme.palette[color]['dark'],
-    backgroundColor: alpha(theme.palette[color].main, 0.16),
-  });
-
-  return {
-    height: 22,
-    lineHeight: 0,
-    borderRadius: 6,
-    cursor: 'default',
-    alignItems: 'center',
-    whiteSpace: 'nowrap',
-    display: 'inline-flex',
-    justifyContent: 'center',
-    padding: theme.spacing(0, 1),
-    color: theme.palette.grey[800],
-    fontSize: theme.typography.pxToRem(12),
-    fontFamily: theme.typography.fontFamily,
-    backgroundColor: theme.palette.grey[300],
-    fontWeight: theme.typography.fontWeightBold,
-
-    ...(color !== 'default'
-      ? {
-          ...(variant === 'filled' && { ...styleFilled(color, styledColor, styledBackground, backgroundColor) }),
-          ...(variant === 'outlined' && { ...styleOutlined(color, styledColor, styledBackground, backgroundColor) }),
-          ...(variant === 'ghost' && { ...styleGhost(color, styledColor, styledBackground, backgroundColor) }),
-        }
-      : color === 'morosidad'
-      ? {
-          backgroundColor: backgroundColor,
-        }
-      : {
-          ...(variant === 'outlined' && {
-            backgroundColor: 'transparent',
-            color: theme.palette.text.primary,
-            border: `1px solid ${theme.palette.grey[500_32]}`,
-          }),
-          ...(variant === 'ghost' && {
-            color: isLight ? theme.palette.text.secondary : theme.palette.common.white,
-            backgroundColor: theme.palette.grey[500_16],
-          }),
-        }),
-  };
+const labelVariants = cva('', {
+  variants: {
+    variant: {
+      outlined: 'bg-transparent border',
+    },
+  },
+  compoundVariants: [
+    // Default
+    { color: 'default', variant: 'filled', class: 'bg-gray-300 text-gray-800' },
+    { color: 'default', variant: 'outlined', class: 'text-gray-900 border-gray-400' },
+    { color: 'default', variant: 'ghost', class: 'bg-gray-200/25 text-gray-600' },
+    // Primary
+    { color: 'primary', variant: 'filled', class: 'bg-blue-600 text-white' },
+    { color: 'primary', variant: 'outlined', class: 'text-blue-600 border-blue-600' },
+    { color: 'primary', variant: 'ghost', class: 'bg-blue-600/16 text-blue-900' },
+    // Secondary
+    { color: 'secondary', variant: 'filled', class: 'bg-purple-600 text-white' },
+    { color: 'secondary', variant: 'outlined', class: 'text-purple-600 border-purple-600' },
+    { color: 'secondary', variant: 'ghost', class: 'bg-purple-600/16 text-purple-900' },
+    // Info
+    { color: 'info', variant: 'filled', class: 'bg-cyan-600 text-white' },
+    { color: 'info', variant: 'outlined', class: 'text-cyan-600 border-cyan-600' },
+    { color: 'info', variant: 'ghost', class: 'bg-cyan-600/16 text-cyan-900' },
+    // Success
+    { color: 'success', variant: 'filled', class: 'bg-green-600 text-white' },
+    { color: 'success', variant: 'outlined', class: 'text-green-600 border-green-600' },
+    { color: 'success', variant: 'ghost', class: 'bg-green-600/16 text-green-900' },
+    // Warning
+    { color: 'warning', variant: 'filled', class: 'bg-amber-600 text-white' },
+    { color: 'warning', variant: 'outlined', class: 'text-amber-600 border-amber-600' },
+    { color: 'warning', variant: 'ghost', class: 'bg-amber-600/16 text-amber-900' },
+    // Error
+    { color: 'error', variant: 'filled', class: 'bg-red-600 text-white' },
+    { color: 'error', variant: 'outlined', class: 'text-red-600 border-red-600' },
+    { color: 'error', variant: 'ghost', class: 'bg-red-600/16 text-red-900' },
+    // Medium
+    { color: 'medium', variant: 'filled', class: 'bg-gray-500 text-white' },
+    { color: 'medium', variant: 'outlined', class: 'text-gray-500 border-gray-500' },
+    { color: 'medium', variant: 'ghost', class: 'bg-gray-500/16 text-gray-700' },
+  ],
+  defaultVariants: {
+    color: 'default',
+    variant: 'ghost',
+  },
 });
 
 // ----------------------------------------------------------------------
@@ -77,6 +61,7 @@ Label.propTypes = {
   styledColor: PropTypes.bool,
   styledBackground: PropTypes.bool,
   backgroundColor: PropTypes.string,
+  className: PropTypes.string,
 };
 
 export default function Label({
@@ -89,27 +74,61 @@ export default function Label({
   styledColor = false,
   styledBackground = false,
   backgroundColor = '',
+  className = '',
 }) {
-  const style = {
-    width: 16,
-    height: 16,
-    '& svg, img': { width: 1, height: 1, objectFit: 'cover' },
+  // Build inline styles from sx prop and custom colors
+  const buildStyles = () => {
+    const styles = {};
+
+    if (styledColor && styledBackground && backgroundColor) {
+      styles.backgroundColor = backgroundColor;
+    } else if (color === 'morosidad' && backgroundColor) {
+      styles.backgroundColor = backgroundColor;
+    }
+
+    // Handle sx prop styles
+    if (sx.color) styles.color = sx.color;
+    if (sx.backgroundColor) styles.backgroundColor = sx.backgroundColor;
+    if (sx.borderColor) styles.borderColor = sx.borderColor;
+
+    return styles;
   };
 
   return (
-    <RootStyle
-      ownerState={{ color, variant, styledColor, styledBackground, backgroundColor }}
-      sx={{
-        ...(startIcon && { pl: 0.75 }),
-        ...(endIcon && { pr: 0.75 }),
-        ...sx,
-      }}
+    <span
+      className={labelVariants({
+        color: styledColor && styledBackground ? undefined : color,
+        variant: styledColor && styledBackground ? undefined : variant,
+        className: `
+          inline-flex items-center justify-center
+          h-[22px] leading-none rounded-md cursor-default whitespace-nowrap
+          px-2 text-xs font-bold
+          ${startIcon ? 'pl-3' : ''}
+          ${endIcon ? 'pr-3' : ''}
+          ${className}
+        `
+          .trim()
+          .replace(/\s+/g, ' '),
+      })}
+      style={buildStyles()}
     >
-      {startIcon && <Box sx={{ mr: 0.75, ...style }}>{startIcon}</Box>}
+      {startIcon && (
+        <div className="mr-3 w-4 h-4 flex items-center justify-center">
+          <div className="w-full h-full [&>svg]:w-full [&>svg]:h-full [&>img]:w-full [&>img]:h-full [&>img]:object-cover">
+            {startIcon}
+          </div>
+        </div>
+      )}
 
       {children}
 
-      {endIcon && <Box sx={{ ml: 0.75, ...style }}>{endIcon}</Box>}
-    </RootStyle>
+      {endIcon && (
+        <div className="ml-3 w-4 h-4 flex items-center justify-center">
+          <div className="w-full h-full [&>svg]:w-full [&>svg]:h-full [&>img]:w-full [&>img]:h-full [&>img]:object-cover">
+            {endIcon}
+          </div>
+        </div>
+      )}
+    </span>
   );
 }

@@ -5,7 +5,7 @@
  */
 
 import Head from 'next/head';
-import { useRouter } from 'next/router';
+import { useUTMRouter as useRouter } from '~/components/UtmNavigation';
 import { useEffect } from 'react';
 import useSendTrackEvent from '~/hooks/useSendEvent';
 

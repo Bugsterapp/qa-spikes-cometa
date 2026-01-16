@@ -1,9 +1,19 @@
-import { Invoice, Status } from './paid-orders';
-import { Student } from '/src/components/organisms/dashboard/ComplianceCard';
-import { Intent } from '/src/components/organisms/dashboard/FulfillmentDetail/FulfillmentChip';
-import { ManualPaymentAccount } from '/src/components/organisms/dashboard/OrderTableForPayins';
-import { TypeSpecialDiscount } from '/src/constants/specialDiscountTypes';
-import { User } from '/src/interfaces/core';
+import type { Invoice } from './paid-orders';
+import type { Intent } from '../src/components/payments/FulfillmentDetail/FulfillmentChip';
+import type { ManualPaymentAccount } from '/src/components/organisms/dashboard/OrderTableForPayins';
+import type { TypeSpecialDiscount } from '/src/constants/specialDiscountTypes';
+import type { User } from '/src/interfaces/core';
+
+export interface Student {
+  id: string;
+  first_name: string;
+  last_name: string;
+  section: string;
+  level: string;
+  enrollment_code: string;
+  due_orders?: number;
+}
+
 export interface EarlyBirds {
   total: number;
   details: EarlyBirdDetail[];
@@ -84,39 +94,6 @@ export interface PayinFulfillment {
   payin: string;
   total_paid: number;
   paid_date: string;
-}
-
-export interface Fulfillment {
-  id: string;
-  order_name: string;
-  student: Student;
-  guardian: Guardian;
-  amount: string;
-  final_amount: string;
-  paid_date: string;
-  paid_status: Intent;
-  paid_type: string;
-  interest: string;
-  discount: string;
-  discount_breakdown: DiscountBreakdown;
-  is_manual: boolean;
-  due_date: string;
-  paid_amount: string;
-  has_partial_payins: boolean;
-  collected_at_school: boolean;
-  partial_payins: PartialPayin[];
-  invoice: Invoice;
-  invoice_status: Status;
-  correlative_id?: string;
-  payout: Payout;
-  payin_correlative_id?: string;
-  pending_amount: string;
-  payin_id?: string;
-  payins: PartialPayin[];
-  status: Intent;
-  payin_fulfillments: PayinFulfillment[];
-  is_sponsored: boolean;
-  guardian_commission: string;
 }
 
 export interface Guardian {

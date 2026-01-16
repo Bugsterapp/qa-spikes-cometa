@@ -29,9 +29,7 @@ export const useSubscriptionStore = create<ISelectionStore>()(
           totalToPay: itemsSelected.reduce((total, item) => total + Number(item.concept_price), 0),
         }));
         useStudentStore.setState({
-          studentIds: new Set<RetrieveSubscribableConceptsResponseDTO['student_id']>(
-            itemsSelected.map((item) => item.student_id)
-          ),
+          studentIds: itemsSelected.map((item) => item.student_id),
         });
       },
       setTotalToPay: (totalToPay) => set((state) => ({ ...state, totalToPay })),
@@ -42,7 +40,7 @@ export const useSubscriptionStore = create<ISelectionStore>()(
           totalToPay: 0,
         }));
         useStudentStore.setState({
-          studentIds: new Set<RetrieveSubscribableConceptsResponseDTO['student_id']>(),
+          studentIds: [],
         });
       },
     }),

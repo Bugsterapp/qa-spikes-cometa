@@ -1,16 +1,18 @@
-import { Page, Locator, expect, ElementHandle } from '@playwright/test';
+import test, { Page, Locator, expect, ElementHandle, Response } from '@playwright/test';
 import { dataConfig } from '../data/data';
-import { LoginPage } from '../pages/loginPage';
+import { LoginPage } from '../pages/dashboard/loginPage';
 import axios, { AxiosRequestConfig } from 'axios';
 import * as excel from 'exceljs';
 import { Api } from '@cometa/trpc/src/types';
+import { GuardianHomePage } from '/pages/portal/guardianHomePage';
+import { WelcomePage } from '/pages/portal/welcomePage';
 
 type Environment = 'local' | 'stage' | 'dev';
 
 export async function goto(page: Page): Promise<void> {
   try {
     // eslint-disable-next-line turbo/no-undeclared-env-vars
-    const envVar = process.env.ENV as Environment;
+    const envVar = process.env.ENV_PLAYWRIGHT as Environment;
 
     const vercelUrlWithQuotes: string | undefined = process.env.DASHBOARD_BASE_URL;
     let vercel_url: string | undefined;
@@ -23,7 +25,6 @@ export async function goto(page: Page): Promise<void> {
     if (!vercel_url) {
       if (envVar && envVar in dataConfig && dataConfig[envVar].DASHBOARD_URL) {
         const dashboardUrl = dataConfig[envVar].DASHBOARD_URL;
-        console.log('Navigate to url : ' + dashboardUrl);
         await page.goto(dashboardUrl);
 
         const pageNotFound = page.getByText('¡Disculpa, página no encontrada!');
@@ -49,39 +50,38 @@ export async function goto(page: Page): Promise<void> {
 export async function gotoPortal(page: Page, token: string): Promise<Page> {
   try {
     // eslint-disable-next-line turbo/no-undeclared-env-vars
-    const envVar = process.env.ENV as Environment | undefined;
-
+    const envVar = process.env.ENV_PLAYWRIGHT as Environment | undefined;
     const vercelUrlWithQuotes: string | undefined = process.env.PORTAL_BASE_URL;
-    let vercel_url: string | undefined;
 
-    if (vercelUrlWithQuotes) {
-      // Elimina las comillas dobles
-      vercel_url = vercelUrlWithQuotes.replace(/["=]/g, '');
+    // Limpiar la URL si está presente
+    const vercel_url = vercelUrlWithQuotes?.replace(/["=]/g, '');
+
+    // Determinar la URL final
+    const url = vercel_url
+      ? `https://${vercel_url}${token}`
+      : envVar && envVar in dataConfig && dataConfig[envVar].PORTAL_URL
+      ? `${dataConfig[envVar].PORTAL_URL}${token}`
+      : undefined;
+
+    if (!url) {
+      throw new Error(`No se encontró una configuración válida para portal en el entorno "${envVar}".`);
     }
 
-    if (!vercel_url) {
-      if (envVar && envVar in dataConfig && dataConfig[envVar].PORTAL_URL) {
-        const url = dataConfig[envVar].PORTAL_URL;
-        await page.goto(url + token);
-        return page;
-      } else {
-        throw new Error(`No se encontró una configuración válida para portal para el entorno "${envVar}".`);
-      }
-    } else {
-      await page.goto('https://' + vercel_url + token);
-    }
+    // Navegar a la URL y esperar la respuesta
+    await page.goto(url);
+    //Espero que se cargue la welcomePage con los términos y condiciones
+    await page.waitForResponse(/\/terms\?.+/);
   } catch (error) {
-    if (error instanceof Error) {
-      throw new Error(error.message);
-    }
+    throw new Error(error instanceof Error ? error.message : 'Error desconocido');
   }
+
   return page;
 }
 
 export async function gotoAdmin(page: Page, urlPath: string): Promise<void> {
   try {
     // eslint-disable-next-line turbo/no-undeclared-env-vars
-    const envVar = process.env.ENV as Environment | undefined;
+    const envVar = process.env.ENV_PLAYWRIGHT as Environment | undefined;
 
     if (envVar && envVar in dataConfig) {
       if (dataConfig[envVar].ADMIN_URL) {
@@ -152,17 +152,25 @@ export async function getGuardianToken(
   if (email) {
     tutorEmail = email;
   } else {
-    tutorEmail = `${guardianLastName}${guardianFirstName}${domain}`;
+    tutorEmail = `${guardianFirstName}${guardianLastName}${domain}`;
   }
-  await gotoAdmin(page, `cometa_admin/students/guardian/?q=${guardianFirstName}+${guardianLastName}`);
+  if (process.env.ENV_PLAYWRIGHT == 'local') {
+    await gotoAdmin(page, `admin/students/guardian/?q=${guardianFirstName}+${guardianLastName}`);
+  } else {
+    await gotoAdmin(page, `cometa_admin/students/guardian/?q=${guardianFirstName}+${guardianLastName}`);
+  }
   if (!logged) {
     await expect(page.getByLabel('Email address:')).toBeVisible();
-    await page.getByLabel('Email address:').fill('admin@getcometa.com');
-    await page.getByLabel('Password:').fill('spiritbreaker');
+    await page.getByLabel('Email address:').fill('automationadmin@getcometa.com');
+    await page.getByLabel('Password:').fill('barriletecosmico');
     await page.getByRole('button', { name: 'Log in' }).click();
   }
   await expect(page.getByRole('cell', { name: tutorEmail })).toBeVisible();
-  await page.locator('input[name="_selected_action"]').click();
+  await page
+    .getByRole('row', { name: new RegExp(tutorEmail, 'i') })
+    .locator('input[name="_selected_action"]')
+    .first()
+    .click();
   await page
     .getByLabel(
       'Action: \n  ---------\n\n  Delete selected guardians\n\n  Reset Onboarding\n\n  Validate Billing\n\n  Send 1st onboard message\n\n  Send 2.1 onboard message to guardians\n\n  Send 2.2 onboard message to guardians\n\n  Send 3rd onboard message\n\n  Send 4th onboard message\n\n  Send Guardian portal url whatsapp\n\n  Generate Auth URL'
@@ -211,6 +219,32 @@ export async function retryExpectWithScroll(
     await page.reload();
     await page.waitForLoadState();
   }
+}
+
+export async function retryElementIsVisible(page: Page, locator: Locator, maxRetries = 5, delayBetweenRetries = 2000) {
+  for (let retry = 0; retry < maxRetries; retry++) {
+    try {
+      const element = locator;
+      await page.waitForTimeout(delayBetweenRetries);
+      if (await element.isVisible()) {
+        // La aserción fue exitosa, terminamos la función.
+        return true; // Termina si el elemento es visible.
+      }
+    } catch (error) {
+      // Only log the error, don't throw it yet
+      // eslint-disable-next-line no-console
+      console.log(`Retry ${retry + 1}/${maxRetries}: Element not visible yet`);
+    }
+
+    // Only reload on certain retries to avoid too many reloads
+    if (retry < maxRetries - 1 && retry % 2 === 0) {
+      await page.reload();
+      await page.waitForLoadState('networkidle');
+    }
+  }
+
+  // Si llegamos aquí, significa que el elemento nunca fue visible.
+  throw new Error(`No se encontró el elemento visible después de varios intentos el elemento ${locator}:`);
 }
 
 export async function retryExpectUntilElementIsHide(
@@ -274,7 +308,7 @@ export async function findTCSubstring(input: string) {
   const regex = /TC-[^\s]{1,10}/i;
   const match = input.match(regex);
   // eslint-disable-next-line turbo/no-undeclared-env-vars
-  const envVar = process.env.ENV;
+  const envVar = process.env.ENV_PLAYWRIGHT;
   if (envVar && envVar !== 'local') {
     if (match) {
       return match[0].replace('TC-', '');
@@ -409,7 +443,7 @@ export async function addCommentToJiraIssue(jiraIssueKey: string, comment: strin
 
 export async function waitForDashboardNavSidePanelIsLoaded(page: LoginPage) {
   await expect(page.navSidePanelList).toHaveText(
-    [`Cobranzas`, `Morosidad`, `Pagos recibidos`, `Ingresos`, `Estudiantes`, `Conceptos`],
+    [`Cobranzas`, `Morosidad`, `Pagos y Facturas`, `Ingresos`, `Estudiantes`, `Conceptos`],
     { timeout: 15000 }
   );
 }
@@ -418,7 +452,7 @@ export async function closeHelperTourMessages(page: Page, maxRetries = 5) {
   for (let retry = 0; retry < maxRetries; retry++) {
     const element = page.getByLabel('Last');
     try {
-      const isEnabled = await element.isEnabled({ timeout: 5000 });
+      const isEnabled = await element.isEnabled({ timeout: 1000 });
       if (isEnabled) {
         await element.click();
       } else {
@@ -438,7 +472,7 @@ export async function setGuardianAsMercadoPagoBetaTester(
   logged = false
 ) {
   // eslint-disable-next-line turbo/no-undeclared-env-vars
-  const envVar = process.env.ENV as Environment | undefined;
+  const envVar = process.env.ENV_PLAYWRIGHT as Environment | undefined;
 
   if (envVar && envVar in dataConfig) {
     if (dataConfig[envVar].ADMIN_URL) {
@@ -449,8 +483,8 @@ export async function setGuardianAsMercadoPagoBetaTester(
   }
   if (!logged) {
     await expect(page.getByLabel('Email address:')).toBeVisible();
-    await page.getByLabel('Email address:').fill('admin@getcometa.com');
-    await page.getByLabel('Password:').fill('spiritbreaker');
+    await page.getByLabel('Email address:').fill('automationadmin@getcometa.com');
+    await page.getByLabel('Password:').fill('barriletecosmico');
     await page.getByRole('button', { name: 'Log in' }).click();
   }
   await page.getByRole('link', { name: 'Portal feature toggles' }).click();
@@ -462,7 +496,7 @@ export async function setGuardianAsMercadoPagoBetaTester(
   await page.getByRole('option', { name: `${guardianFirstName} ${guardianLastName}` }).click();
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(
-    page.getByText('The portal feature toggle “MERCADO_PAGO_CREDIT_CARD (Beta)” was changed succes')
+    page.getByText('The portal feature toggle "MERCADO_PAGO_CREDIT_CARD (Beta)" was changed succes')
   ).toBeVisible({ timeout: 3000 });
 }
 
@@ -621,7 +655,9 @@ export async function getSchoolIdByName(schoolName: string) {
     return school.id;
   } catch (error) {
     if (error instanceof Error) {
-      throw new Error(`Error al obtener el ID de la escuela: ${error.message}`);
+      throw new Error(
+        `Error al obtener el ID de la escuela o usuario automationAdmin no tiene permisos para esa school: ${error.message}`
+      );
     }
   }
 }
@@ -629,6 +665,7 @@ export async function getSchoolIdByName(schoolName: string) {
 export async function getBankAccountBySchoolName(schoolName: string) {
   const token = await getAdminToken();
   const school_id = await getSchoolIdByName(schoolName);
+
   try {
     const headers = {
       Authorization: `Token ${token}`,
@@ -643,10 +680,15 @@ export async function getBankAccountBySchoolName(schoolName: string) {
     };
 
     const response = await axios(requestOptions);
-    const bankAccount = response.data.results.find((school: { owner: string }) => school.owner === schoolName);
+
+    if (!response.data.results || response.data.results.length === 0) {
+      throw new Error(`No se encontraron cuentas bancarias para la escuela ${schoolName}`);
+    }
+
+    const bankAccount = response.data.results[0];
 
     if (!bankAccount) {
-      throw new Error(`No se encontró ninguna escuela con el nombre ${schoolName}`);
+      throw new Error(`No se encontraron cuentas bancarias para la escuela ${schoolName}. URL: ${url}`);
     }
 
     return {
@@ -655,9 +697,12 @@ export async function getBankAccountBySchoolName(schoolName: string) {
       publicSummary: bankAccount.public_summary,
     };
   } catch (error) {
-    if (error instanceof Error) {
-      throw new Error(`Error al obtener la información de la escuela: ${error.message}`);
+    if (axios.isAxiosError(error)) {
+      throw new Error(
+        `Error al obtener la información de la escuela ${schoolName}: ${error.response?.status} - ${error.response?.statusText}`
+      );
     }
+    throw error;
   }
 }
 
@@ -692,7 +737,7 @@ export async function getFiscalEntityBySchoolId(schoolId: string) {
 }
 
 // eslint-disable-next-line turbo/no-undeclared-env-vars
-const envVar = process.env.ENV as Environment;
+const envVar = process.env.ENV_PLAYWRIGHT as Environment;
 const url = dataConfig[envVar].ADMIN_URL || 'https://api-cometa.dev.getcometa.com/';
 const baseUrl = url.substring(0, url.length - 1);
 const ServiceClient = new Api({ baseUrl: baseUrl }).api;
@@ -713,39 +758,6 @@ export async function getActiveSchoolCycleBySchoolId(schoolId: string, is_active
   );
   return data.data;
 }
-
-/*
-export async function getActiveSchoolCycleBySchoolId(schoolId: string) {
-  const token = await getAdminToken();
-  try {
-    const url = `https://api-cometa.dev.getcometa.com/api/v1/dashboard/schools/${schoolId}/cycles/?is_active=true`;
-    const headers = {
-      Authorization: `Token ${token}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    };
-
-    const requestOptions: AxiosRequestConfig = {
-      method: 'get',
-      url: url,
-      headers: headers,
-    };
-
-    const response = await axios(requestOptions);
-    const cycleId = response.data[0];
-
-    if (!cycleId) {
-      throw new Error(`No se encontró ninguna entidad para esa escuela escuela con el nombre ${schoolId}`);
-    }
-
-    return cycleId;
-  } catch (error) {
-    if (error instanceof Error) {
-      throw new Error(`Error al obtener la información de la escuela: ${error.message}`);
-    }
-  }
-}
-*/
 
 export async function getLevelIdBySchoolId(schoolId: string, levelName?: string) {
   const token = await getAdminToken();
@@ -823,4 +835,71 @@ export async function sliceAreaCodeFromPhoneNumber(phone: string) {
   }
 
   return phone;
+}
+
+export async function validateRegisterPaymentError(element: Locator, payin: Response) {
+  for (let retry = 0; retry < 5; retry++) {
+    try {
+      const isVisible = await element.isVisible({ timeout: 1000 });
+      if (isVisible) {
+        const payinJson = await payin.json();
+        test.info().annotations.push({
+          type: 'Error al registrar pago',
+          description: JSON.stringify(payinJson, null, 2),
+        });
+        break;
+      }
+    } catch (error) {
+      // Manejar cualquier error que ocurra al verificar la visibilidad del elemento
+    }
+  }
+}
+
+export async function closePortalTour(homePage: GuardianHomePage) {
+  const menuTour = homePage.page.locator('[data-test-id="spotlight"]');
+  if (await menuTour.isVisible()) {
+    //await homePage.page.locator('#react-joyride-step-0').getByText('Entendido').click();
+    await homePage.joyrideTooltip.getByTestId('btn-joyrdide-understood').click();
+  }
+
+  const pagosVencidos = homePage.page.getByRole('heading', { name: '¡Tienes pagos vencidos!' });
+
+  if (await pagosVencidos.isVisible()) {
+    //await page.getByRole('button', { name: 'Si' }).click();
+    await homePage.page.getByRole('button', { name: 'Por ahora no' }).click();
+  }
+}
+
+export async function completeOnboardingNewGuardian(page: Page, schoolName: string) {
+  const welcomePage = new WelcomePage(page);
+  //valido si ya se cargo los datos del guardian
+  await page.getByText(schoolName).isVisible();
+  await welcomePage.tAndC.click({ timeout: 10000 });
+
+  await welcomePage.beginBtn.click();
+  await page.getByText('Complete datos del tutor').isVisible();
+  await welcomePage.continueBtn.click();
+  await page.getByText('Datos de los estudiantes').isVisible();
+  await welcomePage.continueBtn.click();
+  await welcomePage.notByNowBtn.click();
+  await page.getByText('¡Ya estas listo para realizar tu primer pago!').isVisible();
+  await welcomePage.startBtn.click({ timeout: 10000 });
+}
+
+export function generateEmail(firstName: string, lastName: string, domain = '@getcometa.com') {
+  return `${firstName}${lastName}${domain}`.toLowerCase();
+}
+
+export const TIMEOUTS = {
+  SHORT: 5000,
+  MEDIUM: 30000,
+  LONG: 100000,
+} as const;
+
+export function generateRandom10DigitNumber(): string {
+  let result = '';
+  for (let i = 0; i < 10; i++) {
+    result += Math.floor(Math.random() * 10);
+  }
+  return result;
 }

@@ -1,8 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Events } from '/src/constants/events';
-import useToggle from '/src/hooks/useToggle';
 import { sendTrackEvent } from '/src/utils/events';
-import * as Sentry from '@sentry/nextjs';
 import { extractPageFromURL } from '/src/utils/object-util';
 import { createColumnHelper } from '@tanstack/react-table';
 import { renderMoney } from '/src/utils/datagridHeaders';
@@ -11,15 +9,15 @@ import IcAlert from '/public/assets/icons/ic_alert.svg';
 import { IDueOrder } from '/types/due-orders';
 import { OrderNameWithParcial } from '/src/components/molecules/dashboard/OrderNameWithParcial';
 import { formatDateWithUTCShort, renderStatus } from '/src/utils/general';
-import ManualPayDetail from '../ManualPayPartial';
 import { cn } from '/src/utils/cn';
-import FulfillmentDetail from '../FulfillmentDetail';
 import { TableVirtualized } from '/src/components/TableInfinityScroll';
 import { api } from '/src/utils/api';
+import OrderDetailSidepanel from '/src/components/order/OrderDetailSidepanel';
 
 interface IOrderTableForDueOrdersProps {
   studentId: string;
   concept?: string;
+  schoolCycle?: string;
 }
 
 export interface DueOrdersTableResponse {
@@ -27,18 +25,22 @@ export interface DueOrdersTableResponse {
   next: string | null;
   previous: string | null;
   results: IDueOrder[];
+  setSelectedOrderModal: (value: string) => void;
+  selectedOrderModal: string;
 }
 
 export default function OrderTableForDueOrders(props: IOrderTableForDueOrdersProps) {
-  const { studentId, concept } = props;
-  const { toggle: openTo, onOpen: onOpenTo, onClose: onCloseTo } = useToggle();
-  const [orderDetail, setOrderDetail] = useState({ id: '', has_partial_payins: false });
-  const [selectedOrderModal, setSelectedOrderModal] = useState<string | undefined>('DUE');
+  const { studentId, concept, schoolCycle } = props;
+  const [orderDetail, setOrderDetail] = useState({
+    id: '',
+    has_partial_payins: false,
+    fulfillment_id: '',
+  });
   const isInProcess = (order: IDueOrder) => order.pending && !order.has_partial_payins;
-
+  const [open, setOpen] = useState(false);
   const {
     data: orders,
-    isLoading,
+    isPending: isLoading,
     isFetching,
     isFetchingNextPage,
     fetchNextPage,
@@ -47,26 +49,23 @@ export default function OrderTableForDueOrders(props: IOrderTableForDueOrdersPro
     {
       student_id: studentId,
       concepts: concept ? [concept] : undefined,
+      school_cycle: schoolCycle ? schoolCycle : undefined,
       status: ['DUE', 'PENDING', 'OUTSTANDING'],
     },
     {
       getNextPageParam: (currentPage) => extractPageFromURL((currentPage as any)?.next as string) ?? undefined,
-      getPreviousPageParam: (firstPage) => firstPage ?? undefined,
-      onError(err: any) {
-        Sentry.captureException(err);
-      },
+      getPreviousPageParam: (firstPage) => extractPageFromURL((firstPage as any)?.previous as string) ?? undefined,
+      meta: { logErrorToSentry: true },
     }
   );
+
   const handleOpen = (row: IDueOrder) => {
     const { id, has_partial_payins } = row;
-    setOrderDetail({ id, has_partial_payins });
-    onOpenTo();
+    setOrderDetail({ id, has_partial_payins, fulfillment_id: row.fulfillment_id || '' });
+    setOpen(true);
     sendTrackEvent(Events.outstanding_orders, { source: document.title.split(' | ')[0] });
   };
 
-  const onSwithSidepanel = (order?: string) => {
-    setSelectedOrderModal(order);
-  };
   const flatData = useMemo(() => orders?.pages.flatMap((page: any) => page?.results ?? []), [orders]);
   const totalCount = useMemo(() => (orders as any)?.pages[0]?.count || 0, [orders]);
   const columnHelper = createColumnHelper<DueOrdersTableResponse['results'][number]>();
@@ -79,7 +78,7 @@ export default function OrderTableForDueOrders(props: IOrderTableForDueOrdersPro
         </div>
       ),
       size: 280,
-      header: () => <span className="w-fit pl-3">Orden</span>,
+      header: () => <span className="pl-3 w-fit">Orden</span>,
     }),
     columnHelper.accessor('due', {
       cell: (info) => {
@@ -151,23 +150,17 @@ export default function OrderTableForDueOrders(props: IOrderTableForDueOrdersPro
           emptyStateText="No hay órdenes para mostrar"
         />
       </div>
-      {selectedOrderModal === 'DUE' ? (
-        <ManualPayDetail
-          open={openTo}
-          onSwithSidepanel={onSwithSidepanel}
-          onClose={onCloseTo}
+      {orderDetail?.id && (
+        <OrderDetailSidepanel
+          typeOfOrder="DUE"
+          open={open}
+          onClose={() => {
+            setOpen(false);
+            setOrderDetail({ id: '', has_partial_payins: false, fulfillment_id: '' });
+          }}
           orderId={orderDetail.id}
           studentId={studentId}
-        />
-      ) : (
-        <FulfillmentDetail
-          onClose={() => {
-            onCloseTo();
-            setSelectedOrderModal('DUE');
-          }}
-          paymentId={selectedOrderModal || ''}
-          open={openTo}
-          sponsored
+          fulfillmentId={orderDetail.fulfillment_id}
         />
       )}
     </>

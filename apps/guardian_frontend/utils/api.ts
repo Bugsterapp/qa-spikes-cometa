@@ -12,8 +12,9 @@ import superjson from 'superjson';
 
 import { type AppRouter } from '../server/api/root';
 import { Api } from '@cometa/trpc/src/types';
+import { createTRPCReact } from '@trpc/react-query';
 
-const getBaseUrl = () => {
+export const getBaseUrl = () => {
   if (typeof window !== 'undefined') return ''; // browser should use relative url
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`; // SSR should use vercel url
   return `http://localhost:${process.env.PORT ?? 3000}`; // dev SSR should use localhost
@@ -23,14 +24,9 @@ const getBaseUrl = () => {
  * A set of typesafe react-query hooks for your tRPC API
  */
 export const api = createTRPCNext<AppRouter>({
+  transformer: superjson,
   config() {
     return {
-      /**
-       * Transformer used for data de-serialization from the server
-       * @see https://trpc.io/docs/data-transformers
-       **/
-      transformer: superjson,
-
       /**
        * Links used to determine request flow from client to server
        * @see https://trpc.io/docs/links
@@ -42,6 +38,11 @@ export const api = createTRPCNext<AppRouter>({
         }),
         httpBatchLink({
           url: `${getBaseUrl()}/api/trpc`,
+          /**
+           * Transformer used for data de-serialization from the server
+           * @see https://trpc.io/docs/data-transformers
+           **/
+          transformer: superjson,
         }),
       ],
     };
@@ -65,3 +66,5 @@ export type RouterInputs = inferRouterInputs<AppRouter>;
 export type RouterOutputs = inferRouterOutputs<AppRouter>;
 
 export const ServiceClient = new Api({ baseUrl: process.env.NEXT_PUBLIC_SERVER_API_BASE_URL }).api;
+
+export const trpc = createTRPCReact<AppRouter>();

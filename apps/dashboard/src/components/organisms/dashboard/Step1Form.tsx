@@ -15,6 +15,8 @@ import ConceptButton from './ConceptButton';
 import { cn } from '/src/utils/cn';
 import SelectChip from '../../atoms/SelectChip';
 import useDebounce from '/src/hooks/useDebounce';
+import { useWindowSize } from 'usehooks-ts';
+import { useFlagWithVariableMatching } from '/src/components/flags/FlagsProvider';
 
 export type AlertToClose = {
   setAlertToCloseSheet: (a: boolean) => void;
@@ -34,6 +36,7 @@ export function Step1Form({
 }: StepProps<FormValues1> & { setHasRecurringRevenue: React.Dispatch<React.SetStateAction<any>> } & AlertToClose) {
   const school = useSelectedSchool();
   const paymentOnlyInDashboard = school?.config_dashboard?.payment_only_in_dashboard;
+  const { isEnabled: isOnlineStoreEnabled } = useFlagWithVariableMatching('enable_online_store_in_concepts');
   const formStep1 = useForm<FormValues1>({
     defaultValues: {
       type: formData?.type,
@@ -47,6 +50,7 @@ export function Step1Form({
       recurrent_payment: formData?.recurrent_payment,
       has_due_date: formData?.has_due_date,
       has_months_to_pay: formData?.has_months_to_pay,
+      available_in_online_store: formData?.available_in_online_store,
     },
     resolver: zodResolver(
       schema.refine(
@@ -69,7 +73,7 @@ export function Step1Form({
 
   const formRef = useRef<HTMLFormElement>(null);
   const selectedSchool = useSelectedSchool();
-  const { data, isLoading } = api.schools.schoolFiscalEntities.useQuery(
+  const { data, isPending: isLoading } = api.schools.schoolFiscalEntities.useQuery(
     { school_id: selectedSchool?.id as string },
     { enabled: !!selectedSchool?.id }
   );
@@ -135,6 +139,7 @@ export function Step1Form({
     timeoutRef.current = setTimeout(() => {
       if (root_concept === 'required') {
         setHasDueDate?.('true');
+        formStep1.setValue('available_in_online_store', undefined);
       }
       if (root_concept === 'optional') {
         setHasDueDate?.('false');
@@ -142,19 +147,22 @@ export function Step1Form({
       }
     }, 200);
     return () => clearTimeout(timeoutRef.current);
-  }, [root_concept, setHasDueDate]);
+  }, [conceptType, root_concept, setHasDueDate]);
 
   useEffect(() => setFormIsDirty?.(isDirty), [isDirty]);
 
   useEffect(() => {
     if (conceptType === 'MONTHLY_FEE' || conceptType === 'INSCRIPTION' || conceptType === 'REINSCRIPTION') {
       formStep1.setValue('root_concept', 'required');
-      formStep1.setValue('payment_only_in_dashboard', 'false');
-    } else {
-      formStep1.setValue('root_concept', undefined);
-      formStep1.setValue('payment_only_in_dashboard', 'false');
+    } else if (conceptType) {
+      if (formStep1.getValues('root_concept') !== 'required') {
+        formStep1.setValue('root_concept', undefined);
+      }
     }
+    formStep1.setValue('payment_only_in_dashboard', 'false');
+    formStep1.setValue('available_in_online_store', 'false');
   }, [conceptType]);
+
   const sortOrder = [
     'colegiatura / mensualidad',
     'inscripción',
@@ -200,7 +208,7 @@ export function Step1Form({
   const conceptNameForm = watch('name');
 
   useEffect(() => {
-    const conceptExists = conceptsList?.some((concept) => concept?.name === conceptNameForm.trim());
+    const conceptExists = conceptsList?.some((concept) => concept?.name === conceptNameForm?.trim());
     if (conceptExists) {
       setError('name', { message: 'Ya existe un concepto con este nombre en este ciclo escolar.' });
     } else {
@@ -213,7 +221,7 @@ export function Step1Form({
 
   const shouldRenderBankAccounts = conceptType && payment_only_in_dashboard === 'false';
   const shouldRenderFallbackBankAccount = !school?.can_invoice_to_general_public;
-
+  const { height } = useWindowSize();
   return (
     <form ref={formRef} onSubmit={formStep1.handleSubmit(onSubmit)}>
       {showErrorAlert && (
@@ -292,7 +300,7 @@ export function Step1Form({
                     className="z-[9999] p-4 bg-white rounded-lg shadow-md min-w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)]"
                     position="popper"
                   >
-                    <RSelect.Viewport className="max-h-[300px] space-y-2">
+                    <RSelect.Viewport className={cn('max-h-[300px] space-y-2', { 'max-h-[200px]': height < 768 })}>
                       {sortedCategories?.map((category) => (
                         <RSelect.Item
                           className="data-[state=checked]:bg-gray-100 rounded-lg p-4 cursor-pointer hover:bg-gray-50"
@@ -331,13 +339,13 @@ export function Step1Form({
                     className="z-[9999] p-4 bg-white rounded-lg shadow-md min-w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)]"
                     position="popper"
                   >
-                    <RSelect.Viewport className="max-h-[250px] space-y-2">
+                    <RSelect.Viewport className={cn('max-h-[250px] space-y-2', { 'max-h-[200px]': height < 768 })}>
                       {sortedSchoolCyclesByYearEnd?.map((school_cycle) => (
                         <RSelect.Item
                           className="data-[state=checked]:bg-gray-100 rounded-lg p-4 cursor-pointer hover:bg-gray-50 flex gap-3"
                           key={`${school_cycle.name}_${school_cycle.id}`}
                           data-testid={`${school_cycle.name}`}
-                          value={school_cycle.id}
+                          value={school_cycle.id as string}
                         >
                           <RSelect.ItemText>{school_cycle.name}</RSelect.ItemText>
                           {school_cycle.is_active && <SelectChip theme="blue">Ciclo actual</SelectChip>}
@@ -416,6 +424,46 @@ export function Step1Form({
                     </RadioGroup>
                   )}
                 />
+                {formStep1.watch('root_concept') === 'optional' && isOnlineStoreEnabled && (
+                  <Controller
+                    control={formStep1.control}
+                    name="available_in_online_store"
+                    render={({ field }) => (
+                      <RadioGroup onValueChange={field.onChange} value={field.value}>
+                        <span className="text-base font-semibold">¿Estará disponible en la tienda en línea?</span>
+                        <p className="text-sm text-gray-500 mb-3">
+                          Al habilitar esta opción, el concepto estará disponible en la nueva tienda en línea y podrá
+                          ser adquirido directamente por el padre o tutor, sin necesidad de haber sido asignado
+                          previamente a un estudiante.
+                        </p>
+                        <div className="flex flex-row gap-6 px-2">
+                          <div className="flex items-center gap-2">
+                            <RadioGroupItem
+                              value="true"
+                              id="available_online_yes"
+                              data-testid="available-online-yes"
+                              error={Boolean(errors.available_in_online_store)}
+                            />
+                            <Label htmlFor="available_online_yes" className="text-[#212B36]">
+                              Sí
+                            </Label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <RadioGroupItem
+                              value="false"
+                              id="available_online_no"
+                              data-testid="available-online-no"
+                              error={Boolean(errors.available_in_online_store)}
+                            />
+                            <Label htmlFor="available_online_no" className="text-[#212B36]">
+                              No
+                            </Label>
+                          </div>
+                        </div>
+                      </RadioGroup>
+                    )}
+                  />
+                )}
                 {formStep1.watch('payment_only_in_dashboard') !== 'false' &&
                   formStep1.watch('root_concept') !== undefined && (
                     <Controller

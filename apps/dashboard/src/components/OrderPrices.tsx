@@ -18,6 +18,7 @@ import TrashIcon from '/public/assets/icons/trash_outline.svg';
 
 import { FormValues7, StepProps, schemaStepOrders } from './organisms/dashboard/CreationConcepts';
 import useSendTrackEventWithUserName from '../hooks/useSendTrackEventWithUserName';
+import { Events } from '../constants/events';
 
 // --- Interfaces ---
 interface Group {
@@ -103,7 +104,10 @@ const generateCombinations = (groupedAttributes: Group[]): Combination[] => {
       name: attr.name,
       type: groupedAttributes[idx].type,
     }));
-    const uniqueID = key.split(' / ').join('_'); // Simple way to generate a unique ID
+    const uniqueID = key
+      .split(' / ')
+      .join('_')
+      .replace(/[^a-zA-Z0-9_]/g, '_');
     const detail: { [key: string]: CombinationDetail[] } = { [key]: value };
     combinationsArray.push({ id: uniqueID, details: detail });
   });
@@ -136,7 +140,7 @@ const groupByTypeAndName = (combinationsArray: Combination[]): GroupedCombinatio
 
 const StepOrdersCreation = ({ onBack, onNext, setData, formData }: StepProps<FormValues7>) => {
   const sendTrackEventWithUserName = useSendTrackEventWithUserName();
-  sendTrackEventWithUserName('dashboard: Concept | New Concept P2B.2 Ordenes');
+  sendTrackEventWithUserName(Events.concept_new_p2b2_ordenes);
   const [removedCombinations, setRemovedCombinations] = useState<string[]>([]);
   const [defaultPrice, setDefaultPrice] = useState<number>(0);
   const [groupBy, setGroupBy] = useState<string | null>(null);
@@ -406,6 +410,7 @@ export const MutableIcon = React.memo(({ action, isIconDisabled }: MutableIconTy
       {isToggle && (
         <Tooltip message="Restablecer opción">
           <IcRefresh
+            fill="#212B36"
             className={cn('cursor-pointer transition-opacity duration-300', {
               'opacity-0': !isToggle,
               'opacity-100': isToggle,

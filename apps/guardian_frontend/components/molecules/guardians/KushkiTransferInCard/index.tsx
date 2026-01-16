@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
-import { formatPrice } from '~/utils/orders';
+import { formatPrice, typeOfOrdersInStore } from '~/utils/orders';
 import { useAlert } from '~/hooks';
 import moment from 'moment';
 import Box from '~/components/atoms/common/Box';
 import { RATED_CSAT_PAYMENT } from '~/utils/storesKeys';
-import { Events } from '~/constants/events';
-import useSendTrackEvent from '~/hooks/useSendEvent';
 import { api } from '~/utils/api';
-import Copy from '~/public/icons/copy.svg';
-import { cn } from '~/lib/cn';
-import { Button } from '~/components/atoms/Button';
+import { Button } from '~/components/ui/Button';
+import { useSendEvent } from '~/hooks/useSendEvent';
+import { TrackEvents } from '~/constants/events';
+import { CopyToClipboard } from '~/components/CopyToClipboard';
+import { useSelectionStore } from '~/stores/selectionStorePersisted';
+import { CartItem } from '@cometa/hooks';
 
 interface KushkiTransferInCardProps {
-  items: { order: string; student: string }[];
+  items: Omit<CartItem, 'id'>[];
   guardian: string;
   currency: string;
   hasCommission?: boolean;
@@ -23,30 +24,41 @@ interface KushkiTransferInCardProps {
     commissions: number;
     total: number;
   };
-}
-
-interface CopyToClipboardProps extends React.HTMLAttributes<HTMLButtonElement> {
-  text: string;
-  successMessage: string;
+  disableMutation?: boolean;
+  clabeData?: { clabe: string };
 }
 
 export const RFC_KUSHKI = 'KUS1812121C1';
 
 const KushkiTransferInCard = ({
   items,
-  guardian,
   currency,
   prices,
   hasCommission,
   handlerClabe,
   setStockError,
+  disableMutation,
+  clabeData,
 }: KushkiTransferInCardProps) => {
-  const [kushki, setKushki] = useState<{ clabe: string } | null>(null);
+  const [kushki, setKushki] = useState<{ clabe: string } | null>(clabeData || null);
   const [expirationDate, setExpirationDate] = useState<string | null>(null);
   const { setAlert } = useAlert();
-  const sendTrackEvent = useSendTrackEvent();
+  const sendEvent = useSendEvent();
+  const { selectedItems } = useSelectionStore();
+  const { optional, mandatory } = typeOfOrdersInStore(selectedItems);
 
-  const { mutate: mutateCheckoutTransferIn, isLoading } = api.kushki.checkoutTransferIn.useMutation({
+  // Setup expiration date when clabeData is provided externally
+  React.useEffect(() => {
+    if (clabeData && !expirationDate) {
+      const twoDaysFromNow = new Date();
+      twoDaysFromNow.setDate(twoDaysFromNow.getDate() + 2);
+      const expirationDateFormatted = moment(twoDaysFromNow).format('DD/MM/YYYY');
+      setExpirationDate(expirationDateFormatted);
+    }
+  }, [clabeData, expirationDate]);
+
+  // Only use the mutation if not disabled
+  const { mutate: mutateCheckoutTransferIn, isPending: isLoading } = api.kushki.checkoutTransferIn.useMutation({
     onSuccess(data) {
       localStorage.removeItem(RATED_CSAT_PAYMENT);
       setKushki(data);
@@ -66,8 +78,10 @@ const KushkiTransferInCard = ({
   });
 
   const handlerClick = () => {
-    sendTrackEvent(Events.bank_transfer_initiated_kushki, { order_info: { prices, currency, items, guardian } });
-    mutateCheckoutTransferIn({ items });
+    sendEvent(TrackEvents.checkout.bankTransfer.bankTransferInitiated, { optional, mandatory });
+    if (!disableMutation) {
+      mutateCheckoutTransferIn({ items });
+    }
   };
 
   const clabe = kushki?.clabe ?? '';
@@ -108,7 +122,11 @@ const KushkiTransferInCard = ({
           ) : (
             <>
               <div className="flex flex-row items-center">
-                <CopyToClipboard text={clabe} successMessage="CLABE copiada">
+                <CopyToClipboard
+                  text={clabe}
+                  successMessage="CLABE copiada"
+                  onCopy={() => sendEvent(TrackEvents.checkout.bankTransfer.bankCodeCopied)}
+                >
                   <span className="text-[#3366FF]">{clabe}</span>
                 </CopyToClipboard>
               </div>
@@ -117,7 +135,11 @@ const KushkiTransferInCard = ({
           )}
           <div className="border-t-[#D6D6D6] border-t pt-3 border-solid">
             <h6 className="mb-2 text-sm font-medium">RFC de destino:</h6>
-            <CopyToClipboard text={RFC_KUSHKI} successMessage="RFC copiado">
+            <CopyToClipboard
+              onCopy={() => sendEvent(TrackEvents.checkout.bankTransfer.bankTransferTaxIdCopied)}
+              text={RFC_KUSHKI}
+              successMessage="RFC copiado"
+            >
               <span className="text-[#3366FF]">{RFC_KUSHKI}</span>
             </CopyToClipboard>
           </div>
@@ -139,26 +161,3 @@ const KushkiTransferInCard = ({
 };
 
 export default KushkiTransferInCard;
-
-export const CopyToClipboard = ({ text, successMessage, className, children }: CopyToClipboardProps) => {
-  const { setAlert } = useAlert();
-
-  const copyToClipboard = () => {
-    if (navigator?.clipboard) {
-      navigator.clipboard.writeText(text).then(() => setAlert(successMessage, 'success'));
-    }
-  };
-
-  return (
-    <button
-      className={cn(
-        'flex items-center transition-opacity bg-transparent border-none rounded-none gap-x-2 hover:opacity-70',
-        className
-      )}
-      onClick={copyToClipboard}
-    >
-      {children}
-      <Copy />
-    </button>
-  );
-};

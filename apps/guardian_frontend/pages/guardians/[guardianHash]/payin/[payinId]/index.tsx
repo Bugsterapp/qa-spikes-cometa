@@ -3,17 +3,23 @@ import Head from 'next/head';
 import Navbar from '~/components/Navbar';
 import { GetServerSideProps } from 'next';
 import { Session } from 'next-auth';
-import { ServiceClient } from '~/utils/api';
+import { ServiceClient, api } from '~/utils/api';
 import dayjs from '~/lib/dayjs';
 import { formatPrice } from '~/utils/orders';
+import PaperPlane from '~/public/icons/paper-plane.svg';
 import { CustomPayinFulfillmentSerializerV2, GuardianPayinSerializerV2 } from '@cometa/trpc';
 import Tag from '~/components/Tag';
-import { useRouter } from 'next/router';
-import Arrow from '~/public/icons/ic_arrow_right.svg';
+import { useUTMRouter as useRouter } from '~/components/UtmNavigation';
 import * as Sentry from '@sentry/nextjs';
-import Link from 'next/link';
+import { UTMLink as Link } from '~/components/UtmNavigation';
 import * as OrderCard from '~/components/OrderCard';
 import { getDependentColor } from '~/utils/colors';
+import { useSendEvent, useSendPageEvent } from '~/hooks/useSendEvent';
+import { useEffect, useState } from 'react';
+import { PageViewedCategory, TrackEvents } from '~/constants/events';
+import { Button } from '~/components/ui/Button';
+import { useAlert } from '~/hooks';
+import { BackButton } from '~/components/BackButton';
 
 interface PayinDetailProps {
   payin: GuardianPayinSerializerV2;
@@ -60,10 +66,11 @@ const Card = ({
   payin_fulfillment: CustomPayinFulfillmentSerializerV2;
   session: Session;
 }) => {
+  const sendEvent = useSendEvent();
   const { student_id, student_first_name, order_name, interest, payin_fulfillments } = payin_fulfillment.fulfillment;
   const { pdf_url, xml_url } = payin_fulfillment?.invoice ?? {};
   const dependents = session?.user?.dependents ?? [];
-  const dependentColor = getDependentColor(dependents, student_id);
+  const dependentColor = getDependentColor(dependents, student_id ?? '');
   const scholarships: Record<string, string>[] =
     payin_fulfillment.fulfillment.discount_breakdown?.details?.scholarships?.details ?? [];
   const special_discounts: Record<string, string>[] =
@@ -85,15 +92,19 @@ const Card = ({
         <OrderCard.Info>
           <div className="flex gap-x-1.5 items-center">
             <h3 className="text-[#3E3E3E] font-semibold">{order_name}</h3>
-            <Tag
-              bgcolor={dependentColor.background}
-              color={dependentColor.text}
-              text={student_first_name.toUpperCase()}
-            />
+            {student_id && student_first_name && (
+              <Tag
+                bgcolor={dependentColor.background}
+                color={dependentColor.text}
+                text={student_first_name.toUpperCase()}
+              />
+            )}
           </div>
         </OrderCard.Info>
         <OrderCard.Details>
-          <OrderCard.DetailsTrigger>Ver detalles</OrderCard.DetailsTrigger>
+          <OrderCard.DetailsTrigger onClick={() => sendEvent(TrackEvents.paymentDetail.viewDetails)}>
+            Ver detalles
+          </OrderCard.DetailsTrigger>
           <OrderCard.DetailsContent>
             <div className="flex flex-col gap-y-3">
               <div className="mb-2.5 w-full">
@@ -144,12 +155,15 @@ const Card = ({
         <OrderCard.HistoricFooter data-testid="payinFulfillmentTotalPaid-txt" amount={payin_fulfillment.total_paid}>
           {!pdf_url ? (
             !conceptIsBillable ? (
-              <span className="text-base font-semibold text-[#A6A6A6]">No facturable</span>
+              <span className="text-base font-semibold text-[#A6A6A6]">Sin factura</span>
             ) : null
           ) : (
             <OrderCard.HistoricButton
               disabled={!pdf_url}
-              onClick={() => downloadFiles(pdf_url, xml_url, order_name)}
+              onClick={() => {
+                sendEvent(TrackEvents.paymentDetail.downloadInvoice);
+                downloadFiles(pdf_url, xml_url, order_name);
+              }}
               data-testid="invoiceDownload-btn"
             >
               Descargar factura
@@ -162,8 +176,47 @@ const Card = ({
 };
 
 function PayinDetail({ payin, session }: Readonly<PayinDetailProps>) {
+  const sendPageEvent = useSendPageEvent();
+  const sendEvent = useSendEvent();
+  const { setAlert } = useAlert();
   const _router = useRouter();
-  const { guardianHash, page, payinId } = _router.query;
+  const { guardianHash, page, payinId, schoolId } = _router.query;
+  const [isSendingInvoice, setIsSendingInvoice] = useState('');
+  const sendInvoce = api.guardian.sendInvoicesToEmail.useMutation({
+    onSuccess: () => {
+      setAlert('Facturas enviadas correctamente.', 'success');
+      setIsSendingInvoice('');
+      sendEvent(TrackEvents.invoice.generatedSuccess, {
+        payin_id: payinId as string,
+        school_id: schoolId as string,
+        guardian_id: guardianHash as string,
+      });
+    },
+    onError: (error) => {
+      setAlert('No fue posible enviar las facturas en este momento.');
+      setIsSendingInvoice('');
+      sendEvent(TrackEvents.invoice.generatedFailed, {
+        payin_id: payinId as string,
+        school_id: schoolId as string,
+        guardian_id: guardianHash as string,
+        error_message: error?.message,
+      });
+    },
+  });
+  const hasInvoices = payin.payin_fulfillments.some(({ invoice }) => invoice !== null);
+  const handleSendInvoices = async () => {
+    setIsSendingInvoice(payinId as string);
+    sendEvent(TrackEvents.invoice.requested, {
+      payin_id: payinId as string,
+      school_id: schoolId as string,
+      guardian_id: guardianHash as string,
+    });
+    await sendInvoce.mutate({ payinId: payinId as string, schoolId: schoolId as string });
+  };
+
+  useEffect(() => {
+    sendPageEvent(TrackEvents.paymentDetail.pageViewed, PageViewedCategory);
+  }, []);
 
   return (
     <div className="text-[#3E3E3E]">
@@ -176,18 +229,21 @@ function PayinDetail({ payin, session }: Readonly<PayinDetailProps>) {
               payinId,
             },
           }}
-          className="flex items-center justify-center flex-shrink-0 p-2 bg-white rounded-full w-9 h-9"
+          className="flex items-center gap-3 hover:cursor-pointer"
           data-testid="back-btn"
         >
-          <Arrow className="text-[#4A5CFF] w-3 rotate-180" />
+          <BackButton arrowColor="#1C1C1D" circleColor="#F3F6FB" />
+          <span className="text-sm font-semibold uppercase">Volver</span>
         </Link>
-        <div className="text-lg font-semibold leading-10">Detalle de Pago</div>
       </div>
       <div className="flex flex-col gap-y-[30px]">
         <div className="flex flex-col gap-y-3.5">
-          <h3 className="text-base font-semibold" data-testid="paymentDate-text">
-            {dayjs(payin.paid_date).format('dddd, D [de] MMMM YYYY')}
-          </h3>
+          <header className="flex flex-col gap-2">
+            <h1 className="text-lg font-bold text-[#22222A]">Detalle de Pago</h1>
+            <h3 className="text-base font-semibold" data-testid="paymentDate-text">
+              {dayjs(payin.paid_date).format('dddd, D [de] MMMM YYYY')}
+            </h3>
+          </header>
           <div className="border-b border-[#E3E0FF]" />
           <div className="inline-flex flex-col items-start justify-start text-sm gap-y-1">
             <div className="inline-flex items-center self-stretch justify-between" data-testid="payerName-text">
@@ -218,6 +274,23 @@ function PayinDetail({ payin, session }: Readonly<PayinDetailProps>) {
               </span>
             )}
           </div>
+          {hasInvoices && (
+            <div className="flex flex-col gap-y-3">
+              <div className="flex items-center justify-end">
+                <Button
+                  className="cursor-pointer bg-transparent"
+                  onClick={handleSendInvoices}
+                  disabled={isSendingInvoice === payinId}
+                  variant="transparent"
+                >
+                  <div className="flex">
+                    <PaperPlane className="w-5 h-5 mr-2 text-[#4A5CFF]" />
+                    <span className="text-[#4A5CFF]">Enviar facturas</span>
+                  </div>
+                </Button>
+              </div>
+            </div>
+          )}
           <div className="flex flex-col gap-y-3">
             {payin.payin_fulfillments.map((payin_fulfillment) => (
               <Card key={payin_fulfillment.id} payin_fulfillment={payin_fulfillment} session={session} />

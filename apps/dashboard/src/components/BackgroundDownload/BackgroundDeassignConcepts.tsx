@@ -1,6 +1,6 @@
 import * as Portal from '@radix-ui/react-portal';
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { useSession } from 'next-auth/react';
@@ -38,35 +38,42 @@ export default function BackgroundDeassignConcepts({
     { id: item as string, schoolId: selectedSchoolId as string },
     {
       enabled: !!item,
-      onSuccess: async (data) => {
-        if (data?.status === MassiveConceptDissasignmentStatusEnum.FINISHED) {
-          setToSuccess();
-          await utils.schools.schoolsConceptsStudentsAssignedList.invalidate();
-          await utils.schools.schoolsConceptsStudentsAssignedIdsList.invalidate();
-          setTimeout(() => {
-            setToIdle();
-            removeFromQueue();
-          }, 5000);
-        }
-        if (data?.status === MassiveConceptDissasignmentStatusEnum.PENDING) {
-          await sleep(2000);
-          await utils.concepts.conceptsGetDeassignStatus.invalidate();
-        }
-
-        if (data?.status === MassiveConceptDissasignmentStatusEnum.ERROR) {
-          Sentry.captureException(new Error('failed to assign concepts'), (scope) => {
-            scope.setContext('state', {
-              session,
-              status,
-              data,
-            });
-            return scope;
-          });
-          setToError();
-        }
-      },
     }
   );
+
+  useEffect(() => {
+    const handleDeassignStatus = async () => {
+      if (!assignStatus) return;
+
+      if (assignStatus.status === MassiveConceptDissasignmentStatusEnum.FINISHED) {
+        setToSuccess();
+        await utils.schools.schoolsConceptsStudentsAssignedList.invalidate();
+        await utils.schools.schoolsConceptsStudentsAssignedIdsList.invalidate();
+        setTimeout(() => {
+          setToIdle();
+          removeFromQueue();
+        }, 5000);
+      }
+      if (assignStatus.status === MassiveConceptDissasignmentStatusEnum.PENDING) {
+        await sleep(2000);
+        await utils.concepts.conceptsGetDeassignStatus.invalidate();
+      }
+
+      if (assignStatus.status === MassiveConceptDissasignmentStatusEnum.ERROR) {
+        Sentry.captureException(new Error('failed to assign concepts'), (scope) => {
+          scope.setContext('state', {
+            session,
+            status,
+            assignStatus,
+          });
+          return scope;
+        });
+        setToError();
+      }
+    };
+
+    handleDeassignStatus();
+  }, [assignStatus]);
 
   useEffect(() => {
     if (!session) {
@@ -296,7 +303,7 @@ export const useBackgroundConceptDeassignStore = create<BackgroundConceptDeassig
         }),
         {
           name: 'background-concept-deassign', // name of item in the storage (must be unique)
-          getStorage: () => localStorage, // (optional) by default the 'localStorage' is used
+          storage: createJSONStorage(() => localStorage),
         }
       )
     ),

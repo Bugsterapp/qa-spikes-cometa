@@ -13,6 +13,7 @@ const BaseMock = {
     display_inscriptions_status: true,
     partial_payins_payment_portal: true,
     student_identifier_is_required: false,
+    use_kushki_sandbox: false,
   },
   config_portal: {
     enable_edit_guardian: false,
@@ -26,6 +27,9 @@ const BaseMock = {
       is_active: true,
     },
     bank_transfer: {
+      is_active: true,
+    },
+    crediko: {
       is_active: true,
     },
   },

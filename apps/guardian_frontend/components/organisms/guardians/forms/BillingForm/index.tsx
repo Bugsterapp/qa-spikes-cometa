@@ -1,24 +1,25 @@
 // TODO: REFACTOR THIS TO USE RHF
-import React, { useState } from 'react';
+
+import type { FormikValues } from 'formik';
 import { useFormik } from 'formik';
-import { isPostalCode, isRequired, isValidRFC, noSpecialChars } from '~/utils/validations';
-import validator, { PackRules } from '~/utils/validator';
-import FormFieldsBilling from '~/components/molecules/guardians/formFields/FormFieldsBilling';
-import useUpdateSession from '~/hooks/useUpdateSession';
-import { useAlert } from '~/hooks';
+import type { Session } from 'next-auth';
+import React, { useState } from 'react';
 import DialogUpdateBilling from '~/components/molecules/guardians/dialogs/DialogUpdateBilling';
-import taxRegimeValues from '~/utils/static_data/taxRegimeValues';
-import { useRouter } from 'next/router';
-import { Events } from '~/constants/events';
-import Pencil from '~/public/icons/pencil.svg';
+import FormFieldsBilling from '~/components/molecules/guardians/formFields/FormFieldsBilling';
+import { useUTMRouter as useRouter } from '~/components/UtmNavigation';
+import { TrackEvents } from '~/constants/events';
+import { useAlert } from '~/hooks';
+import { useSendEvent } from '~/hooks/useSendEvent';
+import useUpdateSession from '~/hooks/useUpdateSession';
+import { useVerifyRFC } from '~/hooks/useVerifyRFC';
 import LoadingSpinner from '~/public/icons/loading-spinner.svg';
+import Pencil from '~/public/icons/pencil.svg';
+import { api } from '~/utils/api';
 import { WHAT_LINK } from '~/utils/linksWhatsapp';
 import { personTypeDefault } from '~/utils/static_data/personTypesTaxRegimen';
-import type { Session } from 'next-auth';
-import type { FormikValues } from 'formik';
-import useSendTrackEvent from '~/hooks/useSendEvent';
-import { api } from '~/utils/api';
-import { useVerifyRFC } from '~/hooks/useVerifyRFC';
+import taxRegimeValues from '~/utils/static_data/taxRegimeValues';
+import { isPostalCode, isRequired, isValidRFC, noSpecialChars } from '~/utils/validations';
+import validator, { type PackRules } from '~/utils/validator';
 
 const validationRules: PackRules = {
   taxRegime: [isRequired],
@@ -45,7 +46,7 @@ const BillingForm = ({ session, defaultEditing = false, hrefBack }: BillingFormP
   const updateSession = useUpdateSession();
   const _router = useRouter();
   const { setAlert } = useAlert();
-  const sendTrackEvent = useSendTrackEvent();
+  const sendEvent = useSendEvent();
   const handleClose = () => {
     setLoading(false);
     setOpen(false);
@@ -54,6 +55,7 @@ const BillingForm = ({ session, defaultEditing = false, hrefBack }: BillingFormP
   const { mutateAsync } = api.guardian.update.useMutation();
 
   const onSubmit = () => {
+    sendEvent(TrackEvents.billing.form.confirm);
     setLoading(true);
     if (haveRFC) {
       setOpen(true);
@@ -93,7 +95,6 @@ const BillingForm = ({ session, defaultEditing = false, hrefBack }: BillingFormP
     else goToBillingOptions();
   };
   const updateBilling = () => {
-    sendTrackEvent(Events['rfc_assignment_changed']);
     const formValues = formik.values;
 
     const formParsedValues = {
@@ -146,7 +147,6 @@ const BillingForm = ({ session, defaultEditing = false, hrefBack }: BillingFormP
             type="button"
             className="rounded-lg text-base font-bold bg-gray-200 bg-opacity-10 text-gray-300 flex border-none px-4 py-1.5 items-center space-x-2 cursor-pointer enabled:hover:bg-opacity-20 transition-colors"
             onClick={() => {
-              sendTrackEvent(Events['rfc_edit_opened']);
               setIsEditing(true);
             }}
             disabled={isEditing}
@@ -190,6 +190,7 @@ const BillingForm = ({ session, defaultEditing = false, hrefBack }: BillingFormP
               className="px-8 py-4 text-base font-bold text-blue-100 transition-colors bg-transparent border-none rounded-full outline-none cursor-pointer hover:bg-blue-100 hover:bg-opacity-10"
               id="billing-form-cancel"
               onClick={() => {
+                sendEvent(TrackEvents.billing.form.cancel);
                 if (haveRFC) {
                   formik.setErrors({});
                   setIsEditing(false);

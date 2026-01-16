@@ -1,6 +1,6 @@
-import { ReactNode, createContext, useEffect, useMemo, useState } from 'react';
 import { useStudentStore } from '@cometa/hooks';
-import { BillingGuardian, BillingStudent, Guardian, RetrieveGuardian } from '@cometa/trpc/src/types';
+import type { BillingGuardian, BillingStudent, Guardian, RetrieveGuardian } from '@cometa/trpc/src/types';
+import { createContext, type ReactNode, useEffect, useMemo, useState } from 'react';
 import { api } from '~/utils/api';
 
 type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
@@ -43,14 +43,14 @@ interface VerifyRFCProviderProps {
 }
 
 export const VerifyRFCProvider = ({ children }: VerifyRFCProviderProps) => {
-  const { studentIds } = useStudentStore();
+  const { studentIds, clear } = useStudentStore();
 
   const [dependentsWithErrors, setDependentsWithErrors] = useState<DependantErrorRFC[]>([]);
 
   const { data: user, refetch: refetchUser, isFetching: isFetchingUser } = api.guardian.me.useQuery();
 
   const dependents = useMemo(() => {
-    const newDependents = user?.dependents?.filter((dependent) => studentIds.has(dependent.id)) ?? [];
+    const newDependents = user?.dependents?.filter((dependent) => studentIds.includes(dependent.id)) ?? [];
     return newDependents;
   }, [studentIds, user]);
 
@@ -61,6 +61,10 @@ export const VerifyRFCProvider = ({ children }: VerifyRFCProviderProps) => {
         .map((guardian) => guardian.id)
     );
 
+    if (user?.id && user?.billing_name && user?.tax_id) {
+      ids.push(user.id);
+    }
+
     return Array.from(new Set(ids));
   }, [dependents]);
 
@@ -70,7 +74,11 @@ export const VerifyRFCProvider = ({ children }: VerifyRFCProviderProps) => {
     refetch: refetchDependentsWithErrors,
   } = api.guardian.verifyGuardians.useQuery(
     { guardianIds: billingGuardiansIds },
-    { refetchOnWindowFocus: false, enabled: Boolean(billingGuardiansIds.length), initialData: [] }
+    {
+      refetchOnWindowFocus: false,
+      enabled: Boolean(billingGuardiansIds.length),
+      initialData: [],
+    }
   );
 
   useEffect(() => {
@@ -96,6 +104,8 @@ export const VerifyRFCProvider = ({ children }: VerifyRFCProviderProps) => {
       }) || [];
     setDependentsWithErrors(newDependentsWithErrors);
   }, [dependents, verifiedGuardians]);
+
+  useEffect(() => () => clear(), []);
 
   const valueContext = useMemo(
     () => ({

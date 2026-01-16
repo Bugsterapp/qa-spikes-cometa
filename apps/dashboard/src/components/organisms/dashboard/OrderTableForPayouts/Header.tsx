@@ -1,4 +1,9 @@
-import Header from '../../../molecules/dashboard/Header';
+import type { SchoolCycleEntity } from '@cometa/trpc/src/students/types-mapping';
+import type { ReactElement } from 'react';
+import type { UseFormReturn } from 'react-hook-form';
+import File from '/public/assets/icons/download/file.svg';
+import Table from '/public/assets/icons/download/table.svg';
+import XML from '/public/assets/icons/download/xml.svg';
 import {
   DownloadButton,
   DownloadMenu,
@@ -8,25 +13,25 @@ import {
   useSetToError,
   useSetToIdle,
 } from '/src/components/BackgroundDownload/BackgroundDownload';
-import File from '/public/assets/icons/download/file.svg';
-import XML from '/public/assets/icons/download/xml.svg';
-import Table from '/public/assets/icons/download/table.svg';
-import { useSession } from 'next-auth/react';
-import ApiClient from '/src/services/ApiClient';
-import { sendTrackEvent } from '/src/utils/events';
-import { useSelectedSchoolId } from '/src/guards/AuthGuard';
-import MultipleFilters, { FilterItems, FormFilterData } from '../../../MultipleFilters';
-import { useQuery } from '@tanstack/react-query';
-import { BasicBankAccounts } from '/types/paid-orders';
-import { UseFormReturn } from 'react-hook-form';
 import DateRange from '/src/components/DateRange';
-import { ReactElement } from 'react';
+import Header from '/src/components/molecules/dashboard/Header';
+import MultipleFilters, { type FilterItems, type FormFilterData } from '/src/components/MultipleFilters';
+import { SchoolCycleSelector } from '/src/components/organisms/dashboard/SchoolCycleSelector';
+import { useSelectedSchoolId } from '/src/guards/AuthGuard';
+import ApiClient from '/src/services/ApiClient';
+import { api } from '/src/utils/api';
+import useSendTrackEventWithUserName from '/src/hooks/useSendTrackEventWithUserName';
+import { Events } from '/src/constants/events';
+import { ColumnCustomizerAction } from 'src/components/ColumnCustomizer';
+import type { ColumnCustomizerColumn } from 'src/components/ColumnCustomizer';
+import { ShareTableAction } from '/src/components/ShareTable';
 
 interface HeaderTableProps {
   title: string;
   clickOnButton?: () => void;
   handleAdd: () => Promise<void>;
   filters: any;
+  formFilterData?: FormFilterData;
   handleFilter: (formFilterData: FormFilterData, methods: UseFormReturn<FormFilterData>) => void;
   handleClearFilter: () => void;
   onDatesChange(date: Date[]): void;
@@ -34,38 +39,49 @@ interface HeaderTableProps {
   globalSearchComponent: ReactElement;
   itemsCount: { watchKey: string; count: number }[];
   setSelectedItemsCount: (itemsCount: { watchKey: string; count: number }[]) => void;
-}
-interface IPayoutFilters {
-  bank_accounts: BasicBankAccounts[];
-  statuses: BasicBankAccounts[];
+  setSchoolCycle: (value: SchoolCycleEntity | null) => void;
+  schoolCycle: SchoolCycleEntity | null;
+  schoolCycles: SchoolCycleEntity[];
+  tableColumns?: ColumnCustomizerColumn[];
+  onColumnsChange?: (columns: ColumnCustomizerColumn[]) => void;
+  tableName?: string;
+  fixedColumnIds?: string[];
 }
 export default function HeaderTable({
   title,
   onDatesChange,
   handleAdd,
   filters,
+  formFilterData = {},
   handleFilter,
   handleClearFilter,
   selectedDates,
   globalSearchComponent,
   setSelectedItemsCount,
   itemsCount,
+  setSchoolCycle,
+  schoolCycle,
+  schoolCycles,
+  tableColumns = [],
+  onColumnsChange = (_columns: ColumnCustomizerColumn[]) => void 0,
+  tableName = 'unknown',
+  fixedColumnIds = [],
 }: HeaderTableProps) {
-  const { data: session } = useSession();
   const selectedSchool = useSelectedSchoolId();
   const setIsWorking = useSetIsWorking();
+  const sendTrackEventWithUserName = useSendTrackEventWithUserName();
   const setIsError = useSetToError();
   const setToIdle = useSetToIdle();
   const addToQueue = useAddToQueue();
 
-  const getFilter = async () => {
-    const data = (await ApiClient.getPayoutFilters(session?.token, selectedSchool)) as IPayoutFilters;
-    return data;
-  };
-
-  const { data: payoutsFilters } = useQuery(['payoutsFilters'], getFilter, {
-    enabled: !!selectedSchool,
-  });
+  const { data: payoutsFilters } = api.schools.schoolsPayoutsFiltersList.useQuery(
+    {
+      school_id: selectedSchool as string,
+    },
+    {
+      enabled: !!selectedSchool,
+    }
+  );
 
   const filterItems: FilterItems[] = [
     {
@@ -82,9 +98,9 @@ export default function HeaderTable({
 
   const downloadInvoices = async (extension: string) => {
     setIsWorking();
-    sendTrackEvent('dashboard: Deposits Downloaded', { Type: `Facturas ${extension.toUpperCase()}` });
+    sendTrackEventWithUserName(Events.deposits_downloaded, { Type: `Facturas ${extension.toUpperCase()}` });
 
-    return ApiClient.getSchoolPayoutsInvoices(session?.token, selectedSchool, extension, {
+    return ApiClient.getSchoolPayoutsInvoices(selectedSchool, extension, {
       ...filters,
     })
       .then((data: Record<string, any>) => {
@@ -137,21 +153,51 @@ export default function HeaderTable({
       />
       <div className="mt-5">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex flex-wrap items-center gap-4">
             <MultipleFilters
               filterItems={filterItems}
               handleFilter={handleFilter}
               onClearFilter={handleClearFilter}
               setItemsCount={setSelectedItemsCount}
               itemsCount={itemsCount}
+              tableName={tableName}
             />
+            {schoolCycles && schoolCycles.length > 0 ? (
+              <SchoolCycleSelector selected={schoolCycle} setFn={setSchoolCycle} cycles={schoolCycles || []} />
+            ) : null}
             {globalSearchComponent}
-            <DateRange onDatesChange={onDatesChange} selectedDates={selectedDates} />
+            <DateRange tableName={tableName} onDatesChange={onDatesChange} selectedDates={selectedDates} />
           </div>
 
-          <DownloadMenu items={DownloadMenuItems}>
-            <DownloadButton theme="blue" data-testid="download-button" />
-          </DownloadMenu>
+          <div className="flex items-center gap-4">
+            <ShareTableAction
+              tableName={tableName}
+              relativeUrl="income"
+              filters={{
+                school_cycles: schoolCycle ? { id: schoolCycle.id, name: schoolCycle.name } : null,
+                filters: formFilterData,
+                dates: selectedDates.map((date) => date.toISOString()),
+              }}
+              columns={{
+                columns: tableColumns.map((col) => ({
+                  columnId: col.columnId,
+                  columnName: col.columnName,
+                  isVisible: col.isVisible,
+                  order: col.order,
+                  isFixed: col.isFixed,
+                })),
+              }}
+            />
+            <ColumnCustomizerAction
+              columns={tableColumns}
+              onColumnsChange={onColumnsChange}
+              tableName={tableName}
+              fixedColumnIds={fixedColumnIds}
+            />
+            <DownloadMenu items={DownloadMenuItems}>
+              <DownloadButton theme="blue" data-testid="download-button" />
+            </DownloadMenu>
+          </div>
         </div>
       </div>
     </div>

@@ -1,49 +1,55 @@
-import Sheet from '../../components/atoms/Sheet';
-import Layout from '../../components/layouts';
-import SidebarHeader from '../../components/molecules/dashboard/SidebarHeader';
-import Button from '../../components/organisms/dashboard/Button';
-import useToggle from '../../hooks/useToggle';
-import IcPlus from '/public/assets/icons/ic_plus.svg';
-import { useMemo, useRef, useState } from 'react';
-import { api } from '../../utils/api';
-import { useSelectedSchool } from '../../guards/AuthGuard';
+import { type BaseConcept, OfferingEnum } from '@cometa/trpc/src/types';
 import * as Sentry from '@sentry/nextjs';
-import { useSession } from 'next-auth/react';
-import { useGetPermissions } from '/src/guards/AuthGuard';
 import { createColumnHelper } from '@tanstack/react-table';
-import { BaseConcept } from '@cometa/trpc/src/types';
-import { renderMoney } from '/src/utils/datagridHeaders';
-import Header from '/src/components/molecules/dashboard/Header';
-import { FormDiscount, FormValues } from '/src/components/organisms/dashboard/CreationConcepts';
-import { Step5Form } from '/src/components/organisms/dashboard/Step5Form';
-import { Step4Form } from '/src/components/organisms/dashboard/Step4Form';
-import { Step3Form } from '/src/components/organisms/dashboard/Step3Form';
-import { Order, Step2Form } from '/src/components/organisms/dashboard/Step2Form';
-import { Step1Form } from '/src/components/organisms/dashboard/Step1Form';
-import Dialog from '/src/components/atoms/Dialog';
+import { differenceInCalendarDays, format } from 'date-fns';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/router';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { UseFormReturn } from 'react-hook-form';
 
+import IcVideoTutorial from 'public/assets/icons/ic_video_tutorial.svg';
+import Dialog from '/src/components/atoms/Dialog';
+import { GlobalSearch } from '/src/components/atoms/GlobalSearch';
+import Sheet from '/src/components/atoms/Sheet';
+import StepAttributesCreate from '/src/components/Attributes';
+import Layout from '/src/components/layouts';
+import Header from '/src/components/molecules/dashboard/Header';
+import SidebarHeader from '/src/components/molecules/dashboard/SidebarHeader';
 import MultipleFilters, {
   MultipleFiltersChips,
   TooltipIcon,
   formFilterDataToParams,
   normalizeFilters,
 } from '/src/components/MultipleFilters';
-import { UseFormReturn } from 'react-hook-form';
-import { useRouter } from 'next/router';
-import { z } from 'zod';
-import { differenceInCalendarDays, format } from 'date-fns';
-import { GlobalSearch } from '/src/components/atoms/GlobalSearch';
-import useDebounce from '/src/hooks/useDebounce';
-import StepAttributesCreate from '/src/components/Attributes';
 import StepOrdersCreation from '/src/components/OrderPrices';
-import useAlert from '/src/hooks/useAlert';
-import { cn } from '/src/utils/cn';
+import Button from '/src/components/organisms/dashboard/Button';
+import { Button as ButtonV2 } from '@cometa/recreo/v2';
+import type { FormDiscount, FormValues } from '/src/components/organisms/dashboard/CreationConcepts';
+import { Step1Form } from '/src/components/organisms/dashboard/Step1Form';
+import { type Order, Step2Form } from '/src/components/organisms/dashboard/Step2Form';
+import { Step3Form } from '/src/components/organisms/dashboard/Step3Form';
+import { Step4Form } from '/src/components/organisms/dashboard/Step4Form';
+import { Step5Form } from '/src/components/organisms/dashboard/Step5Form';
 import { StepSingleOrder } from '/src/components/organisms/dashboard/StepSingleOrder';
+import { TableVirtualized } from '/src/components/TableInfinityScroll';
+import { convertToOrdering } from '/src/components/Table';
+import { useGetPermissions, useSelectedSchool } from '/src/guards/AuthGuard';
+import useGetActiveSchoolCycleElement from '/src/hooks/useActiveSchoolCycle';
+import useAlert from '/src/hooks/useAlert';
+import useDebounce from '/src/hooks/useDebounce';
 import useSendPageViewedEvent from '/src/hooks/useSendPageViewedEvent';
 import useSendTrackEventWithUserName from '/src/hooks/useSendTrackEventWithUserName';
-import useGetActiveSchoolCycleElement from '/src/hooks/useActiveSchoolCycle';
-import { TableVirtualized } from '/src/components/TableInfinityScroll';
+import { Events } from '/src/constants/events';
+import useToggle from '/src/hooks/useToggle';
+import { api } from '/src/utils/api';
+import { cn } from '/src/utils/cn';
+import { renderMoney } from '/src/utils/datagridHeaders';
 import { extractPageFromURL } from '/src/utils/object-util';
+import { ConceptsOnboardingVideo } from '../../components/concepts/ConceptsOnboardingVideo';
+import { ConceptsEmptyState } from '../../components/concepts/ConceptsEmptyState';
+import { useFlagWithVariableMatching } from '../../components/flags/FlagsProvider';
+import { useOnboardingVideosStore, ONBOARDING_VIDEO_IDS } from '../../stores/onboardingVideosStore';
+import { Status2B3Enum } from '@cometa/trpc';
 
 Concepts.getLayout = function getLayout(page: JSX.Element) {
   return (
@@ -52,103 +58,6 @@ Concepts.getLayout = function getLayout(page: JSX.Element) {
     </Layout>
   );
 };
-
-export const CreateConceptTypeEnum = z.union([
-  z.literal('MONTHLY_FEE'),
-  z.literal('INSCRIPTION'),
-  z.literal('TRANSPORT'),
-  z.literal('PRE_DEBT'),
-  z.literal('OTHER'),
-  z.literal('REINSCRIPTION'),
-  z.literal('EXTRACURRICULAR'),
-  z.literal('SPORTS'),
-  z.literal('CAFETERIA'),
-  z.literal('BOOKS_AND_MATERIALS'),
-  z.literal('EXAMS_AND_CERTIFICATES'),
-  z.literal('UNIFORMS_AND_MERCH'),
-]);
-
-export const MonthsToPayEnum = z.union([
-  z.literal(1),
-  z.literal(2),
-  z.literal(3),
-  z.literal(4),
-  z.literal(5),
-  z.literal(6),
-  z.literal(7),
-  z.literal(8),
-  z.literal(9),
-  z.literal(10),
-  z.literal(11),
-  z.literal(12),
-]);
-
-export const CompoundingEnum = z.union([
-  z.literal('SINGLE'),
-  z.literal('DAILY'),
-  z.literal('WEEKLY'),
-  z.literal('MONTHLY'),
-]);
-
-export const TypeF30Enum = z.union([
-  z.literal('PERCENT'),
-  z.literal('AMOUNT'),
-  z.literal('FIXED'),
-  z.literal('BRILLAMONT'),
-]);
-
-export const DiscountTypeEnum = z.union([
-  z.literal('PERCENT'),
-  z.literal('AMOUNT'),
-  z.literal('FIXED'),
-  z.literal('BRILLAMONT'),
-]);
-
-export const InterestSchema = z.object({
-  compounding: CompoundingEnum,
-  type: TypeF30Enum,
-  value: z.number().min(0),
-  day_offset: z.number().min(-3),
-  month_offset: z.number().min(0),
-});
-
-export const EarlyBirdDiscount = z.object({
-  name: z.string(),
-  discount_type: DiscountTypeEnum,
-  up_to_days: z.number().min(1),
-  value: z.number().min(0),
-});
-
-export const OrderCreate = z.object({
-  name: z.string(),
-  price: z.string().regex(/^-?\d{0,12}(?:\.\d{0,2})?$/),
-  due: z.string().optional().nullable(),
-});
-
-export const CreateConcept = z.object({
-  id: z.string().uuid(),
-  entity: z.string().nullable(),
-  type: CreateConceptTypeEnum,
-  school_cycle: z.string().nullable(),
-  name: z.string().max(512),
-  subscription: z.boolean().optional(),
-  optional: z.boolean().optional(),
-  bank_account: z.string().nullable().optional(),
-  not_invoicing_bank_account: z.string().nullable().optional(),
-  payment_only_in_dashboard: z.boolean().optional(),
-  months_to_pay: z.array(MonthsToPayEnum).optional(),
-  payday: z.number().min(-32768).max(32767).optional(),
-  price: z.string().regex(/^-?\d{0,12}(?:\.\d{0,2})?$/),
-  interest_schema: z.array(InterestSchema).optional(),
-  early_bird_discounts: z.array(EarlyBirdDiscount).optional(),
-  has_sales_tax: z.boolean().optional(),
-  tax_code: z.string().max(30).nullable().optional(),
-  tax_unit: z.string().max(30).nullable().optional(),
-  institutional_id: z.string().max(32).nullable().optional(),
-  is_billable: z.boolean().optional(),
-  orders: z.array(OrderCreate).optional(),
-  setup_periodic_restrictions: z.boolean().optional(),
-});
 
 enum Steps {
   Step1 = 'STEP_1_INFORMATION',
@@ -180,20 +89,67 @@ function Concepts() {
   const [hasScrolled, setHasScrolled] = useState(false);
   const sendTrackEventWithUserName = useSendTrackEventWithUserName();
 
+  const { isEnabled: welcomePageFlag } = useFlagWithVariableMatching('enable_welcome_page');
+  const isOnboardingSchool = selectedSchool?.status === Status2B3Enum.Onboarding;
+  const showVideoFeature = isOnboardingSchool && welcomePageFlag;
+
+  const { hasWatchedVideo } = useOnboardingVideosStore();
+  const hasWatchedConceptsVideo = hasWatchedVideo(ONBOARDING_VIDEO_IDS.CONCEPTS);
+
+  const shouldShowVideoOnLoad = showVideoFeature && !hasWatchedConceptsVideo;
+  const [showOnboarding, setShowOnboarding] = useState(shouldShowVideoOnLoad);
+
   const {
     toggle: openConceptCreationEdit,
     onClose: onCloseConceptCreationEdit,
     onOpen: onOpenConceptCreationEdit,
   } = useToggle();
 
+  const utils = api.useUtils();
   const handleOpenConceptsCreation = () => {
     onOpenConceptCreationEdit();
-    sendTrackEventWithUserName('Dashboard - New concept Started');
+    if (selectedSchool?.id) {
+      utils.series.invoiceSeriesList.prefetch({
+        schoolId: selectedSchool?.id as string,
+      });
+    }
+    sendTrackEventWithUserName(Events.concept_new_started);
   };
 
   const handleData = (data: ConcepForm) => {
     setFormData((prev) => ({ ...prev, ...data }));
   };
+
+  function getCommonParsePayload(payload: ConcepForm) {
+    const isBillable = payload.is_billable === 'true';
+    const notInvoicingBankAccount = payload.not_invoicing_bank_account || payload.bank_account;
+    const onlyInDashboard = payload.payment_only_in_dashboard === 'true';
+    const doesInvoiceAsGeneralPublic = payload.does_invoice_as_general_public === 'true';
+
+    const getOfferingValue = (availableOnline?: string) => {
+      if (availableOnline === 'true') return OfferingEnum.OPEN_LOOP;
+      if (availableOnline === 'false') return OfferingEnum.SCHOLAR;
+      return undefined;
+    };
+
+    return {
+      entity: payload.entity,
+      is_billable: isBillable, // as provided in the payload
+      does_invoice_as_general_public: doesInvoiceAsGeneralPublic,
+      name: payload.name,
+      payment_only_in_dashboard: onlyInDashboard,
+      type: payload.type,
+      school_cycle: payload.school_cycle,
+      series: payload.series?.id,
+      ...(payload.available_in_online_store ? { offering: getOfferingValue(payload.available_in_online_store) } : {}),
+      ...(!onlyInDashboard
+        ? {
+            bank_account: payload.bank_account,
+            not_invoicing_bank_account: notInvoicingBankAccount,
+          }
+        : {}),
+    };
+  }
 
   function parsePayload(payload: ConcepForm) {
     const price = payload.price;
@@ -206,17 +162,10 @@ function Concepts() {
       };
     });
     const months = payload.orders?.map((order: { months_to_pay: number }) => order.months_to_pay);
+    const commonPayload = getCommonParsePayload(payload);
     return {
-      entity: payload.entity,
-      type: payload.type,
-      school_cycle: payload.school_cycle,
-      name: payload.name,
       subscription: true,
       optional: payload.root_concept === 'optional',
-      ...(payload.payment_only_in_dashboard === 'false'
-        ? { bank_account: payload.bank_account, not_invoicing_bank_account: payload.not_invoicing_bank_account }
-        : {}),
-      payment_only_in_dashboard: payload.payment_only_in_dashboard === 'true',
       setup_periodic_restrictions: payload.setup_periodic_restrictions === 'true',
       months_to_pay: months,
       payday: payload.payday ? parseInt(payload.payday) : '',
@@ -245,8 +194,8 @@ function Concepts() {
       ...(payload.has_rvoe === 'true'
         ? { institutional_id: payload.rvoe, use_education_complement: true }
         : { use_education_complement: false }),
-      is_billable: payload.is_billable === 'true',
       orders: orders,
+      ...commonPayload,
     };
   }
   const { setAlertState } = useAlert();
@@ -254,16 +203,14 @@ function Concepts() {
   const createConceptMutation = api.schools.schoolsConceptsCreate.useMutation();
   const createConceptsWithAttributesMutation = api.schools.schoolsConceptsWithAttributesCreate.useMutation();
   const createConceptWithSingleOrder = api.schools.schoolsConceptWithSingleOrderCreate.useMutation();
-  const utils = api.useUtils();
 
   const handleCreate = async (data?: ConcepForm) => {
     setIsCreatingConcepts(true);
 
-    if (createConceptMutation.isLoading || isCreatingConcepts) return;
+    if (createConceptMutation.isPending || isCreatingConcepts) return;
 
     try {
       const payload = parsePayload({ ...data, ...formData });
-
       try {
         await createConceptMutation.mutate(
           { school_id: selectedSchool?.id as string, data: { ...payload, subscription: true } },
@@ -278,7 +225,7 @@ function Concepts() {
                 severity: 'success',
                 message: 'El concepto ha sido creado satisfactoriamente',
               });
-              sendTrackEventWithUserName('Back: Concept Created');
+              sendTrackEventWithUserName(Events.concept_created);
               setTimeout(() => {
                 setAlertState({ open: false, severity: 'error', message: '' });
                 setIsCreatingConcepts(false);
@@ -292,7 +239,7 @@ function Concepts() {
                 severity: 'error',
                 message: 'Hemos tenido problemas al crear el concepto, por favor intenta de nuevo.',
               });
-              sendTrackEventWithUserName('Back: Concept Failed');
+              sendTrackEventWithUserName(Events.concept_failed);
               setTimeout(() => {
                 setAlertState({ open: false, severity: 'error', message: '' });
               }, 3000);
@@ -316,11 +263,10 @@ function Concepts() {
   const handleCreateWithAttributes = async (data?: ConcepForm) => {
     setIsCreatingConcepts(true);
 
-    if (createConceptsWithAttributesMutation.isLoading || isCreatingConcepts) return;
+    if (createConceptsWithAttributesMutation.isPending || isCreatingConcepts) return;
 
     try {
       const payload = parsePayloadWithAttributes({ ...data, ...formData });
-
       try {
         await createConceptsWithAttributesMutation.mutate(
           { school_id: selectedSchool?.id as string, data: { ...payload } },
@@ -335,7 +281,7 @@ function Concepts() {
                 severity: 'success',
                 message: 'El concepto ha sido creado satisfactoriamente',
               });
-              sendTrackEventWithUserName('Back: Concept With Attributes Created');
+              sendTrackEventWithUserName(Events.concept_with_attributes_created);
               setTimeout(() => {
                 setAlertState({ open: false, severity: 'success', message: '' });
                 setIsCreatingConcepts(false);
@@ -386,43 +332,32 @@ function Concepts() {
       })),
     }));
 
-  const parsePayloadWithAttributes = (payload: ConcepForm) => ({
-    entity: payload.entity,
-    root_concept: payload.root_concept,
-    type: payload.type,
-    school_cycle: payload.school_cycle,
-    name: payload.name,
-    bank_account: payload.payment_only_in_dashboard === 'false' ? payload.bank_account : undefined,
-    not_invoicing_bank_account: payload.payment_only_in_dashboard ? payload.not_invoicing_bank_account : undefined,
-    payment_only_in_dashboard: payload.payment_only_in_dashboard === 'false' ? false : true,
-    subscription: false,
-    has_sales_tax: payload.has_sales_tax === 'true',
-    optional: payload.root_concept === 'optional' || payload.has_due_date === 'false',
-    ...(payload.product_key ? { tax_code: payload.product_key } : {}),
-    ...(payload.unit_type ? { tax_unit: payload.unit_type } : {}),
-    ...(payload.has_rvoe === 'true'
-      ? { institutional_id: payload.rvoe, use_education_complement: true }
-      : { use_education_complement: false }),
-    is_billable: payload.is_billable === 'true',
-    price: payload.price || 0,
-    orders_attributes: parseOrdersAttributes(payload.orders_attributes || {}),
-    setup_periodic_restrictions: payload.setup_periodic_restrictions === 'true',
-  });
+  const parsePayloadWithAttributes = (payload: ConcepForm) => {
+    const commonPayload = getCommonParsePayload(payload);
+    return {
+      root_concept: payload.root_concept,
+      subscription: false,
+      has_sales_tax: payload.has_sales_tax === 'true',
+      optional: payload.root_concept === 'optional' || payload.has_due_date === 'false',
+      ...(payload.product_key ? { tax_code: payload.product_key } : {}),
+      ...(payload.unit_type ? { tax_unit: payload.unit_type } : {}),
+      ...(payload.has_rvoe === 'true'
+        ? { institutional_id: payload.rvoe, use_education_complement: true }
+        : { use_education_complement: false }),
+      price: payload.price || 0,
+      orders_attributes: parseOrdersAttributes(payload.orders_attributes || {}),
+      setup_periodic_restrictions: payload.setup_periodic_restrictions === 'true',
+      ...commonPayload,
+    };
+  };
 
   const parsePayloadSingleOrder = (payload: ConcepForm) => {
     const order = {
       price: payload.price,
       due: payload.due ? format(new Date(payload.due), 'yyyy-MM-dd') : '',
     };
-
+    const commonPayload = getCommonParsePayload(payload);
     return {
-      entity: payload.entity,
-      type: payload.type,
-      school_cycle: payload.school_cycle,
-      name: payload.name,
-      bank_account: payload.payment_only_in_dashboard === 'false' ? payload.bank_account : undefined,
-      not_invoicing_bank_account: payload.payment_only_in_dashboard ? payload.not_invoicing_bank_account : undefined,
-      payment_only_dashboard: payload.payment_only_in_dashboard === 'true',
       months_to_pay: [], // as per your requirement, it's an empty array
       payday: 1,
       price: payload.price,
@@ -453,22 +388,21 @@ function Concepts() {
       ...(payload.has_rvoe === 'true'
         ? { institutional_id: payload.rvoe, use_education_complement: true }
         : { use_education_complement: false }),
-      is_billable: payload.is_billable === 'true', // as provided in the payload
       tax_code: payload.product_key,
       tax_unit: payload.unit_type,
       institutional_id: payload.has_rvoe === 'true' ? payload.rvoe : undefined,
       orders: [order], // contains only the provided order
+      ...commonPayload,
     };
   };
 
   const handleCreateSingleOrder = async (data?: ConcepForm) => {
     setIsCreatingConcepts(true);
 
-    if (createConceptWithSingleOrder.isLoading || isCreatingConcepts) return;
+    if (createConceptWithSingleOrder.isPending || isCreatingConcepts) return;
 
     try {
       const payload = parsePayloadSingleOrder({ ...data, ...formData });
-
       try {
         await createConceptWithSingleOrder.mutate(
           { school_id: selectedSchool?.id as string, data: { ...payload, subscription: true } },
@@ -483,7 +417,7 @@ function Concepts() {
                 severity: 'success',
                 message: 'El concepto ha sido creado satisfactoriamente',
               });
-              sendTrackEventWithUserName('Back: Concept Single Order Created');
+              sendTrackEventWithUserName(Events.concept_single_order_created);
               setTimeout(() => {
                 setAlertState({ open: false, severity: 'success', message: '' });
                 setIsCreatingConcepts(false);
@@ -617,6 +551,26 @@ function Concepts() {
         break;
     }
   };
+
+  useEffect(() => {
+    setShowOnboarding(shouldShowVideoOnLoad);
+  }, [shouldShowVideoOnLoad]);
+
+  if (showOnboarding) {
+    return (
+      <Sentry.ErrorBoundary
+        beforeCapture={(scope) => {
+          scope.setContext('state', {
+            session,
+            selectedSchool,
+          });
+        }}
+      >
+        <ConceptsOnboardingVideo onComplete={() => setShowOnboarding(false)} />
+      </Sentry.ErrorBoundary>
+    );
+  }
+
   return (
     <Sentry.ErrorBoundary
       beforeCapture={(scope) => {
@@ -626,7 +580,7 @@ function Concepts() {
         });
       }}
     >
-      <div className="flex flex-col justify-center w-full py-4">
+      <div className="flex flex-col justify-center pb-4 w-full">
         <Sheet
           open={openConceptCreationEdit}
           onOpenChange={(open) => {
@@ -683,7 +637,7 @@ function Concepts() {
                   }
                   onBack={handleBack}
                   formData={formData}
-                  isSubmitting={createConceptMutation.isLoading || isCreatingConcepts}
+                  isSubmitting={createConceptMutation.isPending || isCreatingConcepts}
                 />
               )}
               {currentStep === Steps.StepAttributesCreate && (
@@ -693,7 +647,7 @@ function Concepts() {
                   onBack={handleBack}
                   formData={formData}
                   setAttributeSinglePrice={setAttributeSinglePrice}
-                  isSubmitting={createConceptsWithAttributesMutation.isLoading || isCreatingConcepts}
+                  isSubmitting={createConceptsWithAttributesMutation.isPending || isCreatingConcepts}
                 />
               )}
               {currentStep === Steps.StepOrdersCreation && (
@@ -714,7 +668,7 @@ function Concepts() {
           <Dialog.Description>
             Los datos no se guardarán y deberás iniciar el proceso nuevamente en caso que desees continuarlo
           </Dialog.Description>
-          <div className="flex justify-center gap-x-10">
+          <div className="flex gap-x-10 justify-center">
             <Button
               id="dialog-in-drawer-cancel"
               variant="ghost"
@@ -756,12 +710,21 @@ export function ConceptsTable({
   const permissions = useGetPermissions();
   const [formFilterData, setFormFilterData] = useState<FormFilterData>({});
   const [itemsCount, setItemsCount] = useState<{ watchKey: string; count: number }[]>([]);
+  const [conceptsSorting, setConceptsSorting] = useState<string>();
   type FormFilterData = Record<string, { checked: boolean; name: string }>;
   const formRef = useRef() as React.MutableRefObject<UseFormReturn<FormFilterData>>;
   const paramsFromForm = useMemo(() => formFilterDataToParams(formFilterData), [formFilterData]);
 
+  const { isEnabled: welcomePageFlag } = useFlagWithVariableMatching('enable_welcome_page');
+  const isOnboardingSchool = selectedSchool?.status === Status2B3Enum.Onboarding;
+  const showOnboardingEmptyState = isOnboardingSchool && welcomePageFlag;
+  const showVideoFeature = isOnboardingSchool && welcomePageFlag;
+
+  const [showVideoFromEmptyState, setShowVideoFromEmptyState] = useState(false);
+
   const params = {
     multiple_search: searchDebounced,
+    ordering: conceptsSorting ? [conceptsSorting] : undefined,
     ...paramsFromForm,
   };
   const { data: filters } = api.schools.schoolsConceptsFilters.useQuery({ school_id: selectedSchool?.id as string });
@@ -785,12 +748,21 @@ export function ConceptsTable({
       watchKey: 'type',
       contents: schoolsConceptFilter?.type,
     },
+    {
+      header: 'Tienda en línea',
+      watchKey: 'offering',
+      contents: [
+        {
+          id: OfferingEnum.OPEN_LOOP,
+          name: 'Sí',
+        },
+        {
+          id: OfferingEnum.SCHOLAR,
+          name: 'No',
+        },
+      ],
+    },
   ];
-
-  const handleOpen = (row: Record<string, any>) => {
-    router.push(`/concepts/${row.id}`);
-  };
-
   const handleFilter = (data: FormFilterData, methods: UseFormReturn<FormFilterData>) => {
     formRef.current = methods;
     setFormFilterData(data);
@@ -801,10 +773,13 @@ export function ConceptsTable({
     formRef.current.reset(data);
     setItemsCount(itemsCount.map((item) => ({ ...item, count: 0 })));
   };
+  const handleOpen = (row: Record<string, any>) => {
+    router.push(`/concepts/${row.id}`);
+  };
 
   const {
     data: conceptsTable,
-    isLoading,
+    isPending: isLoading,
     isFetching,
     isFetchingNextPage,
     fetchNextPage,
@@ -819,7 +794,7 @@ export function ConceptsTable({
       enabled: !!selectedSchool?.id,
       refetchOnWindowFocus: false,
       getNextPageParam: (currentPage) => extractPageFromURL((currentPage as any)?.next as string) ?? undefined,
-      getPreviousPageParam: (firstPage) => firstPage ?? undefined,
+      getPreviousPageParam: (firstPage) => extractPageFromURL((firstPage as any)?.previous as string) ?? undefined,
     }
   );
   const flatData = useMemo(() => conceptsTable?.pages.flatMap((page: any) => page?.results ?? []), [conceptsTable]);
@@ -836,11 +811,13 @@ export function ConceptsTable({
       ),
       header: () => <span className="whitespace-nowrap">Nombre</span>,
       size: 250,
+      enableSorting: true,
     }),
     // @ts-ignore
     columnHelper.accessor('school_cycle.name', {
       cell: (info) => <div className="text-sm font-normal">{info.getValue() as string}</div>,
       header: () => <span className="whitespace-nowrap">Ciclo escolar</span>,
+      enableSorting: true,
     }),
     columnHelper.accessor('type', {
       cell: (info) => (
@@ -849,93 +826,130 @@ export function ConceptsTable({
         </div>
       ),
       header: () => <span className="whitespace-nowrap">Tipo de concepto</span>,
+      size: 220,
+      enableSorting: true,
     }),
-    columnHelper.accessor('price', {
-      cell: (info) => <div className="text-sm font-semibold">{renderMoney(info.getValue())}</div>,
+    columnHelper.accessor('last_order_price', {
+      cell: (info) => (
+        <div className={cn('text-sm', { 'font-semibold': info.row.original.unique_price })}>
+          {info.row.original.unique_price ? renderMoney(info.getValue()) : 'Múltiples precios'}
+        </div>
+      ),
       header: () => <span className="whitespace-nowrap">Precio</span>,
       meta: {
         numeric: true,
       },
+      enableSorting: true,
     }),
     columnHelper.accessor('students_assigned_count', {
       cell: (info) => <div className="text-sm font-normal">{info.getValue()}</div>,
-      header: () => <span className="whitespace-nowrap">Alumnos asignados</span>,
+      header: () => <span className="whitespace-nowrap">Estudiantes asignados</span>,
+      enableSorting: true,
     }),
   ];
 
   const schoolCycleChip = useGetActiveSchoolCycleElement;
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const isEmpty = !isLoading && totalCount === 0;
+  const shouldShowOnboardingEmptyState =
+    showOnboardingEmptyState && isEmpty && !search && Object.keys(formFilterData).length === 0;
+
+  const handleViewTutorial = () => {
+    setShowVideoFromEmptyState(true);
+  };
+
+  if (showVideoFromEmptyState) {
+    return (
+      <Sentry.ErrorBoundary>
+        <ConceptsOnboardingVideo onComplete={() => setShowVideoFromEmptyState(false)} />
+      </Sentry.ErrorBoundary>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full">
-      <div>
-        <div className="flex flex-row items-center justify-between pb-3">
-          <div>
-            <div className="ml-10">
-              <Header title="Conceptos" />
-              <div className="flex items-center gap-2">
-                <MultipleFilters
-                  filterItems={filterItems}
-                  handleFilter={handleFilter}
-                  onClearFilter={() => {
-                    setFormFilterData({});
-                  }}
-                  itemsCount={itemsCount}
-                  setItemsCount={setItemsCount}
-                  postFixElement={schoolCycleChip}
-                />
-                <GlobalSearch
-                  search={search}
-                  setSearch={setSearch}
-                  placeholder="Buscar conceptos"
-                  typeButton="button"
-                />
+      <div className="pb-5">
+        <div className="px-10">
+          <div className="flex flex-row justify-between items-center [&>div>div]:!py-0 [&>div>div]:!pt-[23px] [&>div>div]:!pb-4">
+            <Header title="Conceptos" />
+            {permissions?.can_add_concept && !shouldShowOnboardingEmptyState && (
+              <div className="flex gap-2 items-center">
+                {showVideoFeature && (
+                  <ButtonV2 variant="ghost" onClick={handleViewTutorial}>
+                    <IcVideoTutorial className="w-4 h-4" />
+                    Ver tutorial
+                  </ButtonV2>
+                )}
+                <ButtonV2 variant="default" onClick={handleOpenConceptsCreation} data-testid="createConcept-button">
+                  Nuevo concepto
+                </ButtonV2>
               </div>
-            </div>
-            <div className="px-4">
-              <MultipleFiltersChips
-                onChange={handleChangeChipFilter}
-                formFilterData={formFilterData}
+            )}
+          </div>
+          {!shouldShowOnboardingEmptyState && (
+            <div className="flex gap-5 items-center">
+              <MultipleFilters
+                filterItems={filterItems}
+                handleFilter={handleFilter}
+                onClearFilter={() => {
+                  setFormFilterData({});
+                }}
                 itemsCount={itemsCount}
                 setItemsCount={setItemsCount}
+                postFixElement={schoolCycleChip}
               />
-            </div>
-          </div>
-          {permissions?.can_add_concept && (
-            <div className="mr-20">
-              <Button onClick={handleOpenConceptsCreation} className="max-w-[300px]" data-testid="createConcept-button">
-                <IcPlus fill="currentColor" />
-                Nuevo concepto
-              </Button>
+              <GlobalSearch search={search} setSearch={setSearch} placeholder="Buscar conceptos" typeButton="button" />
             </div>
           )}
         </div>
+        {!shouldShowOnboardingEmptyState && (
+          <div className="px-10">
+            <MultipleFiltersChips
+              onChange={handleChangeChipFilter}
+              formFilterData={formFilterData}
+              itemsCount={itemsCount}
+              setItemsCount={setItemsCount}
+            />
+          </div>
+        )}
       </div>
       <div
         ref={wrapperRef}
         className={cn(
-          'h-[calc(100vh-245px)]',
+          'h-[calc(100vh-190px)]',
           { 'cursor-wait ': isLoading || isFetching },
           'transition-opacity duration-300'
         )}
       >
-        <TableVirtualized
-          data={flatData || []}
-          columns={columns as any[]}
-          isFetchingNextPage={isFetchingNextPage}
-          hasNextPage={hasNextPage || false}
-          fetchNextPage={fetchNextPage}
-          onRowClick={handleOpen}
-          maxHeight={wrapperRef?.current?.offsetHeight || 500}
-          totalCount={totalCount || 0}
-          totalFetched={flatData?.length || 0}
-          isLoading={isLoading}
-          isFetching={isFetching}
-          hideSum
-          addMorePaddingFirstRow
-          showEmptyStateImage
-          emptyEndText="No hay más conceptos para mostrar"
-          emptyStateText="No hay conceptos para mostrar"
-        />
+        {shouldShowOnboardingEmptyState ? (
+          <div className="flex items-center justify-center h-full">
+            <ConceptsEmptyState onCreateConcept={handleOpenConceptsCreation} onViewTutorial={handleViewTutorial} />
+          </div>
+        ) : (
+          <TableVirtualized
+            data={flatData || []}
+            columns={columns as any[]}
+            isFetchingNextPage={isFetchingNextPage}
+            hasNextPage={hasNextPage || false}
+            fetchNextPage={fetchNextPage}
+            onRowClick={handleOpen}
+            maxHeight={wrapperRef?.current?.offsetHeight || 500}
+            totalCount={totalCount || 0}
+            totalFetched={flatData?.length || 0}
+            isLoading={isLoading}
+            isFetching={isFetching}
+            hideSum
+            addMorePaddingFirstRow
+            showEmptyStateImage
+            emptyEndText="No hay más conceptos para mostrar"
+            emptyStateText="No hay conceptos para mostrar"
+            onSortingChange={(sorting) => {
+              const text = convertToOrdering(sorting);
+              setConceptsSorting(text);
+            }}
+          />
+        )}
       </div>
     </div>
   );

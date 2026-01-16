@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import type { CustomInputProps } from '../CustomInput';
-import { cn } from '/src/utils/cn';
+import { cn } from '@cometa/utils';
 
 type NFormTextFieldProps = {
   className?: string;
@@ -41,8 +41,9 @@ const NFormTextField = ({
     <>
       <div
         className={cn(
-          'flex gap-2 bg-white rounded-xl p-4 border border-[#919EAB52] text-base relative',
-          { 'border-red-500': error },
+          'flex items-center gap-2 bg-white rounded-xl p-4 border border-[#919EAB52] text-base relative',
+          { 'border-red-500 mb-3': error },
+          { 'focus-within:border-green': !error },
           className
         )}
       >
@@ -57,13 +58,13 @@ const NFormTextField = ({
           <label
             htmlFor={name}
             className={cn(
-              'block font-medium px-[1px] top-0 bottom-0 m-auto h-fit absolute text-base cursor-text left-3.5 transition-[top,color] z-[1]',
+              'block font-medium px-[1px] top-0 bottom-0 m-auto h-fit absolute text-base cursor-text left-3.5 transition-[top,color] z-[1] select-none',
               {
                 'text-[#919EAB] peer-focus-within:text-green': !error,
                 'peer-focus-within:text-red-500 text-red-500': error,
                 'peer-focus-within:bottom-auto peer-focus-within:-top-2.5 bg-white peer-focus-within:left-3.5 peer-focus-within:ease-out peer-focus-within:text-xs peer-focus-within:ease-[cubic-bezier(4, 1, 8, 3)]':
                   true,
-                'z-[2] peer-focus-within:-top-2': textareaGrow,
+                'z-[2] peer-focus-within:-top-2 mt-3': textareaGrow,
               },
               labelDynamicStyles
             )}
@@ -77,7 +78,7 @@ const NFormTextField = ({
         {error && (
           <div
             className={cn(
-              'absolute flex items-center gap-1 text-xs font-thin text-red-500 -bottom-6 max-h-4',
+              'absolute flex items-center gap-1 text-xs font-thin text-red-500 -bottom-6 max-h-4 mb-1',
               errorClassNames
             )}
           >

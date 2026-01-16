@@ -1,4 +1,3 @@
-import { UseMutationResult } from '@tanstack/react-query';
 import SidebarHeader from '/src/components/molecules/dashboard/SidebarHeader';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,19 +16,20 @@ import { NumberFormatBase as NumericFormat } from 'react-number-format';
 import Select from '/src/components/Select';
 import Dialog from '/src/components/atoms/Dialog';
 import Button from '../Button';
-import { IMutationErrors } from '../AssingStudentRFC';
+import type { IMutationErrors } from '../AssingStudentRFC';
 import useSendTrackEventWithUserName from '/src/hooks/useSendTrackEventWithUserName';
+import { Events } from '/src/constants/events';
 import CAlert from '/src/components/atoms/CAlert';
 import { useRouter } from 'next/router';
-import { DashboardGuardian, Guardian, TaxingTypeEnum } from '@cometa/trpc/src/types';
-import type { AxiosError } from 'axios';
+import { type DashboardGuardian, type Guardian, TaxingTypeEnum } from '@cometa/trpc/src/types';
 
 interface RFCDetailProps {
   onClose: () => void;
   guardianDetail: DashboardGuardian | Guardian | undefined;
-  mutation: UseMutationResult<unknown, AxiosError, IUpdateData, unknown>;
+  onSubmit: (values: RFCDetailFormValues) => void;
   errorsMutation?: IMutationErrors;
   showTutorDetail?: boolean;
+  isLoading?: boolean;
 }
 export interface IUpdateData {
   billing_info: RFCDetailFormValues;
@@ -75,11 +75,10 @@ const schema = z
         const rfcRegex =
           /^([A-ZÑ&]{4}) ?(?:- ?)?(\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])) ?(?:- ?)?([A-Z\d]{2})([A\d])$/;
         return rfcRegex.test(data.tax_id) || data.tax_id.length !== 12;
-      } else {
-        const rfcRegex =
-          /^([A-ZÑ&]{3}) ?(?:- ?)?(\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])) ?(?:- ?)?([A-Z\d]{2})([A\d])$/;
-        return rfcRegex.test(data.tax_id) || data.tax_id?.length !== 13;
       }
+      const rfcRegex =
+        /^([A-ZÑ&]{3}) ?(?:- ?)?(\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])) ?(?:- ?)?([A-Z\d]{2})([A\d])$/;
+      return rfcRegex.test(data.tax_id) || data.tax_id?.length !== 13;
     },
     { message: 'El RFC no es válido', path: ['tax_id'] }
   );
@@ -88,9 +87,10 @@ export type RFCDetailFormValues = z.infer<typeof schema>;
 export default function RFCDetail({
   onClose,
   guardianDetail,
-  mutation,
+  onSubmit,
   errorsMutation,
   showTutorDetail = false,
+  isLoading,
 }: RFCDetailProps) {
   const router = useRouter();
   const sendTrackEventWithUserName = useSendTrackEventWithUserName();
@@ -103,9 +103,9 @@ export default function RFCDetail({
   const guardianBillingInfo =
     !!guardianDetail?.billing_info?.taxing_system && !!guardianDetail?.billing_info?.tax_id
       ? guardianDetail?.billing_info
-      : {};
+      : undefined;
 
-  const taxRegime = taxRegimeValues.find((tax) => tax.value === (guardianBillingInfo as any)?.taxing_system);
+  const taxRegime = taxRegimeValues.find((tax) => tax.value === guardianBillingInfo?.taxing_system);
 
   const {
     register,
@@ -116,7 +116,8 @@ export default function RFCDetail({
     control,
   } = useForm<RFCDetailFormValues>({
     defaultValues: {
-      ...guardianBillingInfo,
+      ...(guardianBillingInfo ?? {}),
+      billing_name: guardianBillingInfo?.billing_name || undefined,
       taxing_type: (guardianDetail?.billing_info?.taxing_type as TaxingTypeEnum | null | undefined) ?? TaxingTypeEnum.N,
       taxing_system: taxRegime?.value,
     },
@@ -129,12 +130,8 @@ export default function RFCDetail({
   const cfdi_guardian = watch('cfdi_config');
   const taxRegimeValuesByPersonType = taxRegimeValues.filter((tax) => tax.personTypes.includes(personType));
 
-  const onSubmit = (data: RFCDetailFormValues) => {
-    mutation.mutate({ billing_info: { ...data }, id: guardianDetail?.id ?? '' });
-  };
-
   const handleViewTutor = () => {
-    sendTrackEventWithUserName('dashboard: Invoices | View Guardian');
+    sendTrackEventWithUserName(Events.invoices_view_guardian);
     router.push(`/guardian/${guardianDetail?.id}`);
   };
 
@@ -162,7 +159,7 @@ export default function RFCDetail({
         </div>
 
         <div className="flex flex-col justify-between h-full">
-          <div className="px-8 mb-2 h-full">
+          <div className="h-full px-8 mb-2">
             {showTutorDetail && (
               <div className="mb-8">
                 <div className="flex justify-between mb-4">
@@ -175,14 +172,12 @@ export default function RFCDetail({
                   type="info"
                   message="Podrás editar los datos desde la página de Detalle de Tutor."
                   action={
-                    <>
-                      <button
-                        onClick={handleViewTutor}
-                        className="bg-transparent rounded-md text-sm text-[#00AB55] font-bold border border-[#04297A] py-1 px-2"
-                      >
-                        <span className="whitespace-nowrap text-[#04297A]">Ver tutor</span>
-                      </button>
-                    </>
+                    <button
+                      onClick={handleViewTutor}
+                      className="bg-transparent rounded-md text-sm text-[#00AB55] font-bold border border-[#04297A] py-1 px-2"
+                    >
+                      <span className="whitespace-nowrap text-[#04297A]">Ver tutor</span>
+                    </button>
                   }
                 />
               </div>
@@ -204,7 +199,7 @@ export default function RFCDetail({
             </div>
             <div id="form_rfc">
               <form className="flex flex-col h-full" onSubmit={handleSubmit(onSubmit)}>
-                <div className="col-span-2 space-y-8 h-full">
+                <div className="h-full col-span-2 space-y-8">
                   <div id="person_type_input" className="relative flex flex-col space-y-5">
                     <h5 className="text-sm font-bold">Facturar como:</h5>
                     {errors.taxing_type?.message && (
@@ -295,7 +290,7 @@ export default function RFCDetail({
                       >
                         <Select.Content
                           key={value}
-                          className="flex flex-col overflow-hidden rounded-lg min-w-[420px] max-w-[450px]"
+                          className="flex flex-col overflow-scroll rounded-lg min-w-[420px] max-w-[450px]"
                         >
                           {taxRegimeValuesByPersonType.map((taxRegime) => (
                             <Select.Item key={`${taxRegime.value}_${taxRegime.name}`} value={taxRegime.value}>
@@ -317,10 +312,10 @@ export default function RFCDetail({
                     <Controller
                       control={control}
                       name="postal_code"
+                      disabled={!ableToEdit}
                       render={({ field: { ...props } }) => (
                         <NumericFormat
                           type="tel"
-                          disabled={!ableToEdit}
                           format={formatZip}
                           {...props}
                           className="w-full text-[#1D2939] disabled:text-[#919EAB] placeholder-gray-500 outline-none border-none text-base peer rounded-lg relative z-[2] bg-transparent"
@@ -368,7 +363,7 @@ export default function RFCDetail({
                     </button>
                     <button
                       className="text-white text-base font-bold px-20 py-3 rounded-lg bg-[#00AB55] hover:bg-green-800 disabled:bg-[#919EAB3D] disabled:text-[#919EABCC] whitespace-nowrap outline-none"
-                      disabled={!ableToEdit || Object.keys(errors).length > 0 || mutation?.isLoading}
+                      disabled={!ableToEdit || Object.keys(errors).length > 0 || isLoading}
                       type="submit"
                     >
                       Guardar

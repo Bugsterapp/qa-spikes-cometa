@@ -1,8 +1,9 @@
-import React, { MouseEvent, useCallback, useEffect, useState } from 'react';
+import React, { MouseEvent, useEffect, useState, useMemo } from 'react';
 import { useSelect } from 'downshift';
 import { cn } from '/src/utils/cn';
 import Chevron from '/public/assets/icons/chevron.svg';
 import CheckBox from '/src/components/atoms/CheckBox';
+import { useTableConfig } from '/src/hooks/useTableConfig';
 
 export type Item<T> = {
   label: string;
@@ -20,7 +21,12 @@ type MultipleSelectionComponentProps<T> = {
   fullWidth?: boolean;
   disableAll?: boolean;
   formData?: any;
+  tableName?: string;
 };
+
+interface FiltersConfig<T> {
+  selected_items?: Item<T>[];
+}
 
 const Label = ({ className, children }: React.PropsWithChildren<{ className: string }>) => (
   <label className={className}>{children}</label>
@@ -37,16 +43,88 @@ function MultipleSelectionComponent<T = string>({
   disableAll,
   labelName,
   formData,
+  tableName,
 }: MultipleSelectionComponentProps<T>) {
-  const [selectedItems, setSelectedItems] = useState<Item<T>[]>(
-    () => formData?.months_to_pay || (disableAll ? [] : items)
+  const [selectedItems, setSelectedItems] = useState<Item<T>[]>([]);
+
+  const {
+    shouldUseApi,
+    tableConfig,
+    isLoading,
+    initializedRef,
+    previousSchoolIdRef,
+    schoolId,
+    upsertConfig,
+    processTableConfig,
+  } = useTableConfig<FiltersConfig<T>>({ tableName });
+
+  const processedTableConfig = useMemo(
+    () =>
+      processTableConfig<Item<T>[]>((filtersConfig: FiltersConfig<T>) => {
+        if (
+          filtersConfig?.selected_items &&
+          Array.isArray(filtersConfig.selected_items) &&
+          filtersConfig.selected_items.length > 0
+        ) {
+          return filtersConfig.selected_items;
+        }
+        return null;
+      }),
+    [processTableConfig, tableConfig]
   );
-  useCallback(() => {
-    if (formData?.months_to_pay && !items.length) {
-      setSelectedItems(formData.months_to_pay);
-      onChange?.(selectedItems);
+
+  const updateTableConfig = (selected_items: Item<T>[]) => {
+    if (shouldUseApi) {
+      upsertConfig({
+        selected_items,
+      });
     }
-  }, [formData?.months_to_pay, selectedItems]);
+  };
+
+  useEffect(() => {
+    if (previousSchoolIdRef.current && previousSchoolIdRef.current !== schoolId) {
+      initializedRef.current = false;
+
+      if (disableAll) {
+        setSelectedItems([]);
+        onChange?.([]);
+      } else if (items.length > 0) {
+        setSelectedItems(items);
+        onChange?.(items);
+      }
+    }
+  }, [schoolId, items, disableAll, onChange, initializedRef, previousSchoolIdRef]);
+
+  useEffect(() => {
+    if (initializedRef.current) {
+      return;
+    }
+
+    if (shouldUseApi && isLoading) {
+      return;
+    }
+
+    if (processedTableConfig) {
+      setSelectedItems(processedTableConfig);
+      onChange?.(processedTableConfig);
+      initializedRef.current = true;
+      return;
+    } else if (!disableAll && items.length > 0) {
+      setSelectedItems(items);
+      onChange?.(items);
+      initializedRef.current = true;
+      return;
+    }
+
+    if (formData?.months_to_pay && formData.months_to_pay.length > 0) {
+      setSelectedItems(formData.months_to_pay);
+      onChange?.(formData.months_to_pay);
+      initializedRef.current = true;
+      return;
+    }
+
+    initializedRef.current = true;
+  }, [schoolId, items, disableAll, onChange, shouldUseApi, isLoading, processedTableConfig, formData]);
 
   const { isOpen, getMenuProps, getItemProps, getToggleButtonProps, highlightedIndex } = useSelect<Item<T>>({
     items,
@@ -62,10 +140,14 @@ function MultipleSelectionComponent<T = string>({
         if (index > -1) {
           const newState = [...prevState.slice(0, index), ...prevState.slice(index + 1)];
           onChange?.(newState);
+
+          updateTableConfig(newState);
           return newState;
         } else {
           const newState = [...prevState, selectedItem];
           onChange?.(newState);
+
+          updateTableConfig(newState);
           return newState;
         }
       });
@@ -80,12 +162,16 @@ function MultipleSelectionComponent<T = string>({
       setSelectedItems((prevState) => {
         const newState = prevState.filter((i) => i.label !== item.label);
         onChange?.(newState);
+
+        updateTableConfig(newState);
         return newState;
       });
     } else {
       setSelectedItems((prevState) => {
         const newState = [...prevState, item];
         onChange?.(newState);
+
+        updateTableConfig(newState);
         return newState;
       });
     }
@@ -96,20 +182,15 @@ function MultipleSelectionComponent<T = string>({
     if (selectedItems.length === items.length) {
       setSelectedItems([]);
       onChange?.([]);
+
+      updateTableConfig([]);
     } else {
       setSelectedItems(items);
       onChange?.(items);
+
+      updateTableConfig(items);
     }
   };
-
-  const [prevItems, setPrevItems] = useState<Item<T>[]>(items);
-
-  useEffect(() => {
-    if (JSON.stringify(prevItems) !== JSON.stringify(items)) {
-      setSelectedItems([]);
-      setPrevItems(items);
-    }
-  }, [items, prevItems]);
 
   const displaySelectedItems = (selectedItems: Item<T>[], items: Item<T>[]) => {
     const selectedItemCount = selectedItems.length;
@@ -160,7 +241,7 @@ function MultipleSelectionComponent<T = string>({
           className={cn(
             'select-none whitespace-nowrap overflow-hidden overflow-ellipsis',
             { 'text-white': !isOpen || selectedItems.length < 1 },
-            { 'text-secondary': (!isOpen && selectedItems.length > 0) || labelName === 'meses' }
+            { 'text-foreground': (!isOpen && selectedItems.length > 0) || labelName === 'meses' }
           )}
           data-testid={`${label}-list`}
         >

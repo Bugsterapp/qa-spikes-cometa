@@ -1,6 +1,6 @@
 import Link_To from '/public/assets/icons/ic_link_to.svg';
 import { Tooltip } from 'src/components/atoms/Tooltip';
-import { SkeletonText } from '../organisms/dashboard/FulfillmentDetail';
+import { Skeleton as SkeletonText } from 'src/components/ui/Skeleton';
 import { cn } from '/src/utils/cn';
 
 const LinkDetail = ({
@@ -10,6 +10,7 @@ const LinkDetail = ({
   loading,
   loaderWidth,
   className,
+  target = '_blank',
 }: {
   text: string;
   href: string;
@@ -17,6 +18,7 @@ const LinkDetail = ({
   loading?: boolean;
   loaderWidth?: number;
   className?: string;
+  target?: '_self' | '_blank' | '_parent' | '_top';
 }) => (
   <Tooltip message={message} disableClick={false}>
     <div>
@@ -29,7 +31,7 @@ const LinkDetail = ({
             'text-sm flex flex-row p-2 border rounded cursor-pointer border-blue-secondary hover:bg-info/8 gap-2 items-center',
             className
           )}
-          target="_blank"
+          target={target}
           rel="noopener noreferrer"
         >
           {text}

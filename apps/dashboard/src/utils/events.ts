@@ -4,8 +4,8 @@ type Properties = Record<string, unknown>;
 
 const shouldLog = process.env.NEXT_PUBLIC_SEGMENT_ACTIVE === 'active' && typeof window !== 'undefined';
 
-export const sendTrackEvent = (eventName: string, properties: Properties) => {
-  if (shouldLog) window?.analytics?.track(eventName, properties);
+export const sendTrackEvent = (eventName: string, properties: Properties, options?: SegmentAnalytics.SegmentOpts) => {
+  if (shouldLog) window?.analytics?.track(eventName, properties, options);
 };
 
 export const sendIdentifyEvent = (userId: string, properties: Properties) => {
@@ -26,9 +26,19 @@ export const sendPageViewedEvent = (pageName: string, user?: Properties, school?
       plataform: window?.navigator.userAgent,
       schoolId: school?.id,
       schoolName: school?.name,
+      job_title: school && 'job_title' in school ? school.job_title : undefined,
       ...user,
     };
 
     if (shouldLog) window?.analytics?.track('dashboard: Page viewed', properties);
   }
+};
+
+export const sendPageEvent = (
+  pageName: string,
+  category?: string,
+  properties?: Record<string, any>,
+  options?: SegmentAnalytics.SegmentOpts
+) => {
+  if (shouldLog) window?.analytics?.page(category, pageName, properties, options);
 };

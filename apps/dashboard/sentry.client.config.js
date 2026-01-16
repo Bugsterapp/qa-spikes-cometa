@@ -15,9 +15,8 @@ Sentry.init({
   // `release` value here - use the environment variable `SENTRY_RELEASE`, so
   // that it will also get attached to your source maps
   // enabled: process.env.NODE_ENV !== 'development',
-  replaysSessionSampleRate: 0.1,
   // If the entire session is not sampled, use the below sample rate to sample
   // sessions when an error occurs.
-  replaysOnErrorSampleRate: 1.0,
-  integrations: [new Sentry.Replay()],
+  sampleRate: 0.5,
+  integrations: [Sentry.browserProfilingIntegration(),],
 });

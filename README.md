@@ -22,24 +22,60 @@ $ git clone git@github.com:getcometa/cometa-frontend.git
 
 ```
 
-Prerequisites
+Prerequisites -
 
 Before you begin, make sure you have the following dependencies installed:
 
 - Node.js (v16 or later)
 - npm (v8.6.0 or later)
+- vercel cli
 
 ## Installation
 
 To install the required dependencies and set up the project, follow these steps:
 
 Clone the repository or download the zip file to your local machine.
+
+### Setup your Vercel credentials
+
+To be able to pull the environment variables for the projects you should get your [Vercel token](https://vercel.com/account/tokens).
+
+Set up your token in the scope for `Cometa` and set it to never expire, save it to a local `.env` file at the root of this repository under the variable `VERCEL_TOKEN`.
+
+#### Important
+
+If you have a different clone url for cometa (ie, `git@github.com-cometa:getcometa/cometa-frontend.git`):
+
+1. Go to `.git/config`
+2. Change the url temporarily to `git@github.com:getcometa/cometa-frontend.git`
+3. Finish the steps
+4. Rollback the url change
+
 Open a terminal and navigate to the root directory of the project.
 Run the following command to install the dependencies:
 
 ```bash
 npm install
+npx playwright install
 ```
+
+#### _What if I don't have a Vercel account?_
+
+If you don't have a Vercel account yet or don't plan to have one, you can skip this step by running `npm install` and setting the `VERCEL` environment variable to `1`.
+
+```sh
+VERCEL=1 && npm run install
+```
+
+### Pull environment variables
+
+Run the script
+
+```bash
+npm run pull_envs
+```
+
+Download the environment variables for `dashboard` and `guardian-portal` and ta-da!
 
 ## Guardian
 

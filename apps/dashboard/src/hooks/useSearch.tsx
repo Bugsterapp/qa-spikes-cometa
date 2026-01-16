@@ -11,7 +11,7 @@ const useSearch = (
   const searchMethod = searchBy === 'Estudiante' ? searchByStudent : searchByPayer;
 
   //eslint-disable-next-line
-  return useQuery(['search', search], () => searchMethod(search) as any);
+  return useQuery({ queryKey: ['search', search], queryFn: () => searchMethod(search) as any });
 };
 
 export default useSearch;

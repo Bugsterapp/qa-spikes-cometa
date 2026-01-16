@@ -15,10 +15,65 @@ export enum AccountTypeEnum {
   CB = 'CB',
 }
 
+/** Single adjustment for simulation */
+export interface AdjustmentItem {
+  type: TypeAceEnum;
+  /**
+   * @format decimal
+   * @pattern ^-?\d{0,3}(?:\.\d{0,2})?$
+   */
+  percentage?: string | null;
+  /**
+   * @format decimal
+   * @pattern ^-?\d{0,8}(?:\.\d{0,2})?$
+   */
+  amount?: string | null;
+}
+
+/** Serializer for AdjustmentRule CRUD operations */
+export interface AdjustmentRule {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id: string;
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  school: string;
+  /** Type of adjustment */
+  rule_type: RuleTypeEnum;
+  /**
+   * Application order (1-N, only relevant in sequential mode)
+   * @min -2147483648
+   * @max 2147483647
+   */
+  order: number;
+  /** Whether the rule is active */
+  is_active?: boolean;
+  /** Specific config (e.g.: {"is_accumulative": true} for scholarships) */
+  config?: Record<string, any>;
+  /**
+   * Created at
+   * Date time on which the object was created.
+   * @format date-time
+   */
+  created: string;
+  /**
+   * Modified at
+   * Date time on which the object was last modified.
+   * @format date-time
+   */
+  modified: string;
+}
+
 export interface AffectedConcept {
   /** @format uuid */
   id: string;
   name: string;
+  /** @format uuid */
+  school_cycle: string;
   /** @format double */
   prev_price: number;
   /** @format double */
@@ -26,19 +81,37 @@ export interface AffectedConcept {
   fulfillments: any[];
 }
 
-export enum AffectedConceptTypesEnum {
-  MONTHLY_FEE = 'MONTHLY_FEE',
-  INSCRIPTION = 'INSCRIPTION',
-  TRANSPORT = 'TRANSPORT',
-  PRE_DEBT = 'PRE_DEBT',
-  OTHER = 'OTHER',
-  REINSCRIPTION = 'REINSCRIPTION',
-  EXTRACURRICULAR = 'EXTRACURRICULAR',
-  SPORTS = 'SPORTS',
-  CAFETERIA = 'CAFETERIA',
-  BOOKS_AND_MATERIALS = 'BOOKS_AND_MATERIALS',
-  EXAMS_AND_CERTIFICATES = 'EXAMS_AND_CERTIFICATES',
-  UNIFORMS_AND_MERCH = 'UNIFORMS_AND_MERCH',
+export interface AllowedBlockPeriodResponse {
+  /** @format uuid */
+  id: string;
+  /** @format date */
+  start_date: string;
+  /** @format date */
+  end_date: string;
+  template_id: string;
+}
+
+export interface AnnulInvoiceRequestDTO {
+  /** @minItems 1 */
+  invoice_ids: string[];
+}
+
+export interface AnnulInvoiceResponseDTO {
+  success_count: number;
+  failed_count: number;
+  results: AnnulInvoiceResultDTO[];
+}
+
+export interface AnnulInvoiceResultDTO {
+  /** @format uuid */
+  invoice_id: string;
+  status: AnnulInvoiceResultDTOStatusEnum;
+  message: string | null;
+}
+
+export enum AnnulInvoiceResultDTOStatusEnum {
+  Success = 'success',
+  Failed = 'failed',
 }
 
 export interface AssignBilling {
@@ -58,9 +131,24 @@ export interface AssignBillings {
   students: AssignBilling[];
 }
 
+export interface AssignConceptsDTO {
+  /** @format uuid */
+  student_id: string;
+  concept_ids: string[];
+}
+
 export interface AssignmentStatusRequest {
   concept_id: string;
   students_ids: string[];
+}
+
+export interface AsyncInvoiceResponseDTO {
+  /** Operation status message */
+  message: string;
+  /** Total number of invoices to process */
+  invoice_count: number;
+  /** Number of parallel batches that will be created */
+  estimated_batches: number;
 }
 
 export interface AttributeCreate {
@@ -80,6 +168,16 @@ export interface Attributes {
   name: string;
   /** @maxLength 100 */
   type: string;
+}
+
+export interface AuthDashboardRequestDTO {
+  username: string;
+  password: string;
+}
+
+export interface AuthDashboardResponseDTO {
+  token: string;
+  user: User;
 }
 
 export interface AuthRequest {
@@ -143,10 +241,53 @@ export interface AvailableScholarshipDetail {
   orders_to_skip?: string[];
   /** Affected concept for expired student scholarship. */
   affected_concepts: AffectedConcept[];
+  /** Types of concepts that are affected by scholarship. */
+  affected_concept_types?: ConceptTypesEnum[];
+  /** Excluded concepts on scholarship */
+  excluded_concepts: string;
 }
 
 export interface BadRequestResponse {
   error: string;
+}
+
+export enum BalanceTypeEnum {
+  Discount = 'discount',
+  Surcharge = 'surcharge',
+}
+
+export interface BankAccountHistory {
+  history_id: number;
+  /** @format date-time */
+  history_date: string;
+  history_change_reason: string | null;
+  history_type: string;
+  history_user: string;
+  /** @format uuid */
+  bank_account_id: string;
+  account_type: string;
+  owner: string;
+  nickname: string;
+  bank_name: string;
+  account_number: string;
+  archived: boolean;
+}
+
+export interface BankHolidayRequest {
+  /**
+   * Date in YYYY-MM-DD format
+   * @format date
+   */
+  holiday_date: string;
+}
+
+export interface BankHolidayResponse {
+  payouts_rescheduled: number;
+  /** @format date */
+  holiday_date: string;
+  /** @format date */
+  next_date: string;
+  message: string;
 }
 
 export interface BaseAdmin {
@@ -187,8 +328,13 @@ export interface BaseConcept {
    * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
    */
   price: string;
-  school_cycle: string;
+  school_cycle: SchoolCycle;
   students_assigned_count: string;
+  unique_price: string;
+  last_order_price: string;
+  /** Offering of the concept */
+  offering?: OfferingEnum;
+  optional: string;
 }
 
 export interface BaseEnum {
@@ -245,7 +391,7 @@ export interface BillingGuardianInfo {
    * @maxLength 128
    */
   billing_name?: string | null;
-  billable_dependents: SlimStudent[];
+  billable_dependents?: SlimStudent[];
   /** Fiscal regime config for billing. */
   taxing_system?: TaxingSystemEnum | BlankEnum | NullEnum | null;
   /**
@@ -315,6 +461,7 @@ export interface BillingStudent {
    * @maxLength 250
    */
   last_name?: string;
+  /** Section name */
   section: string;
   billing_guardian: BillingGuardian;
   guardians: Guardian[];
@@ -324,6 +471,40 @@ export interface BillingStudent {
 
 export enum BlankEnum {
   Value = '',
+}
+
+export interface BookKeeperOrderUpdateRequest {
+  name?: string;
+  paid_orders_required?: string[];
+  paid_orders_required_proxy?: string[];
+}
+
+export interface BookKeeperUpdateConceptResponse {
+  /** @format uuid */
+  id: string;
+  name: string;
+  school_cycle_id: string;
+  is_billable: boolean;
+  bank_account_id: string;
+  payment_only_in_dashboard: boolean;
+  tax_code: string | null;
+  tax_unit: string | null;
+  has_sales_tax: boolean;
+  use_education_complement: boolean;
+  institutional_id: string | null;
+  offering: OfferingEnum;
+  does_invoice_as_general_public: boolean;
+  not_invoicing_bank_account_id: string | null;
+}
+
+export interface BookKeeperUpdateOrderResponse {
+  /** @format uuid */
+  id: string;
+  name: string;
+  concept: string;
+  school: string;
+  paid_orders_required: string[];
+  paid_orders_required_proxy: string[];
 }
 
 export interface CFDIUser {
@@ -337,8 +518,28 @@ export enum CardTypeEnum {
   AMEX = 'AMEX',
 }
 
+export interface ChangeBankAccountRequest {
+  /** @format uuid */
+  bank_account_id: string;
+}
+
 export interface ChangeLimitResponse {
   message: string;
+}
+
+export enum ChangeTypeEnum {
+  Onboarding = 'onboarding',
+  Reconfiguration = 'reconfiguration',
+}
+
+export interface CheckBlockActiveResponse {
+  is_blocked: boolean;
+  /** @format date */
+  checked_date: string;
+  /** @format date */
+  start_date?: string | null;
+  /** @format date */
+  end_date?: string | null;
 }
 
 export enum CollectedAtEnum {
@@ -346,25 +547,80 @@ export enum CollectedAtEnum {
   DirectoAColegio = 'Directo a Colegio',
 }
 
-export interface CollectionsGraphic {
+export interface CollectionsGraphicRequest {
+  concepts: string[];
+}
+
+export interface CollectionsGraphicResponse {
   period: Period;
   total_students: number;
   on_time_students: OnTimeStudentsStatistics;
   delinquent_students: DelinquentStudentsStatistics;
 }
 
-export interface CollectionsTable {
-  count: number;
-  next: string;
-  previous: string;
-  results: SlimStudent[];
-  delinquent_students: number;
-  /** @format double */
-  payment_compliance_percentage: number;
-}
-
 export interface ColumnsResponse {
   columns: Record<string, string>;
+}
+
+/** DTO for individual commission configuration per payment method */
+export interface CommissionConfigDTO {
+  /**
+   * Fixed commission amount in MXN per transaction
+   * @format decimal
+   * @pattern ^-?\d{0,8}(?:\.\d{0,2})?$
+   */
+  fixed: string;
+  /**
+   * Percentage commission as decimal (e.g., 0.0201 for 2.01%)
+   * @format decimal
+   * @pattern ^-?\d{0,1}(?:\.\d{0,4})?$
+   */
+  percentage: string;
+  /**
+   * Commission distribution: 0 = 100% school, 1 = 100% guardian, 0.5 = 50% school, 50% guardian
+   * @format decimal
+   * @pattern ^-?\d{0,1}(?:\.\d{0,2})?$
+   */
+  commission_distribution: string;
+}
+
+/** DTO for updating school commissions schema */
+export interface CommissionsSchemaRequestDTO {
+  /** DTO for individual commission configuration per payment method */
+  credit_card: CommissionConfigDTO;
+  /** DTO for individual commission configuration per payment method */
+  debit_card: CommissionConfigDTO;
+  /** DTO for individual commission configuration per payment method */
+  amex_credit_card: CommissionConfigDTO;
+  /** DTO for individual commission configuration per payment method */
+  bank_transfer: CommissionConfigDTO;
+  /** DTO for individual commission configuration per payment method */
+  oxxo: CommissionConfigDTO;
+  /** DTO for individual commission configuration per payment method */
+  ticket: CommissionConfigDTO;
+  /** DTO for individual commission configuration per payment method */
+  digital_currency?: CommissionConfigDTO;
+}
+
+/** DTO for school commissions schema response */
+export interface CommissionsSchemaResponseDTO {
+  /** @format uuid */
+  school_id: string;
+  school_name: string;
+  commissions_schema: Record<string, any>;
+  /** @format date-time */
+  updated_at: string;
+}
+
+/** DTO for commissions schema update operation response */
+export interface CommissionsSchemaUpdateResponseDTO {
+  message: string;
+  /** @format uuid */
+  school_id: string;
+}
+
+export interface CommissionsUpdateErrorResponse {
+  commissions_schema: string[];
 }
 
 export enum CompoundingEnum {
@@ -375,29 +631,42 @@ export enum CompoundingEnum {
   MONTHLY = 'MONTHLY',
 }
 
-/**
- * A ModelSerializer that takes an additional `fields` argument that
- * controls which fields should be displayed.
- */
 export interface Concept {
   /**
    * Unique identifier for the object.
    * @format uuid
    */
   id: string;
-  /** Name of the concept. Concatenate concept basename with rootConcept name */
+  /**
+   * Name of the concept. Concatenate concept basename with rootConcept name
+   * @maxLength 512
+   */
   name: string;
   type: string;
-  /** Indicates if concept only can be paid on dashboard. */
-  payment_only_in_dashboard: boolean;
-  /**
-   * Price for concept orders.
-   * @format decimal
-   * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
-   */
-  price: string;
-  /** Day of month when concept due, values between -3 and 28 (-1: last day, -2: penultimate day, -3: third to last day). */
-  payday: number;
+  /** Description of the concept. */
+  description?: string | null;
+}
+
+export interface ConceptAutoAssignedGrade {
+  id: string;
+  name: string;
+  is_all_assigned: boolean;
+  sections: ConceptAutoAssignedSection[];
+}
+
+export interface ConceptAutoAssignedLevel {
+  id: string;
+  name: string;
+  is_all_assigned: boolean;
+  grades: ConceptAutoAssignedGrade[];
+}
+
+export interface ConceptAutoAssignedSection {
+  id: string;
+  name: string;
+  is_already_assigned: boolean;
+  /** @format uuid */
+  concept_availability_id?: string | null;
 }
 
 export interface ConceptOrdersListSuccessResponse {
@@ -420,10 +689,35 @@ export interface ConceptSerializerStatic {
   type: string;
   /** Indicates if concept only can be paid on dashboard. */
   payment_only_in_dashboard: boolean;
-  optional: string;
+  optional: boolean;
   subscription: string;
   /** Defines whether the concept can be billed, as long as the payment is made through the dashboard. */
   is_billable: boolean;
+  display_type: string;
+}
+
+export interface ConceptSlim {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id: string;
+  /**
+   * Name of the concept. Concatenate concept basename with rootConcept name
+   * @maxLength 512
+   */
+  name: string;
+  /** Type of the concept. */
+  type: ConceptSlimTypeEnum;
+  school_cycle: SchoolCycle;
+}
+
+export enum ConceptSlimTypeEnum {
+  MONTHLY_FEE = 'MONTHLY_FEE',
+  INSCRIPTION = 'INSCRIPTION',
+  TRANSPORT = 'TRANSPORT',
+  PRE_DEBT = 'PRE_DEBT',
+  OTHER = 'OTHER',
 }
 
 export interface ConceptSmall {
@@ -450,15 +744,14 @@ export interface ConceptStudent {
    * @maxLength 250
    */
   last_name?: string;
+  state?: StateEnum;
   /**
    * Private identifier inside school.
    * @maxLength 50
    */
   enrollment_code?: string | null;
-  /** Section name */
-  section?: string;
-  /** Level name */
-  level?: string;
+  section: string;
+  level: string;
   orders_to_pay: string;
   orders_payed: string;
   orders_to_pay_in_process: string;
@@ -469,8 +762,27 @@ export interface ConceptStudent {
 }
 
 export interface ConceptTypes {
-  type: string;
+  type: ConceptTypesEnum;
   name: string;
+}
+
+export enum ConceptTypesEnum {
+  MONTHLY_FEE = 'MONTHLY_FEE',
+  INSCRIPTION = 'INSCRIPTION',
+  TRANSPORT = 'TRANSPORT',
+  PRE_DEBT = 'PRE_DEBT',
+  OTHER = 'OTHER',
+  REINSCRIPTION = 'REINSCRIPTION',
+  EXTRACURRICULAR = 'EXTRACURRICULAR',
+  SPORTS = 'SPORTS',
+  CAFETERIA = 'CAFETERIA',
+  BOOKS_AND_MATERIALS = 'BOOKS_AND_MATERIALS',
+  EXAMS_AND_CERTIFICATES = 'EXAMS_AND_CERTIFICATES',
+  UNIFORMS_AND_MERCH = 'UNIFORMS_AND_MERCH',
+  DONATION = 'DONATION',
+  EVENTS = 'EVENTS',
+  TRIPS = 'TRIPS',
+  INSURANCE = 'INSURANCE',
 }
 
 export interface ConceptsList {
@@ -490,6 +802,39 @@ export interface ConceptsList {
    */
   root_concept?: string | null;
   orders: OrderImporter[];
+}
+
+/** Configuration history response */
+export interface ConfigurationHistory {
+  /** @format uuid */
+  id: string;
+  /** @format date-time */
+  timestamp: string;
+  user: ConfigurationHistoryUser | null;
+  change_type: ChangeTypeEnum;
+  apply_independently: boolean;
+  rules: ConfigurationHistoryRule[];
+  description: string;
+  recalculation_triggered: boolean;
+  recalculation_trigger: RecalculationTriggerEnum | NullEnum | null;
+  rules_created_count: number;
+  rules_deleted_count: number;
+}
+
+/** Rule snapshot in configuration history */
+export interface ConfigurationHistoryRule {
+  rule_type: string;
+  order: number;
+  is_active: boolean;
+  config: Record<string, any>;
+}
+
+/** User information in configuration history */
+export interface ConfigurationHistoryUser {
+  /** @format uuid */
+  id: string;
+  first_name: string;
+  last_name: string;
 }
 
 export enum CountryEnum {
@@ -766,6 +1111,29 @@ export interface CreateAdmin {
   job_title?: string;
 }
 
+export interface CreateAllowedBlockPeriodRequest {
+  /** @format date */
+  start_date: string;
+  /** @format date */
+  end_date: string;
+  /** @maxLength 255 */
+  template_id: string;
+}
+
+export interface CreateAssignGuardian {
+  first_name: string;
+  last_name: string;
+  /** @format email */
+  email: string;
+  phone: string;
+  /** @maxLength 1 */
+  gender?: string;
+  /** @format uuid */
+  student_id: string;
+  relationship?: string;
+  has_student_custody?: boolean;
+}
+
 export interface CreateConcept {
   /**
    * Unique identifier for the object.
@@ -777,7 +1145,7 @@ export interface CreateConcept {
    * @format uuid
    */
   entity: string | null;
-  type: Type68EEnum;
+  type: ConceptTypesEnum;
   /**
    * Unique identifier for the object.
    * @format uuid
@@ -835,8 +1203,31 @@ export interface CreateConcept {
   is_billable?: boolean;
   orders?: OrderCreate[];
   setup_periodic_restrictions?: boolean;
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  series?: string | null;
   /** Indicates if concept must be use educational complement on billing. */
   use_education_complement?: boolean;
+  /**
+   * Special dispersion config of concept
+   * @format uuid
+   */
+  payout_config?: string | null;
+  /** Offering of the concept */
+  offering?: OfferingEnum;
+  does_invoice_as_general_public?: boolean;
+}
+
+export interface CreateConceptAutoAssignRequestDTO {
+  section_ids: string[];
+  /** @default true */
+  is_auto_assignable?: boolean;
+}
+
+export interface CreateConceptAutoAssignResponseDTO {
+  id: string;
 }
 
 export interface CreateConceptWithAttributes {
@@ -850,7 +1241,7 @@ export interface CreateConceptWithAttributes {
    * @format uuid
    */
   entity: string | null;
-  type: Type68EEnum;
+  type: ConceptTypesEnum;
   /**
    * Unique identifier for the object.
    * @format uuid
@@ -906,7 +1297,20 @@ export interface CreateConceptWithAttributes {
   orders_attributes?: OrderWithAttributes[];
   /** Indicates if concept must be use educational complement on billing. */
   use_education_complement?: boolean;
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  series?: string | null;
   orders?: OrderStock[];
+  /**
+   * Special dispersion config of concept
+   * @format uuid
+   */
+  payout_config?: string | null;
+  /** Offering of the concept */
+  offering?: OfferingEnum;
+  does_invoice_as_general_public?: boolean;
 }
 
 export interface CreateConceptWithSinglePayment {
@@ -920,7 +1324,7 @@ export interface CreateConceptWithSinglePayment {
    * @format uuid
    */
   entity: string | null;
-  type: Type68EEnum;
+  type: ConceptTypesEnum;
   /**
    * Unique identifier for the object.
    * @format uuid
@@ -980,6 +1384,59 @@ export interface CreateConceptWithSinglePayment {
   setup_periodic_restrictions?: boolean;
   /** Indicates if concept must be use educational complement on billing. */
   use_education_complement?: boolean;
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  series?: string | null;
+  /**
+   * Special dispersion config of concept
+   * @format uuid
+   */
+  payout_config?: string | null;
+  /** Offering of the concept */
+  offering?: OfferingEnum;
+  does_invoice_as_general_public?: boolean;
+}
+
+export interface CreateDashboardCreditNoteRequestDTO {
+  /**
+   * CASH = 01
+   * TRANSFER = 03
+   * CREDIT_CARD = 04
+   * DEBIT_CARD = 28
+   * TO_DEFINE = 99
+   */
+  payment_method: CreateDashboardCreditNoteRequestDTOPaymentMethodEnum;
+  /**
+   * @format decimal
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
+   */
+  amount: string;
+  observations?: string | null;
+}
+
+export enum CreateDashboardCreditNoteRequestDTOPaymentMethodEnum {
+  Value01 = '01',
+  Value03 = '03',
+  Value04 = '04',
+  Value28 = '28',
+  Value99 = '99',
+}
+
+export interface CreateDashboardCreditNoteResponseDTO {
+  id: string;
+  client_identifier: string;
+}
+
+export interface CreateDashboardInvoiceRequestDTO {
+  payin_fulfillment: number;
+  observations?: string | null;
+}
+
+export interface CreateDashboardInvoiceResponseDTO {
+  /** @format uuid */
+  id: string;
 }
 
 export interface CreateKushkiPreference {
@@ -1003,23 +1460,92 @@ export interface CreateMassiveConceptAssignments {
   students: string[];
 }
 
-export interface CreateMerPagoCPPreference {
-  /** @format uuid */
-  guardian: string;
-  items: CreateServicePreferenceItem[];
-  preference_type: PreferenceTypeEnum;
-  back_urls?: Record<string, string>;
+export interface CreatePayoutBalanceRequestDTO {
+  payout_id: string;
+  balance_type: BalanceTypeEnum;
+  /**
+   * @format decimal
+   * @pattern ^-?\d{0,13}(?:\.\d{0,2})?$
+   */
+  amount: string;
+  registered_by: string;
+  comment: string;
 }
 
-export interface CreateMercadoPagoCPGatewayNotification {
-  notification: Record<string, any>;
+export interface CreateRefundDashboardRequestDTO {
+  payin_fulfillment_id: string;
+  /** @format double */
+  amount: number;
+  invoice_action: InvoiceActionEnum;
+  /**
+   * cash = cash
+   * transfer = transfer
+   * credit_card = credit_card
+   * debit_card = debit_card
+   * to_define = to_define
+   */
+  payment_method?: CreateRefundDashboardRequestDTOPaymentMethodEnum;
+  /** @format date */
+  registered_at?: string;
+  comment?: string;
+  /** @default false */
+  unassign_concept?: boolean;
+}
+
+export enum CreateRefundDashboardRequestDTOPaymentMethodEnum {
+  Cash = 'cash',
+  Transfer = 'transfer',
+  CreditCard = 'credit_card',
+  DebitCard = 'debit_card',
+  ToDefine = 'to_define',
+}
+
+export interface CreateRefundDashboardResponseDTO {
+  id: string;
+  payin_fulfillment: string;
+  action: string;
+  amount: string;
+  invoice?: string;
+  /** @format date */
+  registered_at: string;
+  comment: string;
+  payment_method: string;
+  /** @default false */
+  unassign_concept?: boolean;
+}
+
+export interface CreateSchoolBlockedPeriodRequest {
+  /** @format date */
+  start_date: string;
+  /** @format date */
+  end_date: string;
 }
 
 export interface CreateServicePreferenceItem {
   /** @format uuid */
-  student: string;
+  student: string | null;
   /** @format uuid */
   order: string;
+}
+
+export interface CreateSpecialDiscountDashboardRequestDTO {
+  /** @maxLength 255 */
+  name: string;
+  /** @format uuid */
+  student: string;
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  order: string;
+  /**
+   * Amount or percentage of discount depending of type.
+   * @format decimal
+   * @pattern ^-?\d{0,13}(?:\.\d{0,2})?$
+   */
+  value?: string | null;
+  /** Type of discount. */
+  type: Type104Enum;
 }
 
 export interface CreateSubscriptionRequestDTO {
@@ -1037,6 +1563,16 @@ export interface CreateSubscriptionRequestDTO {
   token?: string;
 }
 
+export interface CreateUpdateUserDTO {
+  first_name?: string;
+  last_name?: string;
+  /** @format email */
+  email?: string;
+  mobile?: string | null;
+  membership?: string;
+  is_active?: boolean;
+}
+
 export interface CreateUser {
   /**
    * Unique identifier for the object.
@@ -1049,10 +1585,13 @@ export interface CreateUser {
    * @pattern ^[\w.@+-]+$
    */
   username: string;
-  /** @maxLength 128 */
-  password: string;
+  /** @maxLength 20 */
+  mobile?: string | null;
+  password?: string;
   /** @maxLength 150 */
   first_name?: string;
+  /** @maxLength 150 */
+  last_name?: string;
   /**
    * Email address
    * Email address of the user.
@@ -1060,7 +1599,16 @@ export interface CreateUser {
    * @maxLength 254
    */
   email: string;
+  /** @default false */
+  is_staff?: boolean;
   auth_token: string;
+}
+
+export interface CreditNoteWithTotal {
+  /** @format uuid */
+  id: string;
+  /** @format double */
+  total: number;
 }
 
 /**
@@ -1092,31 +1640,31 @@ export interface CustomFulfillmentSerializerV2 {
    * Student unique identifier
    * @format uuid
    */
-  student_id: string;
+  student_id: string | null;
   /** Student first name */
-  student_first_name: string;
+  student_first_name: string | null;
   /**
    * Total amount of fulfillment
    * @format decimal
-   * @pattern ^-?\d{0,6}(?:\.\d{0,2})?$
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
    */
   total: string;
   /**
    * Subtotal amount of fulfillment
    * @format decimal
-   * @pattern ^-?\d{0,6}(?:\.\d{0,2})?$
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
    */
   subtotal: string;
   /**
    * Discount of fulfillment
    * @format decimal
-   * @pattern ^-?\d{0,6}(?:\.\d{0,2})?$
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
    */
   discount: string;
   /**
    * Interest of fulfillment
    * @format decimal
-   * @pattern ^-?\d{0,6}(?:\.\d{0,2})?$
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
    */
   interest: string;
   /** Discount breakdown */
@@ -1138,7 +1686,7 @@ export interface CustomPayinFulfillmentDetailSerializerV2 {
   /**
    * Total paid amount of payinFulfillment
    * @format decimal
-   * @pattern ^-?\d{0,6}(?:\.\d{0,2})?$
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
    */
   total_paid: string;
   /**
@@ -1153,7 +1701,7 @@ export interface CustomPayinFulfillmentSerializerV2 {
   /**
    * Paid amount for payinFulfillment
    * @format decimal
-   * @pattern ^-?\d{0,6}(?:\.\d{0,2})?$
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
    */
   total_paid: string;
   is_partial?: boolean;
@@ -1170,11 +1718,19 @@ export interface CustomStudentPayinSerializerV2 {
    * Student unique identifier
    * @format uuid
    */
-  student_id: string;
+  student_id: string | null;
   /** Student first name */
-  first_name: string;
+  first_name: string | null;
   /** List of paid orders */
   orders: string[];
+}
+
+export interface DashbaordSchoolDueOrdersDelinquents {
+  zero: number;
+  low: number;
+  mid: number;
+  high: number;
+  total: number;
 }
 
 export interface DashboardDependentFulfillment {
@@ -1247,13 +1803,9 @@ export interface DashboardDependentOrder {
   /** Current paid amount for fulfillment */
   paid_amount: string;
   currency: string;
-  /**
-   * Date when order due
-   * @format date
-   */
-  due: string | null;
+  due: string;
   /** Status of the student order (legacy version). */
-  status: string;
+  status: Status259Enum;
   /** Interest amount of fulfillment(order-student). */
   interest: string;
   /** Discount amount of fulfillment(order-student). */
@@ -1269,6 +1821,9 @@ export interface DashboardDependentOrder {
   fulfillment_id: string;
   /** Interest + visible over charge amount amount of fulfillment(order-student). */
   total_charge: string;
+  base_amount: string;
+  /** status of the fulfillment */
+  fulfillment_status: string;
 }
 
 export interface DashboardDependentOrderDetail {
@@ -1285,44 +1840,38 @@ export interface DashboardDependentOrderDetail {
    * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
    */
   amount: string;
-  /**
-   * @format decimal
-   * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
-   */
   tax_amount: string;
-  /**
-   * @format decimal
-   * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
-   */
   pre_tax_price_amount: string;
   /** Final amount to be paid(after discounts and interests). */
   final_amount: string;
   /** Current paid amount for fulfillment */
   paid_amount: string;
   currency: string;
-  /**
-   * Date when order due
-   * @format date
-   */
-  due: string | null;
+  due: string;
   /** Status of the student order (legacy version). */
-  status: string;
+  status: Status259Enum;
   /** Interest amount of fulfillment(order-student). */
   interest: string;
   /** Discount amount of fulfillment(order-student). */
   discount: string;
-  discount_breakdown: string;
+  discount_breakdown: DiscountBreakdown;
   /** Boolean indicates if first payin associated to order is pending. */
   pending: boolean;
-  dependent: string;
+  dependent: SlimStudent;
   /** Boolean indicates if first payin_fulfillment associated to order is partial. */
   has_partial_payins: boolean;
   /** Current pending amount to be paid. */
   pending_amount: string;
   /** Fulfillment id for order student. */
   fulfillment_id: string;
-  payins: string;
-  special_over_charges: string;
+  /** status of the fulfillment */
+  fulfillment_status: string;
+  fulfillment_base_amount: string;
+  payins: Payin[];
+  special_over_charges: SlimSpecialOverCharge[];
+  original_due: string;
+  is_interest_forgiven: boolean;
+  forgiven_interest: string;
 }
 
 export interface DashboardFulfillment {
@@ -1332,6 +1881,11 @@ export interface DashboardFulfillment {
    */
   id: string;
   order_name: string;
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  order_id: string;
   student: SlimStudent;
   guardian: BillingGuardian;
   /** Original amount to paid(original order amount). */
@@ -1345,13 +1899,13 @@ export interface DashboardFulfillment {
   /**
    * Interest of fulfillment.
    * @format decimal
-   * @pattern ^-?\d{0,6}(?:\.\d{0,2})?$
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
    */
   interest: string;
   /**
    * Discount of fulfillment.
    * @format decimal
-   * @pattern ^-?\d{0,6}(?:\.\d{0,2})?$
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
    */
   discount: string;
   /** Schema of detailed discounts aplied to fulfillment. */
@@ -1363,7 +1917,7 @@ export interface DashboardFulfillment {
   /**
    * Current paid amount.
    * @format decimal
-   * @pattern ^-?\d{0,6}(?:\.\d{0,2})?$
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
    */
   paid_amount: string;
   /** Indicate if fulfillment has partial payins. */
@@ -1377,11 +1931,11 @@ export interface DashboardFulfillment {
   invoice: string;
   /** Unique correlative identifier for the object inside a school. */
   correlative_id: string;
-  payout: string;
+  payout: DashboardPayoutIds | null;
   /**
    * Current pending amount to paid.
    * @format decimal
-   * @pattern ^-?\d{0,6}(?:\.\d{0,2})?$
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
    */
   pending_amount: string;
   payins: Payin[];
@@ -1392,11 +1946,23 @@ export interface DashboardFulfillment {
   /**
    * Total guardian commission (commission + tax).
    * @format decimal
-   * @pattern ^-?\d{0,6}(?:\.\d{0,2})?$
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
    */
   guardian_commission: string;
   /** Indicates if the interest of the fulfillment are forgiven */
   interest_forgiven?: boolean;
+  /**
+   * Original Price.
+   * @format decimal
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
+   */
+  original_amount: string;
+  special_over_charges: string;
+  refund: CreateRefundDashboardResponseDTO;
+  amounts_config: Record<string, any>;
+  /** @format date */
+  original_due: string;
+  is_billable: boolean;
 }
 
 export interface DashboardFulfillmentList {
@@ -1423,7 +1989,7 @@ export interface DashboardFulfillmentList {
   /**
    * Current paid amount.
    * @format decimal
-   * @pattern ^-?\d{0,6}(?:\.\d{0,2})?$
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
    */
   paid_amount: string;
   /** Estado calculado en base a los estados de los Invoices de los payinFulfillments del fulfillment  */
@@ -1433,6 +1999,8 @@ export interface DashboardFulfillmentList {
   payout: string;
   invoices: string;
   is_sponsored: string;
+  /** Id del school cycle perteneciente al concepto pagado en el fulfillment */
+  school_cycle_id: string;
 }
 
 export interface DashboardFulfillmentListSerializerV2 {
@@ -1447,7 +2015,24 @@ export interface DashboardFulfillmentListSerializerV2 {
   student: SlimStudent;
   guardian: BillingGuardian;
   /** Original amount to paid(original order amount). */
-  amount: string;
+  amount: {
+    /**
+     * @format double
+     * @default "0.00"
+     * @example "9287.00"
+     */
+    string_value: string;
+    /**
+     * @default 0
+     * @example 123
+     */
+    int_value: number;
+    /**
+     * @default 2
+     * @example 2
+     */
+    coefficient: number;
+  };
   /** Final amount to paid(after discounts and interests). */
   final_amount: string;
   /** @format date-time */
@@ -1461,13 +2046,13 @@ export interface DashboardFulfillmentListSerializerV2 {
    */
   total_paid?: string;
   /** Estado calculado en base a los estados de los Invoices de los payinFulfillments del fulfillment  */
-  invoice_status: string;
+  invoice_status: InvoiceStatusEnum;
   /** Indicate if first payment of fulfillment is collected at school. */
-  collected_at_school: string;
-  payout: string;
+  collected_at_school: boolean | null;
+  payout: DashboardPayoutIds | null;
   payins: Payin[];
-  invoices: string;
-  is_sponsored: string;
+  invoices: Invoice[];
+  is_sponsored: boolean;
 }
 
 export interface DashboardGuardian {
@@ -1509,6 +2094,83 @@ export interface DashboardGuardian {
   due_total: string;
   billing_info?: BillingGuardianInfo;
   dependents: DashboardStudentDetail[];
+  /** @maxLength 255 */
+  occupation?: string | null;
+  /** @maxLength 255 */
+  workplace?: string | null;
+  /** @maxLength 255 */
+  workphone?: string | null;
+  /** @default "" */
+  relationship: string;
+  has_student_custody: boolean;
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  school_id: string;
+}
+
+export interface DashboardGuardianActionSendMessage {
+  type: DashboardGuardianActionSendMessageTypeEnum;
+  selected_school: string;
+}
+
+export enum DashboardGuardianActionSendMessageTypeEnum {
+  Onboard = 'onboard',
+}
+
+export interface DashboardGuardianSendOutboundRequestDTO {
+  action: DashboardGuardianActionSendMessage;
+}
+
+export interface DashboardGuardianSlim {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id: string;
+  /**
+   * First name of the person.
+   * @maxLength 250
+   */
+  first_name: string;
+  /**
+   * Last name of the person.
+   * @maxLength 250
+   */
+  last_name?: string;
+  /**
+   * Mobile phone number for guardian.
+   * @maxLength 128
+   */
+  phone?: string | null;
+  /**
+   * Email address for guardian.
+   * @format email
+   * @maxLength 254
+   */
+  email: string;
+  /**
+   * Birthdate of the person.
+   * @format date
+   */
+  birthdate?: string | null;
+  /** Activate or deactive send emails to guardian. */
+  send_emails?: boolean;
+  /** Activate or deactive send whatsapps to guardian. */
+  send_whatsapps?: boolean;
+  billing_info?: BillingGuardianInfo;
+  /** @maxLength 255 */
+  occupation?: string | null;
+  /** @maxLength 255 */
+  workplace?: string | null;
+  /** @maxLength 255 */
+  workphone?: string | null;
+  /** @default "" */
+  relationship: string;
+  has_student_custody: boolean;
+  /** @format uuid */
+  school_id?: string;
 }
 
 export interface DashboardJoyride {
@@ -1535,9 +2197,9 @@ export interface DashboardPayin {
    * @format uuid
    */
   id: string;
-  type: Type787Enum;
+  type: Type11EEnum;
   total_currency: string;
-  invoices_pdfs: string;
+  invoices_pdfs: string[];
   /** Indicates if payment was received in school. */
   collected_at_school: boolean;
   /** Unique correlative identifier for the object inside a school. */
@@ -1567,6 +2229,7 @@ export interface DashboardPayin {
   manual_payment_account?: string;
   /** @maxLength 150 */
   comment?: string | null;
+  show_comment?: boolean | null;
   transaction_reference?: string | null;
   sender_account_number?: string | null;
   card_last_digits?: string | null;
@@ -1584,7 +2247,7 @@ export interface DashboardPayinDetail {
   /** Unique correlative identifier for the object inside a school. */
   correlative_id: string;
   /** Type of the payin */
-  type: Type787Enum | NullEnum | null;
+  type: Type11EEnum | NullEnum | null;
   /**
    * Total amount of the payin.
    * @format decimal
@@ -1616,6 +2279,7 @@ export interface DashboardPayinDetail {
    */
   created: string;
   comment: string;
+  show_comment: string;
   transaction_reference: string;
   sender_account_number: string;
   card_last_digits: string;
@@ -1625,7 +2289,8 @@ export interface DashboardPayinDetail {
 export interface DashboardPayinFulfillment {
   id: number;
   is_partial: boolean;
-  total_paid: string;
+  /** @format double */
+  total_paid: number;
   order: string;
   /**
    * A ModelSerializer that takes an additional `fields` argument that
@@ -1642,11 +2307,57 @@ export interface DashboardPayinFulfillment {
    * controls which fields should be displayed.
    */
   fulfillment: SimpleFulfillment;
-  /**
-   * A ModelSerializer that takes an additional `fields` argument that
-   * controls which fields should be displayed.
-   */
   invoice: Invoice;
+  refund: RetrieveRefundDashboardDTO | null;
+  /**
+   * @format decimal
+   * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
+   */
+  paid_interest: string;
+}
+
+export interface DashboardPayout {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id: string;
+  /** Unique correlative identifier for the object inside a school. */
+  correlative_id: string;
+  status?: StatusFdeEnum;
+  /**
+   * Datetime when transaction started.
+   * @format date-time
+   */
+  transaction_started?: string | null;
+  /**
+   * Date when transaction must be started, this in an approximation.
+   * @format date
+   */
+  scheduled_date?: string | null;
+  deposit_date: string;
+}
+
+export interface DashboardPayoutIds {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id: string;
+  /** Unique correlative identifier for the object inside a school. */
+  correlative_id: string;
+  status?: StatusFdeEnum;
+  /**
+   * Datetime when transaction started.
+   * @format date-time
+   */
+  transaction_started?: string | null;
+  /**
+   * Date when transaction must be started, this in an approximation.
+   * @format date
+   */
+  scheduled_date?: string | null;
+  deposit_date: string;
 }
 
 export interface DashboardRootConcept {
@@ -1661,7 +2372,7 @@ export interface DashboardRootConcept {
    */
   school_cycle?: string | null;
   /** Type of the concept. */
-  type: Type68EEnum;
+  type: ConceptTypesEnum;
   /**
    * Name of the concept.
    * @maxLength 124
@@ -1681,7 +2392,7 @@ export interface DashboardRootConceptDetail {
    */
   school_cycle?: string | null;
   /** Type of the concept. */
-  type: Type68EEnum;
+  type: ConceptTypesEnum;
   /**
    * Name of the concept.
    * @maxLength 124
@@ -1707,6 +2418,58 @@ export interface DashboardSchool {
   /** Indicates if school uses our invoicing services. */
   does_invoice?: boolean;
   can_invoice_to_general_public?: boolean;
+  /** If true, scholarships and partial payments are applied independently on the original amount. */
+  apply_discounts_independently?: boolean;
+  /**
+   * Logo of the school.
+   * @format uri
+   */
+  logo?: string | null;
+  /** Indicate if is a demo school. */
+  demo?: boolean;
+  /**
+   * Created at
+   * Date time on which the object was created.
+   * @format date-time
+   */
+  created: string;
+  /** Type of institution this school represents. */
+  school_type?: SchoolTypeEnum | BlankEnum | NullEnum | null;
+  /** Current status of the school */
+  status?: Status2B3Enum;
+  has_integration: boolean;
+  /** Default cfdi config for invoice. */
+  cfdi_use_config?: Record<string, any>;
+  invoice_discount_breakdown: boolean;
+}
+
+export interface DashboardSchoolDueOrdersResume {
+  total: number;
+  delinquents: DashbaordSchoolDueOrdersDelinquents;
+}
+
+export interface DashboardSchoolFilters {
+  concepts: Concept[];
+  orders: OrderFilter[];
+  sections: DashboardSchoolSection[];
+  levels: DashboardSchoolLevel[];
+  payment_methods: string[][];
+  collected_at: string[][];
+  concepts_types: string[][];
+  concepts_months: [number, string][];
+}
+
+export interface DashboardSchoolLevel {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id: string;
+  /**
+   * Name of the level.
+   * @maxLength 350
+   */
+  name: string;
 }
 
 export interface DashboardSchoolPayoutDetails {
@@ -1717,7 +2480,7 @@ export interface DashboardSchoolPayoutDetails {
   /** Account number for bank account related to payout. */
   bank_account_number: string;
   commission: string;
-  payin_fulfillments: string;
+  payin_fulfillments: SimplePayinFulfillment[];
   status?: StatusFdeEnum;
   total_received: string;
   /**
@@ -1731,6 +2494,17 @@ export interface DashboardSchoolPayoutDetails {
    */
   scheduled_date?: string | null;
   deposit_date: string;
+  /**
+   * @format decimal
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
+   */
+  discounts: string;
+  /**
+   * @format decimal
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
+   */
+  surcharges: string;
+  discount_and_surcharge_details: string;
 }
 
 export interface DashboardSchoolPayouts {
@@ -1747,17 +2521,35 @@ export interface DashboardSchoolPayouts {
   transaction_started?: string | null;
   /** Public summary for bank account related to payout. */
   bank_account: string;
+  /**
+   * @format decimal
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
+   */
   total_received: string;
+  /**
+   * @format decimal
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
+   */
   total_emitted: string;
   /**
    * Date when transaction must be started, this in an approximation.
    * @format date
    */
   scheduled_date?: string | null;
-  orders_count: string;
+  orders_count: number;
   /** Unique correlative identifier for the object inside a school. */
   correlative_id: string;
   deposit_date: string;
+  /**
+   * @format decimal
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
+   */
+  discounts: string;
+  /**
+   * @format decimal
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
+   */
+  surcharges: string;
 }
 
 export interface DashboardSchoolSection {
@@ -1774,14 +2566,56 @@ export interface DashboardSchoolSection {
   level: string;
   /**
    * Grade of the section.
-   * @maxLength 50
+   * @maxLength 100
    */
   grade: string;
   /**
    * Internal name for section inside a grade.
-   * @maxLength 9
+   * @maxLength 50
    */
   group?: string | null;
+}
+
+export interface DashboardSchoolUpdate {
+  /**
+   * Name of the school.
+   * @maxLength 350
+   */
+  name?: string;
+  /**
+   * Logo of the school.
+   * @format uri
+   */
+  logo?: string | null;
+  /**
+   * Email contact of the school
+   * @format email
+   * @maxLength 254
+   */
+  email?: string;
+  phone?: string;
+  can_invoice_to_general_public?: boolean;
+  /** @format time */
+  emit_invoice_time?: string | null;
+  enable_manual_pay_invoice?: boolean;
+  /** Defines if scholarship discount is applied over the previous scholarship discount */
+  scholarship_is_accumulative?: boolean;
+  /** Determines which config is used for due orders and scholarships. */
+  scholarship_lost_config?: ScholarshipLostConfigEnum;
+  /** Configuration for scholarship settings */
+  scholarship_config?: Record<string, any>;
+  /** Enable discount breakdown in invoices */
+  invoice_discount_breakdown?: boolean;
+  /** Define if interest rate is frozen after first partial payment */
+  partial_payment_interest_freeze?: boolean;
+  /** Indicated amount over witch amount must be apply interests. */
+  partial_payment_interest_type?: PartialPaymentInterestTypeEnum;
+  /** Indicates if school uses our invoicing services. */
+  does_invoice?: boolean;
+  /** Default cfdi config for invoice. */
+  cfdi_use_config?: Record<string, any>;
+  /** Default cfdi config for discounts */
+  discounts_config?: Record<string, any>;
 }
 
 export interface DashboardSchoolWithStudents {
@@ -1795,7 +2629,41 @@ export interface DashboardSchoolWithStudents {
    * @maxLength 350
    */
   name: string;
+  /**
+   * Logo of the school.
+   * @format uri
+   */
+  logo?: string | null;
+  /**
+   * Email contact of the school
+   * @format email
+   * @maxLength 254
+   */
+  email: string;
+  /**
+   * Phone contact of the school
+   * @maxLength 128
+   */
+  phone: string;
   levels: DashboardLevel[];
+  can_perform_school_cycle_activation: string;
+  /** Defines if scholarship discount is applied over the previous scholarship discount */
+  scholarship_is_accumulative?: boolean;
+  /** Determines which config is used for due orders and scholarships. */
+  scholarship_lost_config?: ScholarshipLostConfigEnum;
+  /** @example {"apply_interest":true,"apply_early_bird":false} */
+  scholarship_config: {
+    /** Whether to apply interest calculations when scholarships are active */
+    apply_interest?: boolean;
+    /** Whether to apply early bird discounts when scholarships are active */
+    apply_early_bird?: boolean;
+  };
+  /** Define if interest rate is frozen after first partial payment */
+  partial_payment_interest_freeze?: boolean;
+  /** Indicated amount over witch amount must be apply interests. */
+  partial_payment_interest_type?: PartialPaymentInterestTypeEnum;
+  /** If true, scholarships and partial payments are applied independently on the original amount. */
+  apply_discounts_independently?: boolean;
 }
 
 export interface DashboardSection {
@@ -1860,7 +2728,10 @@ export interface DashboardStudent {
   billing_guardian_info: BillingGuardianInfo;
   /** True when the student is currently active. */
   is_active?: boolean;
+  state?: StateEnum;
   school_cycle_id: string | null;
+  /** @format date */
+  credential_expiration_date?: string | null;
 }
 
 export interface DashboardStudentDelinquency {
@@ -1885,13 +2756,14 @@ export interface DashboardStudentDelinquency {
    */
   enrollment_code?: string | null;
   /** Level name */
-  level?: string;
+  level: string | null;
   /** Section name */
-  section?: string;
+  section: string | null;
   total_debt: string;
   fulfillments: string;
   /** True when the student is currently active. */
   is_active?: boolean;
+  state?: StateEnum;
   number_of_past_due_orders: string;
   due_monthly_orders: string;
 }
@@ -1918,15 +2790,88 @@ export interface DashboardStudentDelinquencyDetail {
    */
   enrollment_code?: string | null;
   /** Level name */
-  level?: string;
+  level: string | null;
   /** Section name */
-  section?: string;
+  section: string | null;
   total_debt: string;
   number_of_past_due_orders: string;
   fulfillments: string;
   guardians: string;
   /** True when the student is currently active. */
   is_active?: boolean;
+  state?: StateEnum;
+}
+
+export interface DashboardStudentDelinquencyDetailSummary {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id: string;
+  /**
+   * First name of the person.
+   * @maxLength 250
+   */
+  first_name: string;
+  /**
+   * Last name of the person.
+   * @maxLength 250
+   */
+  last_name?: string;
+  /**
+   * Private identifier inside school.
+   * @maxLength 50
+   */
+  enrollment_code?: string | null;
+  /** Level name */
+  level: string;
+  /** Section name */
+  section: string;
+  total_debt: string;
+  number_of_past_due_orders: string;
+  guardians: Guardian[];
+  /** True when the student is currently active. */
+  is_active?: boolean;
+  state?: StateEnum;
+  guardian_id: string | null;
+  guardian_name: string | null;
+  delinquent_concepts: string;
+}
+
+export interface DashboardStudentDelinquencySummary {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id: string;
+  /**
+   * First name of the person.
+   * @maxLength 250
+   */
+  first_name: string;
+  /**
+   * Last name of the person.
+   * @maxLength 250
+   */
+  last_name?: string;
+  /**
+   * Private identifier inside school.
+   * @maxLength 50
+   */
+  enrollment_code?: string | null;
+  /** Level name */
+  level: string;
+  /** Section name */
+  section: string;
+  total_debt: string;
+  /** True when the student is currently active. */
+  is_active?: boolean;
+  state?: StateEnum;
+  number_of_past_due_orders: string;
+  due_monthly_orders: string;
+  guardian_id: string | null;
+  guardian_name: string | null;
+  delinquent_concepts: string;
 }
 
 export interface DashboardStudentDetail {
@@ -1962,6 +2907,7 @@ export interface DashboardStudentDetail {
   has_partial_payins: string;
   /** True when the student is currently active. */
   is_active?: boolean;
+  state?: StateEnum;
   /** The current inscription status for the next cycle */
   inscription_status?: InscriptionStatusEnum;
   /**
@@ -1971,85 +2917,23 @@ export interface DashboardStudentDetail {
    */
   created: string;
   inscription_section: InscriptionSection[];
+  /**
+   * Student photo.
+   * @format uri
+   */
+  photo?: string | null;
+  /** @format date */
+  credential_expiration_date?: string | null;
+  /** Gender of the person. */
+  gender?: GenderEnum | BlankEnum | NullEnum | null;
+  /**
+   * National identifier of the student provided by the school.
+   * @maxLength 20
+   */
+  identifier?: string | null;
 }
 
 export interface DashboardStudentList {
-  /**
-   * Unique identifier for the object.
-   * @format uuid
-   */
-  id: string;
-  /**
-   * First name of the person.
-   * @maxLength 250
-   */
-  first_name: string;
-  /**
-   * Last name of the person.
-   * @maxLength 250
-   */
-  last_name?: string;
-  section?: string;
-  level?: string;
-  due_orders: string;
-  due_total_price: string;
-  has_partial_payins: string;
-  /** True when the student is currently active. */
-  is_active?: boolean;
-  /** The current inscription status for the next cycle */
-  inscription_status?: InscriptionStatusEnum;
-  /**
-   * Private identifier inside school.
-   * @maxLength 50
-   */
-  enrollment_code?: string | null;
-  /**
-   * Created at
-   * Date time on which the object was created.
-   * @format date-time
-   */
-  created: string;
-}
-
-export interface DashboardStudentListDueOrderSerializerV2 {
-  /**
-   * Unique identifier for the object.
-   * @format uuid
-   */
-  id: string;
-  /**
-   * First name of the person.
-   * @maxLength 250
-   */
-  first_name: string;
-  /**
-   * Last name of the person.
-   * @maxLength 250
-   */
-  last_name?: string;
-  section?: string;
-  level?: string;
-  due_orders: string;
-  due_total_price: string;
-  has_partial_payins: string;
-  /** True when the student is currently active. */
-  is_active?: boolean;
-  /** The current inscription status for the next cycle */
-  inscription_status?: InscriptionStatusEnum;
-  /**
-   * Private identifier inside school.
-   * @maxLength 50
-   */
-  enrollment_code?: string | null;
-  /**
-   * Created at
-   * Date time on which the object was created.
-   * @format date-time
-   */
-  created: string;
-}
-
-export interface DashboardStudentListDueOrderSerializerV3 {
   /**
    * Unique identifier for the object.
    * @format uuid
@@ -2072,6 +2956,47 @@ export interface DashboardStudentListDueOrderSerializerV3 {
   has_partial_payins: string;
   /** True when the student is currently active. */
   is_active?: boolean;
+  state?: StateEnum;
+  /** The current inscription status for the next cycle */
+  inscription_status?: InscriptionStatusEnum;
+  next_inscription_status: string;
+  /**
+   * Private identifier inside school.
+   * @maxLength 50
+   */
+  enrollment_code?: string | null;
+  /**
+   * Created at
+   * Date time on which the object was created.
+   * @format date-time
+   */
+  created: string;
+}
+
+export interface DashboardStudentListDueOrderSerializerV4 {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id: string;
+  /**
+   * First name of the person.
+   * @maxLength 250
+   */
+  first_name: string;
+  /**
+   * Last name of the person.
+   * @maxLength 250
+   */
+  last_name?: string;
+  section: string;
+  level: string;
+  due_orders: string;
+  due_total_price: string;
+  has_partial_payins: string;
+  /** True when the student is currently active. */
+  is_active?: boolean;
+  state?: StateEnum;
   /** The current inscription status for the next cycle */
   inscription_status?: InscriptionStatusEnum;
   /**
@@ -2088,12 +3013,16 @@ export interface DashboardStudentListDueOrderSerializerV3 {
   section_for_selected_school_cycle: string;
   level_for_selected_school_cycle: string;
   status_for_selected_school_cycle: string;
+  next_inscription_status: string;
 }
 
-export interface DashboardStudentResume {
+export interface DashboardStudentResumeSerializerV2 {
   total: number;
-  active_students: number;
-  inactive_students: number;
+  new: number;
+  active: number;
+  inactive: number;
+  graduates: number;
+  drop_outs: number;
 }
 
 export interface DashboardStudentSearch {
@@ -2117,15 +3046,15 @@ export interface DashboardStudentSearch {
    * @maxLength 50
    */
   enrollment_code?: string | null;
-  /** Level name */
-  level?: string;
-  /** Section name */
-  section?: string;
+  level: string;
+  section: string;
   guardians: SlimGuardian[];
   /** True when the student is currently active. */
   is_active?: boolean;
+  state?: StateEnum;
   /** The current inscription status for the next cycle */
   inscription_status?: InscriptionStatusEnum;
+  scholarships: SlimStudentsScholarship[];
 }
 
 export interface DashboardStudentSlim {
@@ -2136,6 +3065,11 @@ export interface DashboardStudentSlim {
   id: string;
   name: string;
   assignment: string;
+}
+
+export interface DeleteConceptAutoAssignRequestDTO {
+  concept_auto_assign_ids: string[];
+  delete_concept_assignments: boolean;
 }
 
 export interface DelinquencyQuantity {
@@ -2175,9 +3109,9 @@ export interface DelinquencyStudent {
    */
   last_name?: string;
   /** Section name */
-  section?: string;
+  section: string | null;
   /** Level name */
-  level?: string;
+  level: string | null;
   /**
    * Private identifier inside school.
    * @maxLength 50
@@ -2198,6 +3132,34 @@ export interface DelinquentStudentsStatistics {
   percentage: number;
 }
 
+export interface DestroyMassiveConceptAssignment {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id: string;
+  /**
+   * Created at
+   * Date time on which the object was created.
+   * @format date-time
+   */
+  created: string;
+  /**
+   * Modified at
+   * Date time on which the object was last modified.
+   * @format date-time
+   */
+  modified: string;
+  /** Status for Massive Concept Assignment */
+  status?: Status386Enum;
+  /**
+   * @min 0
+   * @max 2147483647
+   */
+  student_quantity?: number | null;
+  is_concept_optional: boolean;
+}
+
 export interface DetailAdmin {
   /**
    * Unique identifier for the object.
@@ -2216,7 +3178,8 @@ export interface DetailAdmin {
   last_name?: string;
   /** @maxLength 250 */
   job_title: string;
-  permission_set: string;
+  membership_name: string;
+  permission_set: Membership;
   dashboard_joyride: DashboardJoyride;
 }
 
@@ -2230,7 +3193,7 @@ export interface DetailBankAccount {
   account_type: AccountTypeEnum;
   /**
    * Name of the owner of the bank account.
-   * @maxLength 55
+   * @maxLength 255
    */
   owner: string;
   /**
@@ -2307,6 +3270,38 @@ export interface DetailConcept {
   use_education_complement?: boolean;
   can_be_deleted: boolean;
   payout_config: PayoutConfig | null;
+  auto_assigned_concepts: ConceptAutoAssignedLevel[];
+  series: string;
+  root_concept_id: string;
+  /** Offering of the concept */
+  offering?: OfferingEnum;
+  does_invoice_as_general_public: boolean;
+}
+
+/**
+ * A ModelSerializer that takes an additional `fields` argument that
+ * controls which fields should be displayed.
+ */
+export interface DetailedConcept {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id: string;
+  /** Name of the concept. Concatenate concept basename with rootConcept name */
+  name: string;
+  type: string;
+  /** Indicates if concept only can be paid on dashboard. */
+  payment_only_in_dashboard: boolean;
+  /**
+   * Price for concept orders.
+   * @format decimal
+   * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
+   */
+  price: string;
+  /** Day of month when concept due, values between -3 and 28 (-1: last day, -2: penultimate day, -3: third to last day). */
+  payday: number;
+  school_cycle: SchoolCycle;
 }
 
 export interface DetailedStudentOrder {
@@ -2319,7 +3314,7 @@ export interface DetailedStudentOrder {
    * A ModelSerializer that takes an additional `fields` argument that
    * controls which fields should be displayed.
    */
-  concept: Concept;
+  concept: DetailedConcept;
   /** Order name, tipically have format "ConceptName - DueMonth, DueYear" */
   name: string;
   /**
@@ -2329,13 +3324,9 @@ export interface DetailedStudentOrder {
    */
   price: string;
   price_currency: string;
-  /**
-   * Date when order due
-   * @format date
-   */
-  due: string | null;
+  due: string;
   /** Status of the student order (legacy version). */
-  status: string;
+  status: Status259Enum;
   /** Interest + visible over charge amount amount of fulfillment(order-student). */
   total_charge: string;
   /** Interest amount of fulfillment(order-student). */
@@ -2349,9 +3340,9 @@ export interface DetailedStudentOrder {
   /** Deprecated. */
   expiration: string;
   /** Payins associated to fulfillment(order-student) */
-  payins: Payin[];
-  invoice: Invoice;
-  dependent: SlimStudent;
+  payins: Payin[] | null;
+  invoice: Invoice | null;
+  dependent: SlimStudent | null;
   /** Boolean indicates if first payin_fulfillment associated to order is partial. */
   has_partial_payins: boolean;
   /** Current paid amount for fulfillment */
@@ -2361,6 +3352,96 @@ export interface DetailedStudentOrder {
   /** Commission amount charged to guardian based on payin type. */
   guardian_commission: string;
   is_sponsored: string;
+  base_amount: string;
+  original_due: string;
+}
+
+export interface DiscountBreakdown {
+  /**
+   * Total amount of discounts applied to the order.
+   * @format decimal
+   * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
+   */
+  total: string;
+  /** Details of discounts applied to the order. */
+  details: DiscountBreakdownItems;
+}
+
+export interface DiscountBreakdownEarlyBird {
+  /**
+   * Total amount of discounts applied to the order.
+   * @format decimal
+   * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
+   */
+  total: string;
+  details: DiscountBreakdownEarlyBirdDetail[];
+}
+
+export interface DiscountBreakdownEarlyBirdDetail {
+  name: string;
+  /**
+   * Discount amount applied to the order.
+   * @format decimal
+   * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
+   */
+  discount: string;
+  /** @format date */
+  until_date: string;
+}
+
+export interface DiscountBreakdownItems {
+  /** Scholarships applied to the order. */
+  scholarships: DiscountBreakdownScholarship | null;
+  /** Special discounts applied to the order. */
+  special: DiscountBreakdownSpecial | null;
+  /** Early bird discounts applied to the order. */
+  early_bird: DiscountBreakdownEarlyBird | null;
+}
+
+export interface DiscountBreakdownScholarship {
+  /**
+   * Total amount of discounts applied to the order.
+   * @format decimal
+   * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
+   */
+  total: string;
+  details: DiscountBreakdownScholarshipDetail[];
+}
+
+export interface DiscountBreakdownScholarshipDetail {
+  name: string;
+  /**
+   * Discount amount applied to the order.
+   * @format decimal
+   * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
+   */
+  discount: string;
+  /** @format uuid */
+  id: string;
+  active: boolean;
+}
+
+export interface DiscountBreakdownSpecial {
+  /**
+   * Total amount of discounts applied to the order.
+   * @format decimal
+   * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
+   */
+  total: string;
+  details: DiscountBreakdownSpecialDetail[];
+}
+
+export interface DiscountBreakdownSpecialDetail {
+  name: string;
+  /**
+   * Discount amount applied to the order.
+   * @format decimal
+   * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
+   */
+  discount: string;
+  /** @format uuid */
+  id: string;
+  type: string;
 }
 
 export enum DiscountOrderEnum {
@@ -2391,6 +3472,25 @@ export interface EarlyBirdDiscount {
   discount_value: number;
 }
 
+export interface EarlyBirdDiscountSchema {
+  name: string;
+  discount_type: DiscountTypeEnum;
+  /** @min 0 */
+  up_to_days: number;
+  /** @min 0 */
+  discount_value: number;
+}
+
+export interface EmailRequestDTO {
+  /** @format email */
+  email: string;
+}
+
+export enum EntityTypeEnum {
+  STUDENTS = 'STUDENTS',
+  SECTIONS = 'SECTIONS',
+}
+
 export interface ErrorResponse {
   error: string;
 }
@@ -2413,8 +3513,42 @@ export interface ExcelReport {
   report_type?: ReportTypeEnum;
 }
 
+export interface ExecutePayoutResponse {
+  /** @format uuid */
+  payout_id: string;
+  message: string;
+}
+
 export interface ExternalAuthRequest {
   external_id: string;
+}
+
+export interface FailedInvoiceActionResponseDTO {
+  /** @format uuid */
+  id: string;
+  /** @format date-time */
+  created: string;
+  status?: string | null;
+  fail_origin?: string | null;
+  provider_responses?: string | null;
+  error_code?: string | null;
+  failed_reason?: string | null;
+}
+
+export interface FailedInvoiceResponseDTO {
+  /** @format uuid */
+  id: string;
+  status: string;
+  /** @format date-time */
+  created: string;
+  school_name: string;
+  payin_id: string | null;
+  /** @format date-time */
+  last_attempt_date: string | null;
+  /** @format date-time */
+  next_attempt_date: string | null;
+  invoice_action: FailedInvoiceActionResponseDTO | null;
+  fiscal_entity: FiscalEntityResponseDTO | null;
 }
 
 export interface FeatureToggle {
@@ -2430,6 +3564,17 @@ export enum FeatureToggleStatusEnum {
   PUBLIC = 'PUBLIC',
 }
 
+export interface FilterFieldMetadata {
+  /** Nombre del campo de filtro */
+  name: string;
+  /** Tipo de dato del filtro (ej. list, string, date) */
+  type: string;
+  /** Valores posibles para filtros de tipo enumerado */
+  options?: string[] | null;
+  /** Descripción del propósito del filtro */
+  description: string;
+}
+
 export interface FilterPayouts {
   bank_accounts: BasicBankAccount[];
   statuses: BaseEnum[];
@@ -2438,11 +3583,12 @@ export interface FilterPayouts {
 export interface FilterViewConcept {
   type: BaseEnum[];
   school_cycles: BaseEnum[];
+  offering: BaseEnum[];
 }
 
 export interface FilterViewDelinquentStudents {
   due_orders: BaseEnum[];
-  concepts: Concept[];
+  concepts: DetailedConcept[];
   concept_types: BaseEnum[];
   due_monthly_concepts: BaseEnum[];
   orders: Order[];
@@ -2451,11 +3597,27 @@ export interface FilterViewDelinquentStudents {
   fulfillment_statuses: BaseEnum[];
   school_cycles: SchoolCycle[];
   is_active: BaseEnum[];
+  state: BaseEnum[];
+}
+
+export interface FilterViewInvoice {
+  collected_at: BaseEnum[];
+  concepts: DetailedConcept[];
+  concept_types: BaseEnum[];
+  orders: Order[];
+  types: BaseEnum[];
+  levels: Level[];
+  sections: Section[];
+  invoice_statuses: BaseEnum[];
+  school_cycles: SchoolCycle[];
+  billing_to: BaseEnum[];
+  registered_by: User[];
+  invoice_types: BaseEnum[];
 }
 
 export interface FilterViewPayinFulfillment {
   collected_at: BaseEnum[];
-  concepts: Concept[];
+  concepts: DetailedConcept[];
   concept_types: BaseEnum[];
   orders: Order[];
   types: BaseEnum[];
@@ -2473,22 +3635,31 @@ export interface FilterViewPayins {
   users: User[];
 }
 
+export interface FilterViewScholarship {
+  levels: Level[];
+  sections: Section[];
+  scholarships: Scholarship[];
+  active: BaseEnum[];
+}
+
 export interface FilterViewStudents {
   levels: Level[];
   sections: Section[];
-  concepts: Concept[];
+  concepts: DetailedConcept[];
   scholarships: Scholarship[];
   due_orders: BaseEnum[];
   active: BaseEnum[];
+  state: BaseEnum[];
   inscription_status: BaseEnum[];
   paid_status: BaseEnum[];
 }
 
 export interface FilterViewStudentsByLevel {
-  concepts: Concept[];
+  concepts: DetailedConcept[];
   scholarships: Scholarship[];
   due_orders: BaseEnum[];
   has_debt: BaseEnum[];
+  inscription_status: BaseEnum[];
 }
 
 export interface FiscalEntity {
@@ -2509,11 +3680,142 @@ export interface FiscalEntity {
   tax_id: string;
   /** Fiscal regime config for billing. */
   taxing_system: TaxingSystemEnum;
+  /**
+   * When the provided CSD for this tax ID expires
+   * @format date-time
+   */
+  certificate_expiry?: string | null;
+}
+
+export interface FiscalEntityResponseDTO {
+  /** @format uuid */
+  id: string;
+  name: string;
+  tax_id: string;
+  /** @format uuid */
+  school_id?: string;
+  school_name?: string;
+}
+
+export enum FraudStatusEnum {
+  NoRisk = 'no_risk',
+  LowRisk = 'low_risk',
+  MediumRisk = 'medium_risk',
+  HighRisk = 'high_risk',
+  UnderInvestigation = 'under_investigation',
+}
+
+export interface FulfillmentInvoice {
+  /** @format uuid */
+  id: string;
+  correlative_id: string;
+  /** @format uuid */
+  student_id: string;
+}
+
+export interface FulfillmentRequestDTO {
+  /**
+   * List of correlative IDs (max 500 items)
+   * @maxItems 500
+   */
+  correlative_ids: string[];
+}
+
+export interface FulfillmentResponseDTO {
+  /** @format uuid */
+  id: string;
+  correlative_id: string;
+  /** @format uuid */
+  order_id: string;
+  order_name: string;
+  /** @format uuid */
+  student_id: string;
+  student_name: string;
+  /** @format uuid */
+  school_id: string;
+  school_name: string;
+  /** @format date-time */
+  due: string;
+  /** @format uuid */
+  guardian_id: string;
+  guardian_name: string;
+  /**
+   * @format decimal
+   * @pattern ^-?\d{0,13}(?:\.\d{0,2})?$
+   */
+  total_paid: string;
+  total_paid_currency: string;
+  /**
+   * @format decimal
+   * @pattern ^-?\d{0,13}(?:\.\d{0,2})?$
+   */
+  total_remaining: string;
+  total_remaining_currency: string;
+  /**
+   * @format decimal
+   * @pattern ^-?\d{0,13}(?:\.\d{0,2})?$
+   */
+  discount: string;
+  discount_currency: string;
+  /**
+   * @format decimal
+   * @pattern ^-?\d{0,13}(?:\.\d{0,2})?$
+   */
+  overcharge: string;
+  overcharge_currency: string;
+  status: string;
+  /** @format date-time */
+  paid_date: string;
+}
+
+export enum FulfillmentStatusesEnum {
+  NOT_PAID = 'NOT_PAID',
+  WAITING_PAID = 'WAITING_PAID',
+  PAID = 'PAID',
+  PARTIAL_PAID = 'PARTIAL_PAID',
+}
+
+export interface FulfillmentXLSReportParameters {
+  /** Filter by concept UUID(s) */
+  concepts?: string[];
+  /** Filter by order UUID(s) */
+  orders?: string[];
+  /** Filter by school cycle UUID(s) */
+  school_cycles?: string[];
+  /** Filter by fulfillment status (e.g., NOT_PAID, WAITING_PAID, PAID, PARTIAL_PAID) */
+  fulfillment_statuses?: FulfillmentStatusesEnum[];
+  /** Filter by concept type (e.g., Colegiatura, Inscripción, Transporte, etc.) */
+  concept_types?: ConceptTypesEnum[];
+  /** Search text to filter results by a general search term */
+  search?: string;
+  /** Filter results within a specific date range. Expecting [start_date, end_date] */
+  date_range?: string[];
+  /** Additional configuration options for the report. For example, to include or exclude specific columns */
+  config?: string[];
 }
 
 export enum GenderEnum {
   M = 'M',
   F = 'F',
+}
+
+export interface GenerateAuthLinkBadRequest {
+  error: string;
+}
+
+export interface GenerateAuthLinkNotFound {
+  error: string;
+}
+
+export interface GenerateAuthLinkRequest {
+  /** @format email */
+  email?: string | null;
+  phone?: string | null;
+}
+
+export interface GenerateAuthLinkResponse {
+  /** @format uri */
+  auth_url: string;
 }
 
 export interface Guardian {
@@ -2554,75 +3856,85 @@ export interface Guardian {
    */
   billing_name?: string | null;
   billing_info?: BillingGuardianInfo;
+  /** @default "" */
+  relationship: string;
+  has_student_custody: boolean;
+}
+
+export interface GuardianDebtRequest {
+  /** Optional list of guardian IDs to filter. If not provided, returns all guardians in school. */
+  guardian_ids?: string[];
+}
+
+export interface GuardianDebtResponse {
+  /** @format uuid */
+  guardian_id: string;
+  /**
+   * @format decimal
+   * @pattern ^-?\d{0,8}(?:\.\d{0,2})?$
+   */
+  total_debt: string;
+  has_due_fulfillments: boolean;
 }
 
 export interface GuardianDependentFulfillment {
-  /**
-   * Unique identifier for the object.
-   * @format uuid
-   */
+  /** @format uuid */
   id: string;
-  name: string;
-  /** Original amount to be paid(before discounts and interests) */
-  amount: string;
-  /** Final amount to be paid(after discounts and interests). */
-  final_amount: string;
-  /** Current paid amount for fulfillment */
-  paid_amount: string;
+  /** @format uuid */
+  order_id: string;
+  payins: SlimPayinGuardianDependentFulfillment[];
+  concept: SlimConceptGuardianDependentFulfillment;
+  subscription: SlimSubscriptionGuardianDependentFulfillment;
+  student: SlimStudentGuardianDependentFulfillment;
+  /** Special Overcharges charged to the fulfillment */
+  special_over_charges: SpecialOverCharge[];
   currency: string;
-  due: string;
-  /** Payment status of the fulfillment */
-  status?: StatusDc1Enum;
+  /**
+   * Original amount to be paid(before discounts and interests)
+   * @format decimal
+   * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
+   */
+  amount: string;
+  /**
+   * Original amount to be paid(before discounts and interests), it is the order price.
+   * @format decimal
+   * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
+   */
+  price: string;
+  /**
+   * Final amount to be paid(after discounts and interests).
+   * @format decimal
+   * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
+   */
+  final_amount: string;
+  /**
+   * Current pending amount to be paid.
+   * @format decimal
+   * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
+   */
+  pending_amount: string;
   /**
    * Total interest for fulfillment.
    * @format decimal
    * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
    */
   interest: string;
-  total_charge: string;
   /**
-   * Total discount of the fulfillment.
+   * Total interest for fulfillment.
    * @format decimal
    * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
    */
-  discount: string;
-  /** Boolean indicates if first payin associated to order is pending. */
-  pending: boolean;
-  student: SlimStudent;
+  total_overcharged: string;
+  discount_breakdown: Record<string, any>;
   /** Boolean indicates if first payin_fulfillment associated to order is partial. */
   has_partial_payins: boolean;
-  /** Current pending amount to be paid. */
-  pending_amount: string;
-  order_id: string;
-  is_due: string;
-  /** Fulfillments required paid previously (only one level deep) */
-  paid_fulfillments_required_proxy: string[];
-  /** Fulfillments that require this fulfillment to be made (only one level deep) */
-  fulfillments_dependent_proxy: string[];
-  /** Fulfillments that require this fulfillments to be made (all levels deep) */
-  fulfillments_dependent: string[];
-  is_billable: boolean | null;
-  /** Special Overcharges charged to the fulfillment */
-  special_over_charges: SpecialOverCharge[];
-  subscription: Record<string, any>;
-  payins: Payin[];
-  /**
-   * Original amount to be paid(before discounts and interests), belongs to order price amount.
-   * @format decimal
-   * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
-   */
-  price: string;
-  /** Schema of detailed discounts aplied to fulfillment. */
-  discount_breakdown?: Record<string, any>;
-  concept: ConceptSerializerStatic;
-  invoices: Invoice[];
+  status: string;
+  is_due: boolean;
+  name: string;
+  due: string;
   order_type: string;
-  /**
-   * Total guardian commission (commission + tax).
-   * @format decimal
-   * @pattern ^-?\d{0,6}(?:\.\d{0,2})?$
-   */
-  guardian_commission: string;
+  paid_fulfillments_required_proxy: string[];
+  fulfillments_dependent_proxy: string[];
 }
 
 export interface GuardianDependentOrder {
@@ -2633,11 +3945,6 @@ export interface GuardianDependentOrder {
    */
   name: string;
   student: SlimStudent;
-  /**
-   * Date when order due
-   * @format date
-   */
-  due?: string | null;
   concept: ConceptSerializerStatic;
   /**
    * Original amount to be paid(before discounts and interests), belongs to order price amount.
@@ -2645,44 +3952,6 @@ export interface GuardianDependentOrder {
    * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
    */
   price: string;
-  discount_breakdown: {
-    /** @format decimal */
-    total?: string;
-    details?: {
-      scholarships?: {
-        /** @format decimal */
-        total?: string;
-        details?: {
-          id?: string;
-          name?: string;
-          /** @format decimal */
-          discount?: string;
-          active?: boolean;
-        }[];
-      };
-      special?: {
-        /** @format decimal */
-        total?: string;
-        details?: {
-          id?: string;
-          name?: string;
-          /** @format decimal */
-          discount?: string;
-          type?: string;
-        }[];
-      };
-      early_bird?: {
-        /** @format decimal */
-        total?: string;
-        details?: {
-          name?: string;
-          /** @format decimal */
-          discount?: string;
-          until_date?: string;
-        }[];
-      };
-    };
-  };
   currency: string;
   /** Final amount to be paid(after discounts and interests). */
   final_amount: string;
@@ -2694,7 +3963,8 @@ export interface GuardianDependentOrder {
   created: string;
   order_id: string;
   stock?: StockList;
-  acquired: string;
+  acquired: boolean;
+  discount_breakdown: DiscountBreakdown;
 }
 
 export interface GuardianDependentPayin {
@@ -2710,11 +3980,11 @@ export interface GuardianDependentPayin {
    */
   created: string;
   /** Type of the payin */
-  type: Type787Enum | NullEnum | null;
+  type: Type11EEnum | NullEnum | null;
   /** Method of the payin, include but to limited to: Visa, Mastercard, Kushki, oxxo. */
   method: string | null;
   /** Payment status for the payin. */
-  status: StatusC9FEnum;
+  status: Status91FEnum;
   /**
    * Total amount of the payin.
    * @format decimal
@@ -2737,6 +4007,11 @@ export interface GuardianDependentPayin {
   /** Last day for pay if type of payment is ticket. */
   expiration: string;
   user_reports_as_paid: string;
+  /**
+   * File used as proof that the payment was done
+   * @format uri
+   */
+  proof_of_payment: string | null;
 }
 
 export interface GuardianFacturamaValidateIds {
@@ -2767,7 +4042,7 @@ export interface GuardianListPayinSerializerV2 {
   /**
    * Total paid amount
    * @format decimal
-   * @pattern ^-?\d{0,6}(?:\.\d{0,2})?$
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
    */
   total_paid: string;
   /** Number of fulfillments related to payin */
@@ -2799,16 +4074,57 @@ export interface GuardianPayinSerializerV2 {
   /** Guardian fullname */
   guardian_fullname: string;
   /** Payment method used to pay */
-  payment_method: PaymentMethodEnum;
+  payment_method: GuardianPayinSerializerV2PaymentMethodEnum;
   /** Source from where the payin was paid */
   collected_at: CollectedAtEnum;
   /**
    * Total paid amount
    * @format decimal
-   * @pattern ^-?\d{0,6}(?:\.\d{0,2})?$
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
    */
   total_paid: string;
   payin_fulfillments: CustomPayinFulfillmentSerializerV2[];
+}
+
+export enum GuardianPayinSerializerV2PaymentMethodEnum {
+  EnEfectivoTicketImpreso = 'En efectivo (Ticket impreso)',
+  TransferenciaBancaria = 'Transferencia bancaria',
+  EnATM = 'En ATM',
+  TarjetaDeCredito = 'Tarjeta de crédito',
+  TarjetaDeDebito = 'Tarjeta de débito',
+  TarjetaPrepaga = 'Tarjeta prepaga',
+  ChequeNominativo = 'Cheque nominativo',
+  DepositoEnCheque = 'Depósito en cheque',
+  DepositoEnEfectivo = 'Depósito en efectivo',
+  Multipago = 'Multipago',
+  Credito = 'Crédito',
+  PagoDomiciliado = 'Pago Domiciliado',
+  NominaEnEfectivo = 'Nomina en Efectivo',
+  Compensacion = 'Compensación',
+  DacionEnPago = 'Dación en pago',
+}
+
+export interface GuardianResponse {
+  /** @format uuid */
+  id: string;
+  first_name: string;
+  last_name: string;
+  /** @format email */
+  email: string;
+  phone: string | null;
+  block_cash_payments: boolean;
+  dependents: Record<string, any>[];
+  /** @format uuid */
+  school_id: string;
+}
+
+export interface GuardianSignIn {
+  /** First name of the person. */
+  first_name: string;
+  relative_portal_url: string;
+  school_name: string;
+  cellphone: string;
+  country_code: string;
 }
 
 export interface GuardianStudent {
@@ -2818,6 +4134,7 @@ export interface GuardianStudent {
    */
   id: string;
   billing_guardian: BillingGuardian;
+  /** Seccion */
   section_name: string;
   /** Workaround for self-onboarding process. Signals when student has concept generated. */
   is_ready: boolean;
@@ -2891,6 +4208,45 @@ export interface GuardianStudentCreate {
   school: string;
 }
 
+export interface HTTP400BadRequest {
+  error: string;
+}
+
+export interface HistoryChange {
+  user: HistoryUser;
+  id: string;
+  timestamp: string;
+  changed_fields: Record<string, HistoryFieldChange>;
+  model_name: string;
+  object_id: string;
+  /** Type of change: created, changed, or deleted */
+  history_type: HistoryTypeEnum;
+}
+
+export interface HistoryFieldChange {
+  old: Record<string, any>;
+  new: Record<string, any>;
+}
+
+export interface HistoryListResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: HistoryChange[];
+}
+
+export enum HistoryTypeEnum {
+  Created = 'created',
+  Changed = 'changed',
+  Deleted = 'deleted',
+}
+
+export interface HistoryUser {
+  id: string;
+  first_name: string;
+  last_name: string;
+}
+
 export interface Inscription {
   school_cycle: string;
   status: string;
@@ -2902,7 +4258,11 @@ export interface Inscription {
  * controls which fields should be displayed.
  */
 export interface InscriptionSection {
-  school_cycle: string;
+  /**
+   * A ModelSerializer that takes an additional `fields` argument that
+   * controls which fields should be displayed.
+   */
+  school_cycle: SchoolCycle;
   /**
    * A ModelSerializer that takes an additional `fields` argument that
    * controls which fields should be displayed.
@@ -2926,6 +4286,24 @@ export enum InscriptionStatusEnum {
   Pendiente = 'Pendiente',
   NoInscrito = 'No inscrito',
   NOT_AVAILABLE = 'NOT_AVAILABLE',
+}
+
+export interface InscriptionUpdate {
+  /**
+   * School Cycle of the inscription
+   * @format uuid
+   */
+  school_cycle?: string | null;
+  /**
+   * Section of the inscription
+   * @format uuid
+   */
+  section?: string | null;
+  /**
+   * Status of the inscription
+   * @maxLength 150
+   */
+  status?: string | null;
 }
 
 export interface InterestSchema {
@@ -2968,12 +4346,12 @@ export interface InternalSection {
   name: string;
   /**
    * Grade of the section.
-   * @maxLength 50
+   * @maxLength 100
    */
   grade: string;
   /**
    * Internal name for section inside a grade.
-   * @maxLength 9
+   * @maxLength 50
    */
   group?: string | null;
   level_name: string;
@@ -3001,6 +4379,7 @@ export interface Invoice {
   /** Código o número con el que identifica la factura el cliente. */
   client_identifier: string | null;
   billing_guardian: Guardian;
+  /** Full name of the guardian */
   billing_guardian_fullname?: string;
   /** Indicated if is a paid invoice(PUE). */
   is_paid_invoice: boolean;
@@ -3021,6 +4400,90 @@ export interface Invoice {
   billing_name?: string;
   /** Origin of the failure if the invoice was not generated successfully */
   fail_origin: string;
+  type: TypeDb9Enum;
+  /** ID de la factura desde la cual se genera la nota de credito */
+  related_fiscal_identifier: string | null;
+  /**
+   * Datetime when the invoice was successfully emitted
+   * @format date-time
+   */
+  expedition_date: string | null;
+}
+
+export enum InvoiceActionEnum {
+  Cancel = 'cancel',
+  EmitCreditNote = 'emit_credit_note',
+  NoAction = 'no_action',
+}
+
+export interface InvoiceEnabledActions {
+  cancel: boolean;
+  reinvoice: boolean;
+  reinvoice_with_relation: boolean;
+  credit_note: boolean;
+  cancel_credit_note: boolean;
+  retry: boolean;
+}
+
+export interface InvoiceMassiveRetryRequestDTO {
+  month?: MonthEnum;
+  year?: number;
+  /** @format uuid */
+  fiscal_entity_id?: string | null;
+  payin_id?: string | null;
+  statuses?: StatusesEnum[];
+  error_code?: string | null;
+  fail_origin?: string | null;
+  limit?: number | null;
+}
+
+export interface InvoiceRequestDTO {
+  /**
+   * @maxItems 250
+   * @minItems 1
+   */
+  correlative_ids: string[];
+  /** @default false */
+  with_relation?: boolean;
+  /** @default false */
+  force_general_public?: boolean;
+}
+
+export interface InvoiceSendEmailRequestDTO {
+  /** @format uuid */
+  guardian_id: string;
+}
+
+export interface InvoiceSeries {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id: string;
+  /**
+   * Identifier of the series
+   * @maxLength 10
+   */
+  code: string;
+}
+
+export enum InvoiceStatusEnum {
+  Pending = 'pending',
+  Failed = 'failed',
+  Success = 'success',
+  Canceled = 'canceled',
+  Canceling = 'canceling',
+  NotRequested = 'not_requested',
+  Multiple = 'multiple',
+}
+
+export interface InvoiceStudentGuardian {
+  /** @format uuid */
+  id: string;
+  full_name: string;
+  send_emails: boolean;
+  /** @format email */
+  email: string;
 }
 
 export interface InvoiceUrls {
@@ -3028,35 +4491,88 @@ export interface InvoiceUrls {
   xmls: string[];
 }
 
-/**
- * A ModelSerializer that takes an additional `fields` argument that
- * controls which fields should be displayed.
- */
+export enum JobTitleEnum {
+  OWNER = 'OWNER',
+  GENERAL_DIRECTOR = 'GENERAL_DIRECTOR',
+  ADMINISTRATIVE_DIRECTOR = 'ADMINISTRATIVE_DIRECTOR',
+  ACCOUNTANT = 'ACCOUNTANT',
+  TREASURER = 'TREASURER',
+  ADMISSIONS = 'ADMISSIONS',
+  CASH_COLLECTION = 'CASH_COLLECTION',
+  OTHER = 'OTHER',
+}
+
 export interface Level {
-  /**
-   * Unique identifier for the object.
-   * @format uuid
-   */
+  /** @format uuid */
   id: string;
+  name: string;
+  type: string;
+  order: number | null;
+}
+
+/** Serializer for creating school levels. */
+export interface LevelCreate {
   /**
    * Name of the level.
    * @maxLength 350
    */
   name: string;
+  /** Predefined level type. */
+  type: LevelCreateTypeEnum;
+  /**
+   * Order of the Level respect the others
+   * @min -32768
+   * @max 32767
+   */
+  order?: number | null;
+}
+
+export enum LevelCreateTypeEnum {
+  PRE_SCHOOL = 'PRE_SCHOOL',
+  ELEMENTARY = 'ELEMENTARY',
+  MIDDLE = 'MIDDLE',
+  MIDDLEHIGH = 'MIDDLE-HIGH',
+  HIGH = 'HIGH',
+}
+
+export interface ListConceptAutoAssignResponseDTO {
+  id: string;
+  name: string;
+  is_all_assigned: boolean;
+  grades: ConceptAutoAssignedGrade[];
 }
 
 export interface ListDashboardInvoiceResponseDTO {
   id: string;
   client_identifier: string;
   billing_guardian_name: string;
+  billing_tax_id: string;
   status: StatusCf3Enum;
   order_id: string;
   order_name: string;
   payment_amount: string;
+  pdf_url: string;
   guardian_name: string;
+  invoice_type: string;
   fiscal_identifier: string;
-  payment_date: string;
+  expedition_date: string;
   student_name: string;
+  student_state: string;
+  related_invoice: RelatedInvoice;
+}
+
+export interface ListGuardianFiltersMetadataDTO {
+  filters: FilterFieldMetadata[];
+}
+
+export interface ListGuardianResponseDTO {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  onboarding_stage: string;
+  student: Record<string, any>;
 }
 
 export interface ListSubscriptionResponseDTO {
@@ -3093,7 +4609,7 @@ export interface MassiveConceptAssignmentHistory {
    */
   modified: string;
   /** Status for Massive Concept Assignment */
-  status?: MassiveConceptAssignmentHistoryStatusEnum;
+  status?: Status386Enum;
   /**
    * @min 0
    * @max 2147483647
@@ -3110,19 +4626,6 @@ export interface MassiveConceptAssignmentHistory {
    */
   student_processed_ok?: number | null;
   is_concept_optional: boolean;
-}
-
-export enum MassiveConceptAssignmentHistoryStatusEnum {
-  STARTED = 'STARTED',
-  PENDING = 'PENDING',
-  FINISHED = 'FINISHED',
-  FAILED = 'FAILED',
-  CANCELED = 'CANCELED',
-  SUCCESS = 'SUCCESS',
-  FAILED_AND_CANCELED = 'FAILED_AND_CANCELED',
-  FAILED_ON_DELETION = 'FAILED_ON_DELETION',
-  PARTIAL_SUCCESS = 'PARTIAL_SUCCESS',
-  RETRYING = 'RETRYING',
 }
 
 export interface MassiveConceptDissasignment {
@@ -3164,9 +4667,291 @@ export interface MassiveConceptDissasignmentsDissasign {
   students_ids: string[];
 }
 
+export interface MassiveScholarshipAssignmentCreateRequest {
+  /** List of student Ids */
+  student_ids: string[];
+  /** List of school cycle Ids */
+  school_cycle_ids: string[];
+  scholarship_id: string;
+}
+
+export interface MassiveScholarshipAssignmentCreateResponse {
+  id: string;
+  status: string;
+  assigned_students: number;
+  total_students: number;
+}
+
+export interface MassiveScholarshipAssignmentRetrieveResponse {
+  id: string;
+  status: string;
+  assigned_students: number;
+  total_students: number;
+}
+
+export interface Membership {
+  can_add_payment?: boolean;
+  can_add_discount?: boolean;
+  can_assign_scholarship?: boolean;
+  can_deassign_scholarship?: boolean;
+  can_assign_guardian?: boolean;
+  can_deassign_guardian?: boolean;
+  can_edit_guardian?: boolean;
+  can_add_concept_assignment?: boolean;
+  can_edit_concept_assignment?: boolean;
+  can_delete_concept_assignment?: boolean;
+  can_add_student?: boolean;
+  can_edit_student?: boolean;
+  can_send_whatsapp?: boolean;
+  can_assign_billing_guardian?: boolean;
+  can_view_student_status?: boolean;
+  can_add_concept?: boolean;
+  can_edit_stock?: boolean;
+  can_view_collections_page?: boolean;
+  can_view_received_payment_page?: boolean;
+  can_view_delinquency_page?: boolean;
+  can_view_concepts_page?: boolean;
+  can_view_admissions_page?: boolean;
+  can_view_income_stats_cards?: boolean;
+  can_view_registered_payments_table?: boolean;
+  can_view_payouts_table?: boolean;
+  can_view_income_page?: boolean;
+  can_view_student_total_debt?: boolean;
+  can_view_scholarships_and_discounts?: boolean;
+  can_delete_manual_payment?: boolean;
+  can_perform_invoicing?: boolean;
+  can_create_refund?: boolean;
+  can_view_inscriptions_page?: boolean;
+  can_view_inscriptions_quotas_page?: boolean;
+  can_view_account_state_section?: boolean;
+}
+
+export interface MembershipCreate {
+  /** @default true */
+  can_add_payment?: boolean;
+  /** @default true */
+  can_add_discount?: boolean;
+  /** @default true */
+  can_assign_scholarship?: boolean;
+  /** @default true */
+  can_deassign_scholarship?: boolean;
+  /** @default true */
+  can_assign_guardian?: boolean;
+  /** @default true */
+  can_deassign_guardian?: boolean;
+  /** @default true */
+  can_edit_guardian?: boolean;
+  /** @default true */
+  can_add_concept_assignment?: boolean;
+  /** @default true */
+  can_edit_concept_assignment?: boolean;
+  /** @default true */
+  can_delete_concept_assignment?: boolean;
+  /** @default true */
+  can_add_student?: boolean;
+  /** @default true */
+  can_edit_student?: boolean;
+  /** @default true */
+  can_send_whatsapp?: boolean;
+  /** @default true */
+  can_assign_billing_guardian?: boolean;
+  /** @default true */
+  can_view_student_status?: boolean;
+  /** @default true */
+  can_add_concept?: boolean;
+  /** @default true */
+  can_edit_stock?: boolean;
+  /** @default true */
+  can_view_collections_page?: boolean;
+  /** @default true */
+  can_view_received_payment_page?: boolean;
+  /** @default true */
+  can_view_delinquency_page?: boolean;
+  /** @default true */
+  can_view_concepts_page?: boolean;
+  /** @default true */
+  can_view_admissions_page?: boolean;
+  /** @default true */
+  can_view_income_stats_cards?: boolean;
+  /** @default true */
+  can_view_registered_payments_table?: boolean;
+  /** @default true */
+  can_view_payouts_table?: boolean;
+  /** @default true */
+  can_view_income_page?: boolean;
+  /** @default true */
+  can_view_student_total_debt?: boolean;
+  /** @default true */
+  can_view_scholarships_and_discounts?: boolean;
+  /** @default true */
+  can_delete_manual_payment?: boolean;
+  /** @default false */
+  can_perform_invoicing?: boolean;
+  /** @default false */
+  can_create_refund?: boolean;
+  /** @default true */
+  can_view_inscriptions_page?: boolean;
+  /** @default true */
+  can_view_inscriptions_quotas_page?: boolean;
+  /** @default true */
+  can_view_account_state_section?: boolean;
+  /**
+   * UUID of the school
+   * @format uuid
+   */
+  school_id: string;
+  /**
+   * UUID of the user
+   * @format uuid
+   */
+  user_id: string;
+  /**
+   * Job title/role for the membership
+   * @default "OWNER"
+   */
+  job_title?: JobTitleEnum;
+}
+
+export interface MembershipPermissionsResponseDTO {
+  can_add_payment?: boolean;
+  can_add_discount?: boolean;
+  can_assign_scholarship?: boolean;
+  can_deassign_scholarship?: boolean;
+  can_assign_guardian?: boolean;
+  can_deassign_guardian?: boolean;
+  can_edit_guardian?: boolean;
+  can_add_concept_assignment?: boolean;
+  can_edit_concept_assignment?: boolean;
+  can_delete_concept_assignment?: boolean;
+  can_add_student?: boolean;
+  can_edit_student?: boolean;
+  can_send_whatsapp?: boolean;
+  can_assign_billing_guardian?: boolean;
+  can_view_student_status?: boolean;
+  can_add_concept?: boolean;
+  can_edit_stock?: boolean;
+  can_view_collections_page?: boolean;
+  can_view_received_payment_page?: boolean;
+  can_view_delinquency_page?: boolean;
+  can_view_concepts_page?: boolean;
+  can_view_admissions_page?: boolean;
+  can_view_income_stats_cards?: boolean;
+  can_view_registered_payments_table?: boolean;
+  can_view_payouts_table?: boolean;
+  can_view_income_page?: boolean;
+  can_view_student_total_debt?: boolean;
+  can_view_scholarships_and_discounts?: boolean;
+  can_delete_manual_payment?: boolean;
+  can_perform_invoicing?: boolean;
+  can_create_refund?: boolean;
+  can_view_inscriptions_page?: boolean;
+  can_view_inscriptions_quotas_page?: boolean;
+  can_view_account_state_section?: boolean;
+  /** @format uuid */
+  id: string;
+  job_title: string;
+}
+
+export interface MembershipRequestDto {
+  can_add_payment: boolean;
+  can_add_discount: boolean;
+  can_assign_scholarship: boolean;
+  can_deassign_scholarship: boolean;
+  can_assign_guardian: boolean;
+  can_deassign_guardian: boolean;
+  can_edit_guardian: boolean;
+  can_add_concept_assignment: boolean;
+  can_edit_concept_assignment: boolean;
+  can_delete_concept_assignment: boolean;
+  can_add_student: boolean;
+  can_edit_student: boolean;
+  can_send_whatsapp: boolean;
+  can_assign_billing_guardian: boolean;
+  can_view_student_status: boolean;
+  can_add_concept: boolean;
+  can_edit_stock: boolean;
+  can_view_collections_page: boolean;
+  can_view_received_payment_page: boolean;
+  can_view_delinquency_page: boolean;
+  can_view_concepts_page: boolean;
+  can_view_admissions_page: boolean;
+  can_view_income_stats_cards: boolean;
+  can_view_registered_payments_table: boolean;
+  can_view_payouts_table: boolean;
+  can_view_income_page: boolean;
+  can_view_student_total_debt: boolean;
+  can_view_scholarships_and_discounts: boolean;
+  can_delete_manual_payment: boolean;
+  can_perform_invoicing: boolean;
+  can_create_refund: boolean;
+  can_view_account_state_section: boolean;
+  can_view_inscriptions_page: boolean;
+  can_view_inscriptions_quotas_page: boolean;
+}
+
+export interface MembershipResponseDto {
+  can_add_payment: boolean;
+  can_add_discount: boolean;
+  can_assign_scholarship: boolean;
+  can_deassign_scholarship: boolean;
+  can_assign_guardian: boolean;
+  can_deassign_guardian: boolean;
+  can_edit_guardian: boolean;
+  can_add_concept_assignment: boolean;
+  can_edit_concept_assignment: boolean;
+  can_delete_concept_assignment: boolean;
+  can_add_student: boolean;
+  can_edit_student: boolean;
+  can_send_whatsapp: boolean;
+  can_assign_billing_guardian: boolean;
+  can_view_student_status: boolean;
+  can_add_concept: boolean;
+  can_edit_stock: boolean;
+  can_view_collections_page: boolean;
+  can_view_received_payment_page: boolean;
+  can_view_delinquency_page: boolean;
+  can_view_concepts_page: boolean;
+  can_view_admissions_page: boolean;
+  can_view_income_stats_cards: boolean;
+  can_view_registered_payments_table: boolean;
+  can_view_payouts_table: boolean;
+  can_view_income_page: boolean;
+  can_view_student_total_debt: boolean;
+  can_view_scholarships_and_discounts: boolean;
+  can_delete_manual_payment: boolean;
+  can_perform_invoicing: boolean;
+  can_create_refund: boolean;
+  can_view_account_state_section: boolean;
+  can_view_inscriptions_page: boolean;
+  can_view_inscriptions_quotas_page: boolean;
+  /** @format uuid */
+  id: string;
+  job_title: string;
+}
+
 export enum MethodEnum {
   MAIL = 'MAIL',
   WHATSAPP = 'WHATSAPP',
+}
+
+export enum ModeEnum {
+  Independent = 'independent',
+  Sequential = 'sequential',
+}
+
+export enum MonthEnum {
+  Value1 = '1',
+  Value2 = '2',
+  Value3 = '3',
+  Value4 = '4',
+  Value5 = '5',
+  Value6 = '6',
+  Value7 = '7',
+  Value8 = '8',
+  Value9 = '9',
+  Value10 = '10',
+  Value11 = '11',
+  Value12 = '12',
 }
 
 export enum MonthsToPayEnum {
@@ -3189,6 +4974,12 @@ export interface NotFound {
 }
 
 export type NullEnum = null;
+
+export enum OfferingEnum {
+  SCHOLAR = 'SCHOLAR',
+  OPEN_LOOP = 'OPEN_LOOP',
+  MIX = 'MIX',
+}
 
 export interface OnTimeStudentsStatistics {
   value: number;
@@ -3228,6 +5019,66 @@ export interface OptionalConceptOrders {
   stock?: StockList;
 }
 
+export interface OptionalOrder {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id: string;
+  /**
+   * Order name, tipically have format "ConceptName - DueMonth, DueYear"
+   * @maxLength 250
+   */
+  name: string;
+  concept: ConceptSerializerStatic;
+  /**
+   * Original amount to be paid(before discounts and interests), belongs to order price amount.
+   * @format decimal
+   * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
+   */
+  price: string;
+  currency: string;
+  /** Final amount to be paid(after discounts and interests). */
+  final_amount: string;
+  /**
+   * Created at
+   * Date time on which the object was created.
+   * @format date-time
+   */
+  created: string;
+  order_id: string;
+  stock?: StockList;
+  discount_breakdown: DiscountBreakdown;
+  acquired: boolean;
+}
+
+export interface OptionalOrderResponseDTO {
+  /** @format uuid */
+  order_id: string;
+  order_name: string;
+  /** @format uuid */
+  student_id: string;
+  student_name: string;
+  /** @format uuid */
+  school_id: string;
+  school_name: string;
+  concept_name: string;
+  /** @format uuid */
+  concept_id: string;
+  is_optional: boolean;
+  offering: string;
+  /** @format date */
+  due: string;
+  /** @format double */
+  price: number;
+  currency: string;
+  /** @format uuid */
+  guardian_id: string;
+  guardian_name: string;
+  /** Available stock (null = unlimited) */
+  stock?: number | null;
+}
+
 /**
  * A ModelSerializer that takes an additional `fields` argument that
  * controls which fields should be displayed.
@@ -3259,8 +5110,7 @@ export interface Order {
 }
 
 export interface OrderCreate {
-  /** Order name, tipically have format "ConceptName - DueMonth, DueYear" */
-  name: string;
+  name?: string;
   /**
    * Price of the order
    * @format decimal
@@ -3272,6 +5122,24 @@ export interface OrderCreate {
    * @format date
    */
   due?: string | null;
+}
+
+export interface OrderFilter {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id: string;
+  /**
+   * Order name, tipically have format "ConceptName - DueMonth, DueYear"
+   * @maxLength 250
+   */
+  name: string;
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  concept: string;
 }
 
 export interface OrderImporter {
@@ -3290,6 +5158,11 @@ export interface OrderImporter {
    * @format uuid
    */
   concept: string;
+  /**
+   * Date when order due
+   * @format date
+   */
+  due?: string | null;
 }
 
 export interface OrderStock {
@@ -3316,6 +5189,22 @@ export interface OrderStock {
   attributes?: Attributes[];
 }
 
+export interface OrderStockValidate {
+  data: OrderStockValidateItem[];
+}
+
+export interface OrderStockValidateItem {
+  /** @format uuid */
+  order_id: string;
+  quantity: number;
+}
+
+export interface OrderStockValidateResponse {
+  /** @format uuid */
+  order_id: string;
+  has_stock: boolean;
+}
+
 export interface OrderWithAttributes {
   /**
    * @format decimal
@@ -3323,6 +5212,22 @@ export interface OrderWithAttributes {
    */
   order_price: string;
   attributes: AttributeCreate[];
+}
+
+export interface OrganizationCreate {
+  /** Name of the organization */
+  name: string;
+}
+
+export interface OrganizationResponse {
+  /** @format uuid */
+  id: string;
+  name: string;
+}
+
+export interface OrganizationUpdate {
+  /** Name of the organization */
+  name: string;
 }
 
 export enum OtherEnum {
@@ -3352,6 +5257,38 @@ export enum OtherEnum {
   S01 = 'S01',
 }
 
+export interface PaginatedAdjustmentRuleList {
+  /** @example 123 */
+  count?: number;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=4"
+   */
+  next?: string | null;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=2"
+   */
+  previous?: string | null;
+  results?: AdjustmentRule[];
+}
+
+export interface PaginatedAllowedBlockPeriodResponseList {
+  /** @example 123 */
+  count?: number;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=4"
+   */
+  next?: string | null;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=2"
+   */
+  previous?: string | null;
+  results?: AllowedBlockPeriodResponse[];
+}
+
 export interface PaginatedAttributesList {
   /** @example 123 */
   count?: number;
@@ -3366,6 +5303,22 @@ export interface PaginatedAttributesList {
    */
   previous?: string | null;
   results?: Attributes[];
+}
+
+export interface PaginatedBankAccountHistoryList {
+  /** @example 123 */
+  count?: number;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=4"
+   */
+  next?: string | null;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=2"
+   */
+  previous?: string | null;
+  results?: BankAccountHistory[];
 }
 
 export interface PaginatedBaseAdminList {
@@ -3398,6 +5351,22 @@ export interface PaginatedConceptStudentList {
    */
   previous?: string | null;
   results?: ConceptStudent[];
+}
+
+export interface PaginatedConfigurationHistoryList {
+  /** @example 123 */
+  count?: number;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=4"
+   */
+  next?: string | null;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=2"
+   */
+  previous?: string | null;
+  results?: ConfigurationHistory[];
 }
 
 export interface PaginatedDashboardDependentFulfillmentList {
@@ -3462,6 +5431,24 @@ export interface PaginatedDashboardFulfillmentListSerializerV2List {
    */
   previous?: string | null;
   results?: DashboardFulfillmentListSerializerV2[];
+  total_amount?: {
+    /**
+     * @format double
+     * @default "0.00"
+     * @example "9287.00"
+     */
+    string_value: string;
+    /**
+     * @default 0
+     * @example 123
+     */
+    int_value: number;
+    /**
+     * @default 2
+     * @example 2
+     */
+    coefficient: number;
+  };
 }
 
 export interface PaginatedDashboardPayinFulfillmentList {
@@ -3478,22 +5465,12 @@ export interface PaginatedDashboardPayinFulfillmentList {
    */
   previous?: string | null;
   results?: DashboardPayinFulfillment[];
-}
-
-export interface PaginatedDashboardPayinList {
-  /** @example 123 */
-  count?: number;
   /**
-   * @format uri
-   * @example "http://api.example.org/accounts/?page=4"
+   * @format double
+   * @default "0.00"
+   * @example "9287.00"
    */
-  next?: string | null;
-  /**
-   * @format uri
-   * @example "http://api.example.org/accounts/?page=2"
-   */
-  previous?: string | null;
-  results?: DashboardPayin[];
+  total_amount?: string | null;
 }
 
 export interface PaginatedDashboardRootConceptList {
@@ -3526,6 +5503,16 @@ export interface PaginatedDashboardSchoolPayoutsList {
    */
   previous?: string | null;
   results?: DashboardSchoolPayouts[];
+  /**
+   * @format double
+   * @example "9287.00"
+   */
+  total_received_amount: string | null;
+  /**
+   * @format double
+   * @example "9287.00"
+   */
+  total_emitted_amount: string | null;
 }
 
 export interface PaginatedDashboardStudentDelinquencyList {
@@ -3544,7 +5531,7 @@ export interface PaginatedDashboardStudentDelinquencyList {
   results?: DashboardStudentDelinquency[];
 }
 
-export interface PaginatedDashboardStudentListDueOrderSerializerV2List {
+export interface PaginatedDashboardStudentDelinquencySummaryList {
   /** @example 123 */
   count?: number;
   /**
@@ -3557,10 +5544,10 @@ export interface PaginatedDashboardStudentListDueOrderSerializerV2List {
    * @example "http://api.example.org/accounts/?page=2"
    */
   previous?: string | null;
-  results?: DashboardStudentListDueOrderSerializerV2[];
+  results?: DashboardStudentDelinquencySummary[];
 }
 
-export interface PaginatedDashboardStudentListDueOrderSerializerV3List {
+export interface PaginatedDashboardStudentListDueOrderSerializerV4List {
   /** @example 123 */
   count?: number;
   /**
@@ -3573,7 +5560,7 @@ export interface PaginatedDashboardStudentListDueOrderSerializerV3List {
    * @example "http://api.example.org/accounts/?page=2"
    */
   previous?: string | null;
-  results?: DashboardStudentListDueOrderSerializerV3[];
+  results?: DashboardStudentListDueOrderSerializerV4[];
 }
 
 export interface PaginatedDashboardStudentListList {
@@ -3640,6 +5627,22 @@ export interface PaginatedDelinquencyStudentList {
   results?: DelinquencyStudent[];
 }
 
+export interface PaginatedGuardianDependentFulfillmentList {
+  /** @example 123 */
+  count?: number;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=4"
+   */
+  next?: string | null;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=2"
+   */
+  previous?: string | null;
+  results?: GuardianDependentFulfillment[];
+}
+
 export interface PaginatedGuardianDependentOrderList {
   /** @example 123 */
   count?: number;
@@ -3672,6 +5675,22 @@ export interface PaginatedGuardianListPayinSerializerV2List {
   results?: GuardianListPayinSerializerV2[];
 }
 
+export interface PaginatedHistoryListResponseList {
+  /** @example 123 */
+  count?: number;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=4"
+   */
+  next?: string | null;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=2"
+   */
+  previous?: string | null;
+  results?: HistoryListResponse[];
+}
+
 export interface PaginatedInscriptionList {
   /** @example 123 */
   count?: number;
@@ -3686,6 +5705,22 @@ export interface PaginatedInscriptionList {
    */
   previous?: string | null;
   results?: Inscription[];
+}
+
+export interface PaginatedInvoiceSeriesList {
+  /** @example 123 */
+  count?: number;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=4"
+   */
+  next?: string | null;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=2"
+   */
+  previous?: string | null;
+  results?: InvoiceSeries[];
 }
 
 export interface PaginatedListDashboardInvoiceResponseDTOList {
@@ -3720,6 +5755,22 @@ export interface PaginatedMassiveConceptAssignmentHistoryList {
   results?: MassiveConceptAssignmentHistory[];
 }
 
+export interface PaginatedOptionalOrderList {
+  /** @example 123 */
+  count?: number;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=4"
+   */
+  next?: string | null;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=2"
+   */
+  previous?: string | null;
+  results?: OptionalOrder[];
+}
+
 export interface PaginatedOrderList {
   /** @example 123 */
   count?: number;
@@ -3734,6 +5785,28 @@ export interface PaginatedOrderList {
    */
   previous?: string | null;
   results?: Order[];
+}
+
+export interface PaginatedPayinListResponseDTOList {
+  /** @example 123 */
+  count?: number;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=4"
+   */
+  next?: string | null;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=2"
+   */
+  previous?: string | null;
+  results?: PayinListResponseDTO[];
+  /**
+   * @format double
+   * @default "0.00"
+   * @example "9287.00"
+   */
+  total_amount?: string | null;
 }
 
 export interface PaginatedScholarshipExpiredList {
@@ -3768,7 +5841,7 @@ export interface PaginatedScholarshipList {
   results?: Scholarship[];
 }
 
-export interface PaginatedSectionUpdateList {
+export interface PaginatedScholarshipListList {
   /** @example 123 */
   count?: number;
   /**
@@ -3781,7 +5854,39 @@ export interface PaginatedSectionUpdateList {
    * @example "http://api.example.org/accounts/?page=2"
    */
   previous?: string | null;
-  results?: SectionUpdate[];
+  results?: ScholarshipList[];
+}
+
+export interface PaginatedSchoolBlockedPeriodResponseList {
+  /** @example 123 */
+  count?: number;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=4"
+   */
+  next?: string | null;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=2"
+   */
+  previous?: string | null;
+  results?: SchoolBlockedPeriodResponse[];
+}
+
+export interface PaginatedSectionList {
+  /** @example 123 */
+  count?: number;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=4"
+   */
+  next?: string | null;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=2"
+   */
+  previous?: string | null;
+  results?: Section[];
 }
 
 export interface PaginatedSlimBankAccountList {
@@ -3830,6 +5935,36 @@ export interface PaginatedSlimStudentList {
    */
   previous?: string | null;
   results?: SlimStudent[];
+  /** @example 2 */
+  delinquent_students: number | null;
+  /**
+   * @format double
+   * @example 0.5
+   */
+  payment_compliance_percentage: number | null;
+}
+
+export interface PaginatedSlimStudentSerializerV2List {
+  /** @example 123 */
+  count?: number;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=4"
+   */
+  next?: string | null;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=2"
+   */
+  previous?: string | null;
+  results?: SlimStudentSerializerV2[];
+  /** @example 2 */
+  delinquent_students: number | null;
+  /**
+   * @format double
+   * @example 0.5
+   */
+  payment_compliance_percentage: number | null;
 }
 
 export interface PaginatedStockListHistoryList {
@@ -3864,6 +5999,38 @@ export interface PaginatedStudentByLevelList {
   results?: StudentByLevel[];
 }
 
+export interface PaginatedStudentByLevelSerializerV2List {
+  /** @example 123 */
+  count?: number;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=4"
+   */
+  next?: string | null;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=2"
+   */
+  previous?: string | null;
+  results?: StudentByLevelSerializerV2[];
+}
+
+export interface PaginatedStudentsScholarshipList {
+  /** @example 123 */
+  count?: number;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=4"
+   */
+  next?: string | null;
+  /**
+   * @format uri
+   * @example "http://api.example.org/accounts/?page=2"
+   */
+  previous?: string | null;
+  results?: StudentsScholarship[];
+}
+
 export interface PaidReminderRequest {
   school_id: string;
   start_date: string;
@@ -3876,6 +6043,44 @@ export enum PartialPaymentInterestTypeEnum {
   Total = 'total',
   Partial = 'partial',
   NoAply = 'no_aply',
+}
+
+/** Serializer for AdjustmentRule CRUD operations */
+export interface PatchedAdjustmentRule {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id?: string;
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  school?: string;
+  /** Type of adjustment */
+  rule_type?: RuleTypeEnum;
+  /**
+   * Application order (1-N, only relevant in sequential mode)
+   * @min -2147483648
+   * @max 2147483647
+   */
+  order?: number;
+  /** Whether the rule is active */
+  is_active?: boolean;
+  /** Specific config (e.g.: {"is_accumulative": true} for scholarships) */
+  config?: Record<string, any>;
+  /**
+   * Created at
+   * Date time on which the object was created.
+   * @format date-time
+   */
+  created?: string;
+  /**
+   * Modified at
+   * Date time on which the object was last modified.
+   * @format date-time
+   */
+  modified?: string;
 }
 
 export interface PatchedAssignBillings {
@@ -3894,6 +6099,33 @@ export interface PatchedAttributes {
   type?: string;
 }
 
+export interface PatchedAvoidScholarship {
+  scholarship_id?: string;
+  action?: string;
+}
+
+export interface PatchedBookKeeperUpdateConceptRequest {
+  name?: string;
+  type?: string;
+  school_cycle_id?: string;
+  is_billable?: boolean;
+  bank_account_id?: string;
+  payment_only_in_dashboard?: boolean;
+  early_bird_discounts?: EarlyBirdDiscountSchema[];
+  interest_schema?: InterestSchema[];
+  /** @maxLength 30 */
+  tax_code?: string;
+  /** @maxLength 30 */
+  tax_unit?: string;
+  has_sales_tax?: boolean;
+  use_education_complement?: boolean;
+  /** @maxLength 32 */
+  institutional_id?: string;
+  offering?: OfferingEnum;
+  does_invoice_as_general_public?: boolean;
+  not_invoicing_bank_account_id?: string;
+}
+
 export interface PatchedChangeLimitRequest {
   is_limited?: boolean;
   observations?: string;
@@ -3909,7 +6141,12 @@ export interface PatchedChangeOrderPricesRequest {
   price?: number;
 }
 
-export interface PatchedDashboardGuardian {
+export interface PatchedDashboardGuardianSendOutboundResponseDTO {
+  success?: string;
+  error?: string;
+}
+
+export interface PatchedDashboardGuardianSlim {
   /**
    * Unique identifier for the object.
    * @format uuid
@@ -3945,9 +6182,60 @@ export interface PatchedDashboardGuardian {
   send_emails?: boolean;
   /** Activate or deactive send whatsapps to guardian. */
   send_whatsapps?: boolean;
-  due_total?: string;
   billing_info?: BillingGuardianInfo;
-  dependents?: DashboardStudentDetail[];
+  /** @maxLength 255 */
+  occupation?: string | null;
+  /** @maxLength 255 */
+  workplace?: string | null;
+  /** @maxLength 255 */
+  workphone?: string | null;
+  /** @default "" */
+  relationship?: string;
+  has_student_custody?: boolean;
+  /** @format uuid */
+  school_id?: string;
+}
+
+export interface PatchedDashboardSchoolUpdate {
+  /**
+   * Name of the school.
+   * @maxLength 350
+   */
+  name?: string;
+  /**
+   * Logo of the school.
+   * @format uri
+   */
+  logo?: string | null;
+  /**
+   * Email contact of the school
+   * @format email
+   * @maxLength 254
+   */
+  email?: string;
+  phone?: string;
+  can_invoice_to_general_public?: boolean;
+  /** @format time */
+  emit_invoice_time?: string | null;
+  enable_manual_pay_invoice?: boolean;
+  /** Defines if scholarship discount is applied over the previous scholarship discount */
+  scholarship_is_accumulative?: boolean;
+  /** Determines which config is used for due orders and scholarships. */
+  scholarship_lost_config?: ScholarshipLostConfigEnum;
+  /** Configuration for scholarship settings */
+  scholarship_config?: Record<string, any>;
+  /** Enable discount breakdown in invoices */
+  invoice_discount_breakdown?: boolean;
+  /** Define if interest rate is frozen after first partial payment */
+  partial_payment_interest_freeze?: boolean;
+  /** Indicated amount over witch amount must be apply interests. */
+  partial_payment_interest_type?: PartialPaymentInterestTypeEnum;
+  /** Indicates if school uses our invoicing services. */
+  does_invoice?: boolean;
+  /** Default cfdi config for invoice. */
+  cfdi_use_config?: Record<string, any>;
+  /** Default cfdi config for discounts */
+  discounts_config?: Record<string, any>;
 }
 
 export interface PatchedDashboardStudent {
@@ -4002,7 +6290,10 @@ export interface PatchedDashboardStudent {
   billing_guardian_info?: BillingGuardianInfo;
   /** True when the student is currently active. */
   is_active?: boolean;
+  state?: StateEnum;
   school_cycle_id?: string | null;
+  /** @format date */
+  credential_expiration_date?: string | null;
 }
 
 export interface PatchedDetailAdmin {
@@ -4023,7 +6314,8 @@ export interface PatchedDetailAdmin {
   last_name?: string;
   /** @maxLength 250 */
   job_title?: string;
-  permission_set?: string;
+  membership_name?: string;
+  permission_set?: Membership;
   dashboard_joyride?: DashboardJoyride;
 }
 
@@ -4086,6 +6378,27 @@ export interface PatchedDetailConcept {
   use_education_complement?: boolean;
   can_be_deleted?: boolean;
   payout_config?: PayoutConfig | null;
+  auto_assigned_concepts?: ConceptAutoAssignedLevel[];
+  series?: string;
+  root_concept_id?: string;
+  /** Offering of the concept */
+  offering?: OfferingEnum;
+  does_invoice_as_general_public?: boolean;
+}
+
+export interface PatchedEditFulfillmentBase {
+  comment?: string;
+  base?: string;
+}
+
+export interface PatchedEditFulfillmentDue {
+  comment?: string;
+  due?: string;
+}
+
+export interface PatchedForceScholarship {
+  scholarship_id?: string;
+  action?: string;
 }
 
 export interface PatchedGuardianStudent {
@@ -4095,6 +6408,7 @@ export interface PatchedGuardianStudent {
    */
   id?: string;
   billing_guardian?: BillingGuardian;
+  /** Seccion */
   section_name?: string;
   /** Workaround for self-onboarding process. Signals when student has concept generated. */
   is_ready?: boolean;
@@ -4152,7 +6466,7 @@ export interface PatchedMassiveConceptAssignmentHistory {
    */
   modified?: string;
   /** Status for Massive Concept Assignment */
-  status?: MassiveConceptAssignmentHistoryStatusEnum;
+  status?: Status386Enum;
   /**
    * @min 0
    * @max 2147483647
@@ -4199,6 +6513,43 @@ export interface PatchedOrder {
   price?: string;
   concept_name?: string;
   attributes?: Attributes[];
+}
+
+export interface PatchedPatchMembershipPermissionsRequestDTO {
+  can_add_payment?: boolean;
+  can_add_discount?: boolean;
+  can_assign_scholarship?: boolean;
+  can_deassign_scholarship?: boolean;
+  can_assign_guardian?: boolean;
+  can_deassign_guardian?: boolean;
+  can_edit_guardian?: boolean;
+  can_add_concept_assignment?: boolean;
+  can_edit_concept_assignment?: boolean;
+  can_delete_concept_assignment?: boolean;
+  can_add_student?: boolean;
+  can_edit_student?: boolean;
+  can_send_whatsapp?: boolean;
+  can_assign_billing_guardian?: boolean;
+  can_view_student_status?: boolean;
+  can_add_concept?: boolean;
+  can_edit_stock?: boolean;
+  can_view_collections_page?: boolean;
+  can_view_received_payment_page?: boolean;
+  can_view_delinquency_page?: boolean;
+  can_view_concepts_page?: boolean;
+  can_view_admissions_page?: boolean;
+  can_view_income_stats_cards?: boolean;
+  can_view_registered_payments_table?: boolean;
+  can_view_payouts_table?: boolean;
+  can_view_income_page?: boolean;
+  can_view_student_total_debt?: boolean;
+  can_view_scholarships_and_discounts?: boolean;
+  can_delete_manual_payment?: boolean;
+  can_perform_invoicing?: boolean;
+  can_create_refund?: boolean;
+  can_view_inscriptions_page?: boolean;
+  can_view_inscriptions_quotas_page?: boolean;
+  can_view_account_state_section?: boolean;
 }
 
 export interface PatchedRetrieveGuardian {
@@ -4340,6 +6691,52 @@ export interface PatchedRetrieveGuardian {
   };
   /** Type of fiscal regime for billing. */
   taxing_type?: TaxingTypeEnum | BlankEnum | NullEnum | null;
+  has_payins?: string;
+  fraud_status?: FraudStatusEnum | NullEnum | null;
+  /** Block cash payment method for this guardian. */
+  block_cash_payments?: boolean;
+}
+
+/**
+ * A ModelSerializer that takes an additional `fields` argument that
+ * controls which fields should be displayed.
+ */
+export interface PatchedSection {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id?: string;
+  name?: string;
+}
+
+export interface PatchedSlimBankAccount {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id?: string;
+  /** Type of the bank account, CLABE_ACCOUNT type only for Kushki tests. */
+  account_type?: AccountTypeEnum;
+  /**
+   * Name of the owner of the bank account.
+   * @maxLength 255
+   */
+  owner?: string;
+  /**
+   * Friendly name for bank account.
+   * @maxLength 55
+   */
+  nickname?: string;
+  /**
+   * Name of the banck.
+   * @maxLength 75
+   */
+  bank_name?: string;
+  public_summary?: string;
+  /** @maxLength 55 */
+  account_number?: string;
+  archived?: boolean;
 }
 
 export interface PatchedStudentAssignmentDetail {
@@ -4364,6 +6761,21 @@ export interface PatchedStudentAssignmentDetail {
   concept?: string;
   scholarships?: Scholarship[];
   orders_to_skip?: string[];
+}
+
+export interface PatchedStudentScholarshipCreate {
+  /** @format uuid */
+  scholarship_id?: string;
+  orders_to_skip?: string[];
+  /** @format uuid */
+  school_cycle_id?: string;
+  /** @default true */
+  is_active?: boolean;
+  /** @format uuid */
+  student_id?: string;
+  /** @format uuid */
+  school_id?: string;
+  date_ranges?: StudentScholarshipDateRange[];
 }
 
 export interface PatchedUpdateGuardian {
@@ -4451,6 +6863,16 @@ export interface PatchedUpdateGuardian {
   taxing_type?: TaxingTypeEnum | NullEnum | null;
 }
 
+export interface PatchedUpdateGuardianDTO {
+  occupation?: string | null;
+  workplace?: string | null;
+  workphone?: string | null;
+}
+
+export interface PatchedUpdateGuardianRequest {
+  block_cash_payments?: boolean;
+}
+
 export interface PatchedUpdateQuantityRequest {
   action?: UpdateQuantityRequestActionEnum;
   quantity?: number;
@@ -4494,9 +6916,9 @@ export interface Payin {
    */
   id: string;
   /** Payment status for the payin. */
-  status: StatusC9FEnum;
+  status: Status91FEnum;
   /** Type of the payin */
-  type: Type787Enum | NullEnum | null;
+  type: Type11EEnum | NullEnum | null;
   /** Method of the payin, include but to limited to: Visa, Mastercard, Kushki, oxxo. */
   method: string | null;
   guardian: SlimGuardian;
@@ -4534,7 +6956,7 @@ export interface Payin {
   /**
    * Total paid amount
    * @format decimal
-   * @pattern ^-?\d{0,6}(?:\.\d{0,2})?$
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
    */
   total_paid: string;
   /** Fullname of user who creates the object. */
@@ -4542,6 +6964,22 @@ export interface Payin {
   /** Place where payin in collected. */
   collected_at: string;
   invoices: Invoice[];
+  payout: DashboardPayout | null;
+  payin_fullfillments: string;
+}
+
+export interface PayinAssignTransactionRequestDTO {
+  /** @format uuid */
+  payin_id: string;
+  /** @minLength 16 */
+  ticket_number: string;
+  /** @format uuid */
+  payout_id?: string;
+}
+
+export interface PayinCancelRequestDTO {
+  /** @format uuid */
+  payin_id: string;
 }
 
 export interface PayinFulfillmentDetail {
@@ -4550,7 +6988,7 @@ export interface PayinFulfillmentDetail {
   /**
    * Total paid amount for payin fulfillment.
    * @format decimal
-   * @pattern ^-?\d{0,6}(?:\.\d{0,2})?$
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
    */
   total_paid: string;
   order: string;
@@ -4563,24 +7001,121 @@ export interface PayinFulfillmentDetail {
    * controls which fields should be displayed.
    */
   invoice: Invoice;
+  invoices: Invoice[];
   paid_date: string;
+  refund: RetrieveRefundDashboardDTO;
 }
 
-export enum PaymentMethodEnum {
-  CuentaMercadoPago = 'Cuenta Mercado Pago',
-  EnEfectivoTicketImpreso = 'En efectivo (Ticket impreso)',
-  TransferenciaBancaria = 'Transferencia bancaria',
-  EnATM = 'En ATM',
-  TarjetaDeCredito = 'Tarjeta de crédito',
-  TarjetaDeDebito = 'Tarjeta de débito',
-  TarjetaPrepaga = 'Tarjeta prepaga',
-  ChequeNominativo = 'Cheque nominativo',
-  DepositoEnCheque = 'Depósito en cheque',
-  DepositoEnEfectivo = 'Depósito en efectivo',
-  Multipago = 'Multipago',
-  Credito = 'Crédito',
-  PagoDomiciliado = 'Pago Domiciliado',
-  NominaEnEfectivo = 'Nomina en Efectivo',
+export interface PayinFulfillmentListResponse {
+  count: number;
+  next: number | null;
+  previous: number | null;
+  results: any[];
+}
+
+export interface PayinInvoice {
+  /** @format uuid */
+  id: string;
+  correlative_id: string;
+  /** @format uuid */
+  guardian_id: string;
+  guardian_name: string;
+}
+
+export interface PayinListResponseDTO {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id: string;
+  type: Type11EEnum;
+  total_currency: string;
+  invoices_pdfs: string[];
+  /** Indicates if payment was received in school. */
+  collected_at_school: boolean;
+  /** Unique correlative identifier for the object inside a school. */
+  correlative_id: string;
+  created_by: User;
+  /**
+   * Created at
+   * Date time on which the object was created.
+   * @format date-time
+   */
+  created: string;
+  /** Schema that contains relevant information added at momment of registering a payment(comment, bank_name, reference, etc). */
+  manual_payment_metadata: Record<string, any>;
+  /**
+   * Total amount of the payin.
+   * @format decimal
+   * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
+   */
+  total: string;
+  guardian: SlimGuardian;
+  /** @format date-time */
+  paid_date: string;
+  fulfillments: any[];
+  generate_invoice: boolean;
+  manual_payment_account: SlimBankAccount;
+  /** @maxLength 150 */
+  comment?: string | null;
+  show_comment?: boolean | null;
+  transaction_reference?: string | null;
+  sender_account_number?: string | null;
+  card_last_digits?: string | null;
+  bank_name?: string | null;
+  is_partial: boolean;
+  optional_orders: ValidateOptionalOrderStudent[];
+}
+
+export interface PayinProofOfPaymentRequest {
+  /**
+   * File used as proof that the payment was done
+   * @format uri
+   */
+  proof_of_payment: string;
+}
+
+export interface PayinRedirectItemDTO {
+  /** @format uuid */
+  student_id: string;
+  /** @format uuid */
+  order_id: string;
+}
+
+export interface PayinRedirectRequestDTO {
+  /** @format uuid */
+  payin_id: string;
+  /** List of items to redirect payment to. ORDER IS IMPORTANT: items will be paid in the order provided. Optional concepts must be fully paid and cannot be partial. */
+  items: PayinRedirectItemDTO[];
+}
+
+export interface PayinRegenerateTicketRequestDTO {
+  /** @format uuid */
+  payin_id: string;
+}
+
+export interface PayinSyncRequestDTO {
+  ticket_number: string;
+  /** @format uuid */
+  school_id: string;
+  /** @format date-time */
+  start_from: string;
+}
+
+export interface PaymentBlockedRequest {
+  /** @format uuid */
+  payment_id: string;
+  /** @default "" */
+  trace_id?: string;
+  /** @default "" */
+  span_id?: string;
+}
+
+export interface PaymentItem {
+  /** @format uuid */
+  student?: string;
+  /** @format uuid */
+  order: string;
 }
 
 export interface PaymentReminderRequest {
@@ -4589,6 +7124,23 @@ export interface PaymentReminderRequest {
   end_date: string;
   concept_type: string;
   level_type: string;
+}
+
+export interface PaymentRequest {
+  /** @format uuid */
+  guardian: string;
+  items: PaymentItem[];
+  preference_type: PreferenceTypeEnum;
+  token?: string;
+  card_type?: CardTypeEnum;
+  card_brand?: string;
+}
+
+export interface PaymentResponse {
+  /** @format uuid */
+  payment_id: string;
+  trace_id: string;
+  span_id: string;
 }
 
 /**
@@ -4604,6 +7156,18 @@ export interface PayoutConfig {
   not_invoicing_bank_account: DetailBankAccount;
 }
 
+export interface PayoutDetailResponse {
+  /** @format uuid */
+  id: string;
+}
+
+export interface PayoutManagementListResponse {
+  count: number;
+  next: number | null;
+  previous: number | null;
+  results: any[];
+}
+
 export interface Period {
   month_name: string;
   month: string;
@@ -4614,6 +7178,62 @@ export enum PreferenceTypeEnum {
   TRANSFER_IN = 'TRANSFER_IN',
   CASH_IN = 'CASH_IN',
   CARD = 'CARD',
+}
+
+export interface ProductServiceCatalog {
+  DangerousMaterial: string;
+  Complement: string;
+  Name: string;
+  Value: string;
+}
+
+export interface ProductServiceCatalogError {
+  Message: string;
+}
+
+export enum RecalculationTriggerEnum {
+  ModeChange = 'mode_change',
+  OrderChange = 'order_change',
+  ConfigChange = 'config_change',
+}
+
+export interface ReinvoiceRequestDTO {
+  with_relation: boolean;
+  /** @format uuid */
+  invoice_id: string;
+  observations?: string | null;
+}
+
+export interface RelatedInvoice {
+  /** @format uuid */
+  id: string;
+  fiscal_identifier: string;
+}
+
+export interface RepairInvoiceRequestDTO {
+  /**
+   * ID del invoice a reparar
+   * @format uuid
+   */
+  invoice_id: string;
+  /** CFDI ID de Facturama (opcional, se busca automáticamente si no se provee) */
+  service_identifier?: string | null;
+}
+
+export interface RepairInvoiceResponseDTO {
+  /** Mensaje de éxito */
+  message: string;
+  /**
+   * ID del invoice reparado
+   * @format uuid
+   */
+  invoice_id: string;
+  /** Nuevo status del invoice */
+  status: string;
+  /** Service identifier de Facturama */
+  service_identifier: string;
+  /** Fiscal identifier (UUID SAT) */
+  fiscal_identifier: string;
 }
 
 export enum ReportTypeEnum {
@@ -4627,18 +7247,37 @@ export enum ReportTypeEnum {
 }
 
 export interface RetrieveDashboardInvoiceResponseDTO {
+  /** @format uuid */
   id: string;
-  client_identifier: string;
-  billing_guardian_name: string;
   status: StatusCf3Enum;
-  order_id: string;
+  type: TypeDb9Enum;
+  /** @format date-time */
+  expedition_date: string;
   order_name: string;
-  payment_amount: string;
-  guardian_name: string;
-  invoice_date: string;
-  iva: string;
-  retentions: string;
+  billing_guardian?: BillingGuardian;
+  billing_guardian_name: string;
+  tax_id: string;
+  client_identifier: string;
+  fiscal_identifier: string;
+  related_invoice: RelatedInvoice;
+  payin: PayinInvoice;
+  /** @format double */
+  subtotal: number;
+  /** @format double */
+  iva: number;
+  /** @format double */
+  isr: number;
+  /** @format double */
+  total: number;
   payment_method: string;
+  files: string[];
+  fulfillment: FulfillmentInvoice;
+  enabled_actions: InvoiceEnabledActions;
+  credit_notes: CreditNoteWithTotal[];
+  has_invoices_pending_to_cancel: boolean;
+  status_error: string;
+  observations: string;
+  guardians: InvoiceStudentGuardian[];
 }
 
 export interface RetrieveGuardian {
@@ -4780,6 +7419,10 @@ export interface RetrieveGuardian {
   };
   /** Type of fiscal regime for billing. */
   taxing_type?: TaxingTypeEnum | BlankEnum | NullEnum | null;
+  has_payins: string;
+  fraud_status: FraudStatusEnum | NullEnum | null;
+  /** Block cash payment method for this guardian. */
+  block_cash_payments?: boolean;
 }
 
 export interface RetrieveGuardianWithToken {
@@ -4921,7 +7564,25 @@ export interface RetrieveGuardianWithToken {
   };
   /** Type of fiscal regime for billing. */
   taxing_type?: TaxingTypeEnum | BlankEnum | NullEnum | null;
+  has_payins: string;
+  fraud_status: FraudStatusEnum | NullEnum | null;
+  /** Block cash payment method for this guardian. */
+  block_cash_payments?: boolean;
   token: string;
+}
+
+export interface RetrieveRefundDashboardDTO {
+  id: string;
+  payin_fulfillment: string;
+  action: string;
+  amount: string;
+  invoice?: string;
+  /** @format date */
+  registered_at: string;
+  comment: string;
+  payment_method: string;
+  /** @default false */
+  unassign_concept?: boolean;
 }
 
 export interface RetrieveSubscribableConceptsResponseDTO {
@@ -4933,6 +7594,10 @@ export interface RetrieveSubscribableConceptsResponseDTO {
   student_name: string;
   /** @format date */
   next_due: string;
+  /** @format uuid */
+  next_fulfillment_id: string;
+  /** @format uuid */
+  next_order_id: string;
   /** @format double */
   concept_price: number;
   has_due_order: boolean;
@@ -4952,6 +7617,19 @@ export interface RetrieveSubscriptionResponseDTO {
   payment_has_failed: boolean;
   /** @format date */
   next_payment_date: string;
+}
+
+export interface RetryRequestDTO {
+  /** @format uuid */
+  invoice_id: string;
+}
+
+export enum RuleTypeEnum {
+  Scholarship = 'scholarship',
+  EarlyBird = 'early_bird',
+  Interest = 'interest',
+  SpecialDiscount = 'special_discount',
+  SpecialOvercharge = 'special_overcharge',
 }
 
 export interface Scholarship {
@@ -4974,7 +7652,7 @@ export interface Scholarship {
   /** Type of discount. */
   type: TypeF30Enum;
   /** Types of concepts that are affected by scholarship. */
-  affected_concept_types?: AffectedConceptTypesEnum[];
+  affected_concept_types?: ConceptTypesEnum[];
   concepts?: string[];
   /**
    * Created at
@@ -4984,6 +7662,51 @@ export interface Scholarship {
   created: string;
   /** Date when scholarship was assigned, for thispurpose is the last date of modification for StudentScholarship */
   assigned_at: string;
+  /** Excluded concepts on scholarship */
+  excluded_concepts: ConceptSlim[];
+}
+
+export interface ScholarshipDetail {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id: string;
+  /**
+   * Name of scholarship.
+   * @maxLength 64
+   */
+  name: string;
+  /**
+   * Amount or percentage of discount depending of type.
+   * @format decimal
+   * @pattern ^-?\d{0,11}(?:\.\d{0,4})?$
+   */
+  value?: string | null;
+  /** Type of discount. */
+  type: TypeF30Enum;
+  /** Types of concepts that are affected by scholarship. */
+  affected_concept_types?: ConceptTypesEnum[];
+  concepts: ConceptSlim[];
+  /**
+   * Created at
+   * Date time on which the object was created.
+   * @format date-time
+   */
+  created: string;
+  /** Excluded concepts on scholarship */
+  excluded_concepts: ConceptSlim[];
+  /**
+   * User who created object.
+   * @format uuid
+   */
+  created_by_id: string | null;
+  /**
+   * Modified at
+   * Date time on which the object was last modified.
+   * @format date-time
+   */
+  modified: string;
 }
 
 export interface ScholarshipExpired {
@@ -5044,10 +7767,53 @@ export interface ScholarshipExpiredDetail {
   affected_concepts: string;
 }
 
+export interface ScholarshipList {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id: string;
+  /**
+   * Name of scholarship.
+   * @maxLength 64
+   */
+  name: string;
+  /**
+   * Amount or percentage of discount depending of type.
+   * @format decimal
+   * @pattern ^-?\d{0,11}(?:\.\d{0,4})?$
+   */
+  value?: string | null;
+  /** Type of discount. */
+  type: TypeF30Enum;
+  /** Types of concepts that are affected by scholarship. */
+  affected_concept_types?: ConceptTypesEnum[];
+  concepts?: string[];
+}
+
 export enum ScholarshipLostConfigEnum {
   NotLost = 'not_lost',
   ByOrder = 'by_order',
   ByStudent = 'by_student',
+}
+
+export interface ScholarshipSlim {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id: string;
+  /**
+   * Name of scholarship.
+   * @maxLength 64
+   */
+  name: string;
+}
+
+export interface ScholarshipValidate {
+  student_scholarship_exists: boolean;
+  paid_fulfillment_with_scholarship_exists: boolean;
+  message: string;
 }
 
 export interface School {
@@ -5061,6 +7827,8 @@ export interface School {
    * @maxLength 350
    */
   name: string;
+  /** Current status of the school */
+  status?: Status2B3Enum;
   /**
    * Logo of the school.
    * @format uri
@@ -5076,6 +7844,21 @@ export interface School {
   /** Indicates if school uses our invoicing services. */
   does_invoice?: boolean;
   gateway_credentials: Record<string, any>;
+}
+
+export interface SchoolBlockedPeriodResponse {
+  /** @format uuid */
+  id: string;
+  /** @format uuid */
+  school_id: string;
+  /** @format uuid */
+  allowed_period_id: string;
+  /** @format date */
+  start_date: string;
+  /** @format date */
+  end_date: string;
+  campaign_id?: string | null;
+  affected_fulfillment_ids: string[];
 }
 
 /**
@@ -5107,6 +7890,64 @@ export interface SchoolCycle {
   year_end?: number | null;
   /** True only for current cycle */
   is_active?: boolean;
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  next_id: string | null;
+}
+
+export interface SchoolCycleCurrent {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id: string;
+  /**
+   * Name of the cycle.
+   * @maxLength 255
+   */
+  name: string;
+  /** @format uuid */
+  next_id?: string | null;
+  next_name?: string | null;
+  levels: SchoolCycleCurrentLevel[];
+}
+
+export interface SchoolCycleCurrentGroup {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id: string;
+  name: string;
+  /** @format uuid */
+  next_id: string;
+  next_name: string;
+}
+
+export interface SchoolCycleCurrentLevel {
+  /** @format uuid */
+  id: string;
+  name: string;
+  count_students: number;
+  sections: SchoolCycleCurrentSection[];
+}
+
+export interface SchoolCycleCurrentSection {
+  name: string;
+  next_name: string;
+  groups: SchoolCycleCurrentGroup[];
+}
+
+export interface SchoolCycleStatus {
+  status: SchoolCycleStatusStatusEnum;
+}
+
+export enum SchoolCycleStatusStatusEnum {
+  PENDING = 'PENDING',
+  FAILED = 'FAILED',
+  SUCCESS = 'SUCCESS',
 }
 
 export interface SchoolImport {
@@ -5168,6 +8009,8 @@ export interface SchoolImport {
    * @maxLength 16
    */
   postal_code?: string;
+  /** If true, scholarships and partial payments are applied independently on the original amount. */
+  apply_discounts_independently?: boolean;
   /**
    * Name of the school.
    * @maxLength 350
@@ -5183,6 +8026,11 @@ export interface SchoolImport {
    * @maxLength 3
    */
   short_slug?: string;
+  /**
+   * Slug url of the school's name.
+   * @maxLength 40
+   */
+  slug_url?: string | null;
   /**
    * Logo of the school.
    * @format uri
@@ -5242,8 +8090,19 @@ export interface SchoolImport {
   can_invoice_to_general_public?: boolean;
   /** Default cfdi config for invoice. */
   cfdi_use_config?: Record<string, any>;
+  /** Default cfdi config for discounts */
+  discounts_config?: Record<string, any>;
   /** Current status of the school */
-  status?: SchoolImportStatusEnum;
+  status?: Status2B3Enum;
+  /**
+   * Deal/Opportunity id from CRM.
+   * @maxLength 100
+   */
+  external_crm_id?: string | null;
+  /** Indicates whether the school is a real physical campus or is used for external/commercial students. */
+  is_real_campus?: boolean | null;
+  /** Type of institution this school represents. */
+  school_type?: SchoolTypeEnum | BlankEnum | NullEnum | null;
   /**
    * User who created object.
    * @format uuid
@@ -5272,10 +8131,28 @@ export interface SchoolImport {
   members: string[];
 }
 
-export enum SchoolImportStatusEnum {
-  Operando = 'operando',
-  Baja = 'baja',
-  Onboarding = 'onboarding',
+export interface SchoolNotFoundResponse {
+  detail: string;
+}
+
+export interface SchoolPayoutsResume {
+  deposit_month: number;
+  deposit_week: number;
+  deposit_yesterday: number;
+  deposit_today: number;
+}
+
+export enum SchoolTypeEnum {
+  TechnicalSchool = 'technical_school',
+  Extracurricular = 'extracurricular',
+  University = 'university',
+  K12 = 'k12',
+  Kindergarten = 'kindergarten',
+  Demo = 'demo',
+  Events = 'events',
+  Suppliers = 'suppliers',
+  Highschool = 'highschool',
+  ExternalSales = 'external_sales',
 }
 
 /**
@@ -5291,22 +8168,36 @@ export interface Section {
   name: string;
 }
 
-export interface SectionUpdate {
-  /**
-   * Grade of the section.
-   * @maxLength 50
-   */
-  grade: string;
-  /**
-   * Internal name for section inside a grade.
-   * @maxLength 9
-   */
-  group?: string | null;
+export interface SectionFilter {
   /**
    * Unique identifier for the object.
    * @format uuid
    */
+  id: string;
   level: string;
+  /**
+   * Grade of the section.
+   * @maxLength 100
+   */
+  grade: string;
+  /**
+   * Internal name for section inside a grade.
+   * @maxLength 50
+   */
+  group?: string | null;
+}
+
+export interface SectionWithLevel {
+  /** @format uuid */
+  id: string;
+  grade: string;
+  group: string;
+  level: Level;
+  without_group: boolean | null;
+  /** @format uuid */
+  last_section: string | null;
+  /** @format uuid */
+  next: string | null;
 }
 
 export interface SendCodeRequest {
@@ -5315,7 +8206,6 @@ export interface SendCodeRequest {
 }
 
 export enum ServiceEnum {
-  MERPAGO_CP = 'MERPAGO_CP',
   KUSHKI = 'KUSHKI',
 }
 
@@ -5346,9 +8236,60 @@ export interface SimpleFulfillment {
   /**
    * Total guardian commission (commission + tax).
    * @format decimal
-   * @pattern ^-?\d{0,6}(?:\.\d{0,2})?$
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
    */
   guardian_commission: string;
+  /** @format date-time */
+  deleted: string;
+}
+
+export interface SimplePayinFulfillment {
+  id: number;
+  correlative_id?: string;
+  fulfillment_id: string;
+  /** @format date-time */
+  fulfillment_deleted: string;
+  order_name: string;
+  /** @format date-time */
+  paid_date: string;
+  final_amount: string;
+  student: SlimStudent;
+  student_fullname?: string;
+  guardian: SlimGuardian;
+  invoice_status: InvoiceStatusEnum | NullEnum | null;
+  /**
+   * Total guardian commission (commission + tax).
+   * @format decimal
+   * @pattern ^-?\d{0,9}(?:\.\d{0,2})?$
+   */
+  guardian_commission: string;
+  refund: RetrieveRefundDashboardDTO | null;
+}
+
+/** Simulate calculation with example data */
+export interface Simulate {
+  /**
+   * @format decimal
+   * @pattern ^-?\d{0,8}(?:\.\d{0,2})?$
+   */
+  base_amount: string;
+  mode: ModeEnum;
+  adjustments: AdjustmentItem[];
+}
+
+export interface SingleSyncRequest {
+  /** @format uuid */
+  tenant_id: string;
+  action: SingleSyncRequestActionEnum;
+  entity_type: EntityTypeEnum;
+  /** @format uuid */
+  entity_id: string;
+}
+
+export enum SingleSyncRequestActionEnum {
+  CREATE = 'CREATE',
+  UPDATE = 'UPDATE',
+  DELETE = 'DELETE',
 }
 
 export interface SlimBankAccount {
@@ -5361,7 +8302,7 @@ export interface SlimBankAccount {
   account_type: AccountTypeEnum;
   /**
    * Name of the owner of the bank account.
-   * @maxLength 55
+   * @maxLength 255
    */
   owner: string;
   /**
@@ -5375,6 +8316,16 @@ export interface SlimBankAccount {
    */
   bank_name: string;
   public_summary: string;
+  /** @maxLength 55 */
+  account_number: string;
+  archived?: boolean;
+}
+
+export interface SlimConceptGuardianDependentFulfillment {
+  type: string;
+  is_billable: boolean;
+  payment_only_in_dashboard: boolean;
+  optional: boolean;
 }
 
 export interface SlimGuardian {
@@ -5405,6 +8356,49 @@ export interface SlimGuardian {
    * @maxLength 128
    */
   phone?: string | null;
+  fraud_status: FraudStatusEnum | NullEnum | null;
+  /** @default "" */
+  relationship: string;
+  has_student_custody: boolean;
+}
+
+export interface SlimPayinGuardianDependentFulfillment {
+  /** @format uuid */
+  id: string;
+  /** @format date-time */
+  created: string;
+  /**
+   * Total amount of the payin.
+   * @format decimal
+   * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
+   */
+  total: string;
+  /**
+   * Amount from this payin applied to this specific fulfillment.
+   * @format decimal
+   * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
+   */
+  total_paid?: string;
+}
+
+export interface SlimSpecialOverCharge {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id: string;
+  /**
+   * Name of special charge.
+   * @maxLength 255
+   */
+  name?: string;
+  /**
+   * Amount of over charge.
+   * @format decimal
+   * @pattern ^-?\d{0,13}(?:\.\d{0,2})?$
+   */
+  value?: string | null;
+  is_visible?: boolean;
 }
 
 export interface SlimStudent {
@@ -5429,9 +8423,72 @@ export interface SlimStudent {
    */
   enrollment_code?: string | null;
   /** Level name */
-  level?: string;
+  level: string | null;
   /** Section name */
-  section?: string;
+  section: string | null;
+  state?: StateEnum;
+  lead_id?: string;
+}
+
+export interface SlimStudentGuardianDependentFulfillment {
+  /** @format uuid */
+  id: string;
+}
+
+export interface SlimStudentSerializerV2 {
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  id: string;
+  /**
+   * First name of the person.
+   * @maxLength 250
+   */
+  first_name: string;
+  /**
+   * Last name of the person.
+   * @maxLength 250
+   */
+  last_name?: string;
+  /**
+   * Private identifier inside school.
+   * @maxLength 50
+   */
+  enrollment_code?: string | null;
+  /** Level name */
+  level: string | null;
+  /** Section name */
+  section: string | null;
+  state?: StateEnum;
+  lead_id?: string;
+}
+
+export interface SlimStudentsScholarship {
+  id: number;
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  scholarship_id: string;
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  student_id: string;
+  /**
+   * Unique identifier for the object.
+   * @format uuid
+   */
+  school_cycle_id: string | null;
+}
+
+export interface SlimSubscriptionGuardianDependentFulfillment {
+  /** @format uuid */
+  id: string;
+  payment_has_failed: boolean;
+  /** @format date */
+  next_payment_date: string;
 }
 
 export interface SpecialDiscount {
@@ -5456,15 +8513,7 @@ export interface SpecialDiscount {
    */
   value?: string | null;
   /** Type of discount. */
-  type: SpecialDiscountTypeEnum;
-}
-
-export enum SpecialDiscountTypeEnum {
-  INTEREST_FORG = 'INTEREST_FORG',
-  PERCENT = 'PERCENT',
-  AMOUNT = 'AMOUNT',
-  FIXED = 'FIXED',
-  BRILLAMONT = 'BRILLAMONT',
+  type: Type104Enum;
 }
 
 export interface SpecialOverCharge {
@@ -5493,12 +8542,49 @@ export interface SpecialOverCharge {
   type: TypeF30Enum;
 }
 
-export enum StatusC9FEnum {
+export enum StateEnum {
+  Lead = 'lead',
+  NewStudent = 'new_student',
+  Active = 'active',
+  Inactive = 'inactive',
+  Graduated = 'graduated',
+  DroppedOut = 'dropped_out',
+}
+
+export enum Status259Enum {
+  DUE = 'DUE',
+  PAID = 'PAID',
+  PENDING = 'PENDING',
+  OUTSTANDING = 'OUTSTANDING',
+}
+
+export enum Status2B3Enum {
+  Operando = 'operando',
+  Baja = 'baja',
+  Onboarding = 'onboarding',
+  Paused = 'paused',
+}
+
+export enum Status386Enum {
+  STARTED = 'STARTED',
+  PENDING = 'PENDING',
+  FINISHED = 'FINISHED',
+  FAILED = 'FAILED',
+  CANCELED = 'CANCELED',
+  SUCCESS = 'SUCCESS',
+  FAILED_AND_CANCELED = 'FAILED_AND_CANCELED',
+  FAILED_ON_DELETION = 'FAILED_ON_DELETION',
+  PARTIAL_SUCCESS = 'PARTIAL_SUCCESS',
+  RETRYING = 'RETRYING',
+}
+
+export enum Status91FEnum {
   Approved = 'approved',
   Authorized = 'authorized',
   Pending = 'pending',
   InProcess = 'in_process',
   InMediation = 'in_mediation',
+  Blocked = 'blocked',
   Rejected = 'rejected',
   Cancelled = 'cancelled',
   Refunded = 'refunded',
@@ -5534,6 +8620,11 @@ export enum StatusFdeEnum {
   APPROVED_STATUS = 'APPROVED_STATUS',
   DECLINED_STATUS = 'DECLINED_STATUS',
   CANCELED_STATUS = 'CANCELED_STATUS',
+}
+
+export enum StatusesEnum {
+  Pending = 'pending',
+  Failed = 'failed',
 }
 
 export interface Stock {
@@ -5635,6 +8726,13 @@ export enum StockListHistoryTypeEnum {
   EXTERNAL_MOVEMENT = 'EXTERNAL_MOVEMENT',
 }
 
+export interface Student {
+  /** @format uuid */
+  id: string;
+  first_name: string;
+  last_name: string;
+}
+
 export interface StudentAssignment {
   /**
    * Unique identifier for the object.
@@ -5649,7 +8747,7 @@ export interface StudentAssignment {
    * A ModelSerializer that takes an additional `fields` argument that
    * controls which fields should be displayed.
    */
-  concept: Concept;
+  concept: DetailedConcept;
   /** Orders skipped for concept of concept assignment(legacy). */
   orders_to_skip: string;
 }
@@ -5684,6 +8782,18 @@ export interface StudentByLevel {
    * @maxLength 350
    */
   name: string;
+  level_id: string;
+  children: string;
+}
+
+/** V2: Sums section counters for level total (single-pass) */
+export interface StudentByLevelSerializerV2 {
+  /**
+   * Name of the level.
+   * @maxLength 350
+   */
+  name: string;
+  level_id: string;
   children: string;
 }
 
@@ -5700,6 +8810,8 @@ export interface StudentConcept {
   name: string;
   /** Indicates if concept is assigned to student. */
   is_assigned: string;
+  is_optional: string;
+  type: string;
 }
 
 export interface StudentConceptDetail {
@@ -5762,6 +8874,15 @@ export interface StudentConceptDetailSerializerV2 {
   interests: Record<string, any>[];
 }
 
+export interface StudentInscriptionsSummary {
+  re_registered_students_count: number;
+  re_registered_students_denominator: number;
+  new_registered: number;
+  new_registered_denominator: number;
+  next_cycle_count: number;
+  school_cycle: string;
+}
+
 export interface StudentOrder {
   /**
    * Unique identifier for the object.
@@ -5772,7 +8893,7 @@ export interface StudentOrder {
    * A ModelSerializer that takes an additional `fields` argument that
    * controls which fields should be displayed.
    */
-  concept: Concept;
+  concept: DetailedConcept;
   /** Order name, tipically have format "ConceptName - DueMonth, DueYear" */
   name: string;
   /**
@@ -5782,13 +8903,9 @@ export interface StudentOrder {
    */
   price: string;
   price_currency: string;
-  /**
-   * Date when order due
-   * @format date
-   */
-  due: string | null;
+  due: string;
   /** Status of the student order (legacy version). */
-  status: string;
+  status: Status259Enum;
   /** Interest + visible over charge amount amount of fulfillment(order-student). */
   total_charge: string;
   /** Interest amount of fulfillment(order-student). */
@@ -5802,9 +8919,9 @@ export interface StudentOrder {
   /** Deprecated. */
   expiration: string;
   /** Payins associated to fulfillment(order-student) */
-  payins: Payin[];
-  invoice: Invoice;
-  dependent: SlimStudent;
+  payins: Payin[] | null;
+  invoice: Invoice | null;
+  dependent: SlimStudent | null;
   /** Boolean indicates if first payin_fulfillment associated to order is partial. */
   has_partial_payins: boolean;
   /** Current paid amount for fulfillment */
@@ -5814,6 +8931,77 @@ export interface StudentOrder {
   /** Commission amount charged to guardian based on payin type. */
   guardian_commission: string;
   is_sponsored: string;
+  base_amount: string;
+  original_due: string;
+}
+
+export interface StudentScholarshipCreate {
+  /** @format uuid */
+  scholarship_id: string;
+  orders_to_skip?: string[];
+  /** @format uuid */
+  school_cycle_id: string;
+  /** @default true */
+  is_active?: boolean;
+  /** @format uuid */
+  student_id: string;
+  /** @format uuid */
+  school_id: string;
+  date_ranges?: StudentScholarshipDateRange[];
+}
+
+export interface StudentScholarshipDateRange {
+  id: number;
+  /** @format date-time */
+  start_date?: string;
+  /** @format date-time */
+  end_date?: string;
+  /** @default true */
+  is_active?: boolean;
+}
+
+export interface StudentScholarshipDateRangeUpdate {
+  id?: number;
+  /** @format date-time */
+  start_date?: string;
+  /** @format date-time */
+  end_date?: string;
+  /** @default true */
+  is_active?: boolean;
+}
+
+export interface StudentScholarshipRetrieve {
+  /** @format uuid */
+  id: string;
+  scholarship: Scholarship;
+  student: Student;
+  orders_to_skip: any[];
+  /**
+   * A ModelSerializer that takes an additional `fields` argument that
+   * controls which fields should be displayed.
+   */
+  school_cycle: SchoolCycle;
+  is_active: boolean;
+  date_ranges: StudentScholarshipDateRange[];
+  /** Affected concept for expired student scholarship. */
+  affected_concepts: AffectedConcept[];
+  is_deletable: boolean;
+}
+
+export interface StudentScholarshipUpdate {
+  /** @format uuid */
+  scholarship_id: string;
+  orders_to_skip?: string[];
+  /** @format uuid */
+  school_cycle_id: string;
+  /** @default true */
+  is_active?: boolean;
+  /** @format uuid */
+  student_id: string;
+  /** @format uuid */
+  school_id: string;
+  date_ranges?: StudentScholarshipDateRangeUpdate[];
+  id: number;
 }
 
 export interface StudentStatusSummary {
@@ -5821,6 +9009,12 @@ export interface StudentStatusSummary {
   partial_paid: number;
   due: number;
   status: string;
+}
+
+export interface StudentsScholarship {
+  id: number;
+  scholarship: ScholarshipSlim;
+  student: string;
 }
 
 export interface SubscriptionStudentDTO {
@@ -5832,7 +9026,46 @@ export interface SubscriptionStudentDTO {
 
 export interface SuccessResponse {
   message: string;
-  massive_dissasignment_id: string;
+}
+
+export interface SyncRequest {
+  /** @format uuid */
+  tenant_id: string;
+  action: SyncRequestActionEnum;
+  entity_type: EntityTypeEnum;
+}
+
+export enum SyncRequestActionEnum {
+  CREATE = 'CREATE',
+  UPDATE = 'UPDATE',
+}
+
+export interface TableLinkCreateRequest {
+  /** @format uuid */
+  school_id: string;
+  table_name: string;
+  relative_url: string;
+  filters?: Record<string, any>;
+  columns?: Record<string, any>;
+}
+
+export interface TableLinkResponse {
+  /** @format uuid */
+  id: string;
+  /** @format uuid */
+  user_id: string;
+  /** @format uuid */
+  school_id: string;
+  table_name: string;
+  relative_url: string;
+  hash: string;
+  filters: Record<string, any>;
+  columns: Record<string, any>;
+}
+
+export interface TableLinkUpdateRequest {
+  filters?: Record<string, any>;
+  columns?: Record<string, any>;
 }
 
 export enum TaxingSystemEnum {
@@ -5907,23 +9140,15 @@ export enum TransportEnum {
   S01 = 'S01',
 }
 
-export enum Type68EEnum {
-  MONTHLY_FEE = 'MONTHLY_FEE',
-  INSCRIPTION = 'INSCRIPTION',
-  TRANSPORT = 'TRANSPORT',
-  PRE_DEBT = 'PRE_DEBT',
-  OTHER = 'OTHER',
-  REINSCRIPTION = 'REINSCRIPTION',
-  EXTRACURRICULAR = 'EXTRACURRICULAR',
-  SPORTS = 'SPORTS',
-  CAFETERIA = 'CAFETERIA',
-  BOOKS_AND_MATERIALS = 'BOOKS_AND_MATERIALS',
-  EXAMS_AND_CERTIFICATES = 'EXAMS_AND_CERTIFICATES',
-  UNIFORMS_AND_MERCH = 'UNIFORMS_AND_MERCH',
+export enum Type104Enum {
+  INTEREST_FORG = 'INTEREST_FORG',
+  PERCENT = 'PERCENT',
+  AMOUNT = 'AMOUNT',
+  FIXED = 'FIXED',
+  BRILLAMONT = 'BRILLAMONT',
 }
 
-export enum Type787Enum {
-  AccountMoney = 'account_money',
+export enum Type11EEnum {
   Ticket = 'ticket',
   BankTransfer = 'bank_transfer',
   Atm = 'atm',
@@ -5937,6 +9162,21 @@ export enum Type787Enum {
   Credit = 'credit',
   DirectDebit = 'direct_debit',
   CashPayroll = 'cash_payroll',
+  Compensation = 'compensation',
+  Giving = 'giving',
+}
+
+export enum TypeAceEnum {
+  Scholarship = 'scholarship',
+  EarlyBird = 'early_bird',
+  Interest = 'interest',
+  SpecialDiscount = 'special_discount',
+  SpecialOvercharge = 'special_overcharge',
+}
+
+export enum TypeDb9Enum {
+  Invoice = 'invoice',
+  CreditNote = 'credit_note',
 }
 
 export enum TypeF30Enum {
@@ -5944,6 +9184,11 @@ export enum TypeF30Enum {
   AMOUNT = 'AMOUNT',
   FIXED = 'FIXED',
   BRILLAMONT = 'BRILLAMONT',
+}
+
+export interface UnassignConceptsDTO {
+  /** @format uuid */
+  student_id: string;
 }
 
 export interface UpdateGuardian {
@@ -6040,6 +9285,20 @@ export interface UpdateQuantityResponse {
   message: string;
 }
 
+export interface UpdateSchoolConfigDTO {
+  config_dashboard: Record<string, any>;
+  config_portal: Record<string, any>;
+}
+
+export interface UploadPhotoDTO {
+  /** @format uri */
+  photo?: string | null;
+}
+
+export interface UploadPhotoResponseDTO {
+  photo: string;
+}
+
 export interface UrlShortenerResponse {
   /** @format uri */
   redirect_url: string;
@@ -6071,15 +9330,40 @@ export interface User {
   date_joined: string;
 }
 
+export interface UserDTO {
+  /** @format uuid */
+  id: string;
+  first_name: string;
+  last_name: string;
+  /** @format email */
+  email: string;
+  mobile: string | null;
+  membership: string;
+  /** @format uuid */
+  membership_id: string;
+  /** @format date-time */
+  last_login: string;
+}
+
+export interface UserListFiltersDTO {
+  membership: BaseEnum[];
+}
+
 export interface UserReportAsPaid {
   is_paid: boolean;
+}
+
+export interface ValidateDeletionResponse {
+  would_create_sponsored_payment: boolean;
+  sponsored_payment_details?: Record<string, any>;
+  message: string;
 }
 
 export interface ValidateOptionalOrderStudent {
   /** @format uuid */
   order: string;
   /** @format uuid */
-  student: string;
+  student: string | null;
 }
 
 export interface ValidatePreference {
@@ -6087,6 +9371,11 @@ export interface ValidatePreference {
   guardian: string;
   items: CreateServicePreferenceItem[];
   preference_type: PreferenceTypeEnum;
+}
+
+export interface ValidateSpecialOverChargeDeletion {
+  /** @format uuid */
+  student_id: string;
 }
 
 export interface VirtualOrder {
@@ -6142,11 +9431,11 @@ export interface VirtualOrderSerializerV2 {
    */
   due?: string | null;
   /** Indicates if order associated is due. */
-  would_be_due: string;
+  would_be_due: boolean;
   /** Indicated if student has this order a paid, partial paid or pending. */
-  has_fulfillment: string;
+  has_fulfillment: boolean;
   /** Indicates if student not have this order. */
-  is_skipped: string;
+  is_skipped: boolean;
   /**
    * Reflects the price of the fulfillment associated with the order if it exists and is paid.
    * @format decimal
@@ -6154,6 +9443,25 @@ export interface VirtualOrderSerializerV2 {
   fulfillment_amount?: string | null;
   /** Indicates if the order is associated with an optional concept. */
   optional: boolean;
+}
+
+export interface YearlyInvoiceZipRequest {
+  /** Year to gather invoices from January 1 to December 15. */
+  year: number;
+}
+
+export interface YearlyInvoiceZipResponse {
+  status: string;
+  download_url?: string | null;
+}
+
+export interface YearlyInvoiceZipStatusResponse {
+  /** Status: "ready", "generating", "not_found", or "not_available" (before Dec 15) */
+  status: string;
+  download_url?: string | null;
+  message?: string;
+  /** Whether the current user will receive an email notification when the report is ready (only when status is "generating") */
+  user_will_be_notified?: boolean;
 }
 
 export interface ZipReport {
@@ -6273,14 +9581,18 @@ export class HttpClient<SecurityDataType = unknown> {
     [ContentType.FormData]: (input: any) =>
       Object.keys(input || {}).reduce((formData, key) => {
         const property = input[key];
-        formData.append(
-          key,
-          property instanceof Blob
-            ? property
-            : typeof property === 'object' && property !== null
-            ? JSON.stringify(property)
-            : `${property}`
-        );
+        if (Array.isArray(property) && property.every((p) => p instanceof Blob)) {
+          property.forEach((p) => formData.append(key, p));
+        } else {
+          formData.append(
+            key,
+            property instanceof Blob
+              ? property
+              : typeof property === 'object' && property !== null
+              ? JSON.stringify(property)
+              : `${property}`
+          );
+        }
         return formData;
       }, new FormData()),
     [ContentType.UrlEncoded]: (input: any) => this.toQueryString(input),
@@ -6352,7 +9664,7 @@ export class HttpClient<SecurityDataType = unknown> {
       signal: (cancelToken ? this.createAbortSignal(cancelToken) : requestParams.signal) || null,
       body: typeof body === 'undefined' || body === null ? null : payloadFormatter(body),
     }).then(async (response) => {
-      const r = response as HttpResponse<T, E>;
+      const r = response.clone() as HttpResponse<T, E>;
       r.data = null as unknown as T;
       r.error = null as unknown as E;
 
@@ -6387,6 +9699,446 @@ export class HttpClient<SecurityDataType = unknown> {
  * @version 0.0.0
  */
 export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDataType> {
+  academicCoordinator = {
+    /**
+     * @description Get debt information grouped by guardian for students in a school
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorGuardiansDebtCreate
+     * @request POST:/academic-coordinator/{school_id}/guardians/debt/
+     * @secure
+     */
+    academicCoordinatorGuardiansDebtCreate: (schoolId: string, data: GuardianDebtRequest, params: RequestParams = {}) =>
+      this.request<GuardianDebtResponse[], any>({
+        path: `/academic-coordinator/${schoolId}/guardians/debt/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Create a new membership for a user in a school
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorMembershipsCreate
+     * @request POST:/academic-coordinator/memberships/
+     * @secure
+     */
+    academicCoordinatorMembershipsCreate: (data: MembershipCreate, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/academic-coordinator/memberships/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorMembershipsUpdate
+     * @request PUT:/academic-coordinator/memberships/{id}/
+     * @secure
+     */
+    academicCoordinatorMembershipsUpdate: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/academic-coordinator/memberships/${id}/`,
+        method: 'PUT',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorMembershipsPartialUpdate
+     * @request PATCH:/academic-coordinator/memberships/{id}/
+     * @secure
+     */
+    academicCoordinatorMembershipsPartialUpdate: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/academic-coordinator/memberships/${id}/`,
+        method: 'PATCH',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description Create a new organization
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorOrganizationsCreate
+     * @request POST:/academic-coordinator/organizations/
+     * @secure
+     */
+    academicCoordinatorOrganizationsCreate: (data: OrganizationCreate, params: RequestParams = {}) =>
+      this.request<OrganizationResponse, Record<string, any>>({
+        path: `/academic-coordinator/organizations/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Update an existing organization
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorOrganizationsUpdate
+     * @request PUT:/academic-coordinator/organizations/{id}/
+     * @secure
+     */
+    academicCoordinatorOrganizationsUpdate: (id: string, data: OrganizationUpdate, params: RequestParams = {}) =>
+      this.request<OrganizationResponse, Record<string, any>>({
+        path: `/academic-coordinator/organizations/${id}/`,
+        method: 'PUT',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorOrganizationsPartialUpdate
+     * @request PATCH:/academic-coordinator/organizations/{id}/
+     * @secure
+     */
+    academicCoordinatorOrganizationsPartialUpdate: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/academic-coordinator/organizations/${id}/`,
+        method: 'PATCH',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorSchoolCyclesCreate
+     * @request POST:/academic-coordinator/school_cycles/
+     * @secure
+     */
+    academicCoordinatorSchoolCyclesCreate: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/academic-coordinator/school_cycles/`,
+        method: 'POST',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorSchoolCyclesRetrieve
+     * @request GET:/academic-coordinator/school_cycles/{id}/
+     * @secure
+     */
+    academicCoordinatorSchoolCyclesRetrieve: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/academic-coordinator/school_cycles/${id}/`,
+        method: 'GET',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorSchoolCyclesUpdate
+     * @request PUT:/academic-coordinator/school_cycles/{id}/
+     * @secure
+     */
+    academicCoordinatorSchoolCyclesUpdate: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/academic-coordinator/school_cycles/${id}/`,
+        method: 'PUT',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorSchoolCyclesPartialUpdate
+     * @request PATCH:/academic-coordinator/school_cycles/{id}/
+     * @secure
+     */
+    academicCoordinatorSchoolCyclesPartialUpdate: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/academic-coordinator/school_cycles/${id}/`,
+        method: 'PATCH',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorSchoolCyclesHasAssignedConceptsRetrieve
+     * @request GET:/academic-coordinator/school_cycles/{id}/has_assigned_concepts/
+     * @secure
+     */
+    academicCoordinatorSchoolCyclesHasAssignedConceptsRetrieve: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/academic-coordinator/school_cycles/${id}/has_assigned_concepts/`,
+        method: 'GET',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description Create a new section.
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorSectionsCreate
+     * @request POST:/academic-coordinator/sections/
+     * @secure
+     */
+    academicCoordinatorSectionsCreate: (data: SectionWithLevel, params: RequestParams = {}) =>
+      this.request<Record<string, any>, Record<string, any>>({
+        path: `/academic-coordinator/sections/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Update a section
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorSectionsUpdate
+     * @request PUT:/academic-coordinator/sections/{id}/
+     * @secure
+     */
+    academicCoordinatorSectionsUpdate: (id: string, data: Section, params: RequestParams = {}) =>
+      this.request<Section, Record<string, any>>({
+        path: `/academic-coordinator/sections/${id}/`,
+        method: 'PUT',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Partial Update a section
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorSectionsPartialUpdate
+     * @request PATCH:/academic-coordinator/sections/{id}/
+     * @secure
+     */
+    academicCoordinatorSectionsPartialUpdate: (id: string, data: PatchedSection, params: RequestParams = {}) =>
+      this.request<Section, Record<string, any>>({
+        path: `/academic-coordinator/sections/${id}/`,
+        method: 'PATCH',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorSectionsDeleteDestroy
+     * @request DELETE:/academic-coordinator/sections/{id}/delete/
+     * @secure
+     */
+    academicCoordinatorSectionsDeleteDestroy: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/academic-coordinator/sections/${id}/delete/`,
+        method: 'DELETE',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description Delete a list of sections for a id list.
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorSectionsBulkDeleteCreate
+     * @request POST:/academic-coordinator/sections/bulk_delete/
+     * @secure
+     */
+    academicCoordinatorSectionsBulkDeleteCreate: (params: RequestParams = {}) =>
+      this.request<void, Record<string, any>>({
+        path: `/academic-coordinator/sections/bulk_delete/`,
+        method: 'POST',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Store temporary school form data
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorSectionsFormDataRetrieve
+     * @request GET:/academic-coordinator/sections/form_data/
+     * @secure
+     */
+    academicCoordinatorSectionsFormDataRetrieve: (
+      query: {
+        /**
+         * UUID of the school
+         * @format uuid
+         */
+        school_id: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<Record<string, any>, Record<string, any>>({
+        path: `/academic-coordinator/sections/form_data/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Store temporary school form data
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorSectionsFormDataCreate
+     * @request POST:/academic-coordinator/sections/form_data/
+     * @secure
+     */
+    academicCoordinatorSectionsFormDataCreate: (
+      query: {
+        /**
+         * UUID of the school
+         * @format uuid
+         */
+        school_id: string;
+      },
+      data: Record<string, any>,
+      params: RequestParams = {}
+    ) =>
+      this.request<Record<string, any>, Record<string, any>>({
+        path: `/academic-coordinator/sections/form_data/`,
+        method: 'POST',
+        query: query,
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Retrieve a list of sections for a given school.
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorSectionsListBySchoolList
+     * @request GET:/academic-coordinator/sections/list_by_school/
+     * @secure
+     */
+    academicCoordinatorSectionsListBySchoolList: (
+      query: {
+        /** A page number within the paginated result set. */
+        page?: number;
+        /**
+         * UUID of the school
+         * @format uuid
+         */
+        school_id: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<PaginatedSectionList, any>({
+        path: `/academic-coordinator/sections/list_by_school/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Update sections from form
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorSectionsUpdateFromFormCreate
+     * @request POST:/academic-coordinator/sections/update_from_form/
+     * @secure
+     */
+    academicCoordinatorSectionsUpdateFromFormCreate: (data: Section[], params: RequestParams = {}) =>
+      this.request<void, Record<string, any>>({
+        path: `/academic-coordinator/sections/update_from_form/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Retrieve fulfillments by concept types
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorStudentsGetPaidFulfillmentsByConceptTypesRetrieve
+     * @request GET:/academic-coordinator/students/{id}/get_paid_fulfillments_by_concept_types/
+     * @secure
+     */
+    academicCoordinatorStudentsGetPaidFulfillmentsByConceptTypesRetrieve: (
+      id: string,
+      query: {
+        /** List of concept types. Valid values: INSCRIPTION, REINSCRIPTION, MONTHLY_FEE */
+        concept_types: ('INSCRIPTION' | 'REINSCRIPTION' | 'MONTHLY_FEE')[];
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<Record<string, any>, Record<string, any>>({
+        path: `/academic-coordinator/students/${id}/get_paid_fulfillments_by_concept_types/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags academic-coordinator
+     * @name AcademicCoordinatorStudentsInscriptionsCreate
+     * @request POST:/academic-coordinator/students/{id}/inscriptions/
+     * @secure
+     */
+    academicCoordinatorStudentsInscriptionsCreate: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/academic-coordinator/students/${id}/inscriptions/`,
+        method: 'POST',
+        secure: true,
+        ...params,
+      }),
+  };
   apiTokenAuth = {
     /**
      * No description
@@ -6408,6 +10160,271 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
   };
   api = {
+    /**
+     * @description Generate authentication link for guardian app login. Requires only API secret key in headers.
+     *
+     * @tags api
+     * @name ApiAppAuthLoginCreate
+     * @request POST:/api/app/auth/login/
+     * @secure
+     */
+    apiAppAuthLoginCreate: (data: GenerateAuthLinkRequest, params: RequestParams = {}) =>
+      this.request<GenerateAuthLinkResponse, GenerateAuthLinkBadRequest | GenerateAuthLinkNotFound>({
+        path: `/api/app/auth/login/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Get debt information for the authenticated guardian in the specified school.
+     *
+     * @tags api
+     * @name ApiAppSchoolsGuardiansDebtRetrieve
+     * @request GET:/api/app/schools/{school_id}/guardians/debt/
+     * @secure
+     */
+    apiAppSchoolsGuardiansDebtRetrieve: (schoolId: string, params: RequestParams = {}) =>
+      this.request<GuardianDebtResponse, any>({
+        path: `/api/app/schools/${schoolId}/guardians/debt/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Generate a hashed authentication URL for a Guardian
+     *
+     * @tags api
+     * @name ApiAuthGuardianMagicLinkCreate
+     * @request POST:/api/auth/guardian/magic-link/
+     * @secure
+     */
+    apiAuthGuardianMagicLinkCreate: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/auth/guardian/magic-link/`,
+        method: 'POST',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description Exchange username and password for Keycloak tokens
+     *
+     * @tags api
+     * @name ApiAuthTokenCreateCreate
+     * @request POST:/api/auth/token/create/
+     * @secure
+     */
+    apiAuthTokenCreateCreate: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/auth/token/create/`,
+        method: 'POST',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description Exchange a token for a new one with a different audience
+     *
+     * @tags api
+     * @name ApiAuthTokenExchangeCreate
+     * @request POST:/api/auth/token/exchange/
+     * @secure
+     */
+    apiAuthTokenExchangeCreate: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/auth/token/exchange/`,
+        method: 'POST',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description Invalidate the refresh token and log out the user
+     *
+     * @tags api
+     * @name ApiAuthTokenLogoutCreate
+     * @request POST:/api/auth/token/logout/
+     * @secure
+     */
+    apiAuthTokenLogoutCreate: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/auth/token/logout/`,
+        method: 'POST',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description Get the public key used to verify tokens
+     *
+     * @tags api
+     * @name ApiAuthTokenPublicKeyRetrieve
+     * @request GET:/api/auth/token/public-key/
+     * @secure
+     */
+    apiAuthTokenPublicKeyRetrieve: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/auth/token/public-key/`,
+        method: 'GET',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description Refresh an existing token using a refresh token
+     *
+     * @tags api
+     * @name ApiAuthTokenRefreshCreate
+     * @request POST:/api/auth/token/refresh/
+     * @secure
+     */
+    apiAuthTokenRefreshCreate: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/auth/token/refresh/`,
+        method: 'POST',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description Verify a token's validity and decode its content
+     *
+     * @tags api
+     * @name ApiAuthTokenVerifyCreate
+     * @request POST:/api/auth/token/verify/
+     * @secure
+     */
+    apiAuthTokenVerifyCreate: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/auth/token/verify/`,
+        method: 'POST',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description Get the OpenID configuration
+     *
+     * @tags api
+     * @name ApiAuthTokenWellKnownRetrieve
+     * @request GET:/api/auth/token/well-known/
+     * @secure
+     */
+    apiAuthTokenWellKnownRetrieve: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/auth/token/well-known/`,
+        method: 'GET',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiDataPayoutInvoicesList
+     * @request GET:/api/data/payout/invoices/
+     * @secure
+     */
+    apiDataPayoutInvoicesList: (
+      query?: {
+        /** End date in 'dd/mm/yyyy' format. */
+        date_end?: string;
+        /** Start date in 'dd/mm/yyyy' format. */
+        date_start?: string;
+        /** Ending folio number for filtering. */
+        folio_end?: number;
+        /** Starting folio number for filtering. */
+        folio_start?: number;
+        /** Page number for pagination. Defaults to 0. */
+        page?: number;
+        /** RFC of the receiver to filter. */
+        rfc?: string;
+        /** Status of the CFDI ('all', 'active', 'canceled', 'pending'). Defaults to 'all'. */
+        status?: string;
+        /** Name of the receiver to filter. */
+        tax_entity_name?: string;
+        /** Type of CFDI ('issued', 'received'). Defaults to 'issued'. */
+        type?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<
+        {
+          /** Unique identifier for the invoice */
+          Id?: string;
+          /** Type of CFDI ('I' for invoice) */
+          CfdiType?: string;
+          /** Invoice type (e.g., 'Emited') */
+          Type?: string;
+          /** Invoice folio number */
+          Folio?: string;
+          /** Invoice series */
+          Serie?: string;
+          /** Taxpayer name */
+          TaxName?: string;
+          /** Receiver's RFC */
+          Rfc?: string;
+          /** Issuer's RFC */
+          RfcIssuer?: string;
+          /**
+           * Invoice issue date
+           * @format date-time
+           */
+          Date?: string;
+          /**
+           * Subtotal amount
+           * @format float
+           */
+          Subtotal?: number;
+          /**
+           * Total amount
+           * @format float
+           */
+          Total?: number;
+          /** Unique invoice identifier (UUID) */
+          Uuid?: string;
+          /** Indicates if the invoice is active */
+          IsActive?: boolean;
+          /** Payment method (e.g., 'PUE') */
+          PaymentMethod?: string;
+          /** Invoice status ('active', 'canceled', etc.) */
+          Status?: string;
+        }[],
+        {
+          msg?: string;
+        }
+      >({
+        path: `/api/data/payout/invoices/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiDataTransactionsPayinsRetrieve
+     * @request GET:/api/data/transactions/payins/{id}/
+     * @secure
+     */
+    apiDataTransactionsPayinsRetrieve: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/data/transactions/payins/${id}/`,
+        method: 'GET',
+        secure: true,
+        ...params,
+      }),
+
     /**
      * No description
      *
@@ -6620,6 +10637,20 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
 
     /**
+     * @description Guardians
+     *
+     * @tags Guardians
+     * @name ApiPublicV1GuardiansRetrieve
+     * @request GET:/api/public/v1/guardians/
+     */
+    apiPublicV1GuardiansRetrieve: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/public/v1/guardians/`,
+        method: 'GET',
+        ...params,
+      }),
+
+    /**
      * No description
      *
      * @tags api
@@ -6676,6 +10707,23 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       this.request<void, any>({
         path: `/api/public/v1/school-cycles/${schoolCycleId}/concepts/`,
         method: 'GET',
+        ...params,
+      }),
+
+    /**
+     * @description List all fulfillments for a specific guardian and school. Args: request: The HTTP request object guardian_id: UUID of the guardian to get fulfillments for school_id: UUID of the school to filter fulfillments by *args: Additional positional arguments **kwargs: Additional keyword arguments Returns: Response: HTTP response containing serialized fulfillment data Raises: PermissionDenied: If JWT validation fails
+     *
+     * @tags api
+     * @name ApiPublicV1SchoolsGuardiansFulfillmentsList
+     * @request GET:/api/public/v1/schools/{school_id}/guardians/{guardian_id}/fulfillments/
+     * @secure
+     */
+    apiPublicV1SchoolsGuardiansFulfillmentsList: (guardianId: string, schoolId: string, params: RequestParams = {}) =>
+      this.request<GuardianDependentFulfillment[], any>({
+        path: `/api/public/v1/schools/${schoolId}/guardians/${guardianId}/fulfillments/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
         ...params,
       }),
 
@@ -6805,6 +10853,1485 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * No description
      *
      * @tags api
+     * @name ApiV1AdmissionsPartialUpdate
+     * @request PATCH:/api/v1/admissions/{student_lead_id}/
+     * @secure
+     */
+    apiV1AdmissionsPartialUpdate: (studentLeadId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/admissions/${studentLeadId}/`,
+        method: 'PATCH',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1AdmissionsAssignConceptsCreate
+     * @request POST:/api/v1/admissions/assign_concepts/
+     * @secure
+     */
+    apiV1AdmissionsAssignConceptsCreate: (data: AssignConceptsDTO, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/admissions/assign_concepts/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1AdmissionsCheckPaymentsRetrieve
+     * @request GET:/api/v1/admissions/check_payments/{student_id}/
+     * @secure
+     */
+    apiV1AdmissionsCheckPaymentsRetrieve: (studentId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/admissions/check_payments/${studentId}/`,
+        method: 'GET',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1AdmissionsCreateGuardianCreate
+     * @request POST:/api/v1/admissions/create_guardian/
+     * @secure
+     */
+    apiV1AdmissionsCreateGuardianCreate: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/admissions/create_guardian/`,
+        method: 'POST',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1AdmissionsCreateLeadCreate
+     * @request POST:/api/v1/admissions/create_lead/
+     * @secure
+     */
+    apiV1AdmissionsCreateLeadCreate: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/admissions/create_lead/`,
+        method: 'POST',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1AdmissionsDeleteGuardianDestroy
+     * @request DELETE:/api/v1/admissions/delete_guardian/{guardian_id}/
+     * @secure
+     */
+    apiV1AdmissionsDeleteGuardianDestroy: (guardianId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/admissions/delete_guardian/${guardianId}/`,
+        method: 'DELETE',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1AdmissionsDeleteStudentDestroy
+     * @request DELETE:/api/v1/admissions/delete_student/{student_id}/
+     * @secure
+     */
+    apiV1AdmissionsDeleteStudentDestroy: (studentId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/admissions/delete_student/${studentId}/`,
+        method: 'DELETE',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1AdmissionsGuardianRetrieve
+     * @request GET:/api/v1/admissions/guardian/{guardian_id}/
+     * @secure
+     */
+    apiV1AdmissionsGuardianRetrieve: (guardianId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/admissions/guardian/${guardianId}/`,
+        method: 'GET',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1AdmissionsLinkGuardianPartialUpdate
+     * @request PATCH:/api/v1/admissions/link_guardian/{guardian_id}/
+     * @secure
+     */
+    apiV1AdmissionsLinkGuardianPartialUpdate: (guardianId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/admissions/link_guardian/${guardianId}/`,
+        method: 'PATCH',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1AdmissionsStudentLeadPartialUpdate
+     * @request PATCH:/api/v1/admissions/student_lead/{student_id}/
+     * @secure
+     */
+    apiV1AdmissionsStudentLeadPartialUpdate: (studentId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/admissions/student_lead/${studentId}/`,
+        method: 'PATCH',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1AdmissionsUnassignConceptsCreate
+     * @request POST:/api/v1/admissions/unassign_concepts/
+     * @secure
+     */
+    apiV1AdmissionsUnassignConceptsCreate: (data: UnassignConceptsDTO, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/admissions/unassign_concepts/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1AdmissionsUpdateGuardianPartialUpdate
+     * @request PATCH:/api/v1/admissions/update_guardian/{guardian_id}/
+     * @secure
+     */
+    apiV1AdmissionsUpdateGuardianPartialUpdate: (
+      guardianId: string,
+      data: PatchedUpdateGuardianDTO,
+      params: RequestParams = {}
+    ) =>
+      this.request<void, any>({
+        path: `/api/v1/admissions/update_guardian/${guardianId}/`,
+        method: 'PATCH',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * @description List all allowed block periods
+     *
+     * @tags api
+     * @name ApiV1AllowedBlockPeriodsList
+     * @request GET:/api/v1/allowed-block-periods/
+     * @secure
+     */
+    apiV1AllowedBlockPeriodsList: (
+      query?: {
+        /** A page number within the paginated result set. */
+        page?: number;
+        /** Number of results to return per page. */
+        page_size?: number;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<PaginatedAllowedBlockPeriodResponseList, any>({
+        path: `/api/v1/allowed-block-periods/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Create allowed block period (Staff only)
+     *
+     * @tags api
+     * @name ApiV1AllowedBlockPeriodsCreate
+     * @request POST:/api/v1/allowed-block-periods/
+     * @secure
+     */
+    apiV1AllowedBlockPeriodsCreate: (data: CreateAllowedBlockPeriodRequest, params: RequestParams = {}) =>
+      this.request<AllowedBlockPeriodResponse, void>({
+        path: `/api/v1/allowed-block-periods/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Delete allowed block period
+     *
+     * @tags api
+     * @name ApiV1AllowedBlockPeriodsDestroy
+     * @request DELETE:/api/v1/allowed-block-periods/{id}/
+     * @secure
+     */
+    apiV1AllowedBlockPeriodsDestroy: (id: string, params: RequestParams = {}) =>
+      this.request<void, void>({
+        path: `/api/v1/allowed-block-periods/${id}/`,
+        method: 'DELETE',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description List available periods where schools can create blocks (respects minimum advance days)
+     *
+     * @tags api
+     * @name ApiV1AllowedBlockPeriodsAvailableList
+     * @request GET:/api/v1/allowed-block-periods/available/
+     * @secure
+     */
+    apiV1AllowedBlockPeriodsAvailableList: (
+      query?: {
+        /** A page number within the paginated result set. */
+        page?: number;
+        /** Number of results to return per page. */
+        page_size?: number;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<PaginatedAllowedBlockPeriodResponseList, any>({
+        path: `/api/v1/allowed-block-periods/available/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1AppShortUrlsList
+     * @request GET:/api/v1/app/short_urls/
+     * @secure
+     */
+    apiV1AppShortUrlsList: (
+      query: {
+        /** @minLength 1 */
+        hash: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<UrlShortenerResponse[], any>({
+        path: `/api/v1/app/short_urls/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficeCsdCreate
+     * @request POST:/api/v1/backoffice/csd/
+     * @secure
+     */
+    apiV1BackofficeCsdCreate: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/backoffice/csd/`,
+        method: 'POST',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficeFiscalEntitiesRetrieve
+     * @request GET:/api/v1/backoffice/fiscal_entities/
+     * @secure
+     */
+    apiV1BackofficeFiscalEntitiesRetrieve: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/backoffice/fiscal_entities/`,
+        method: 'GET',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficeGatewayCredentialsRetrieve
+     * @request GET:/api/v1/backoffice/gateway_credentials/
+     * @secure
+     */
+    apiV1BackofficeGatewayCredentialsRetrieve: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/backoffice/gateway_credentials/`,
+        method: 'GET',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description Cancel batch of invoices
+     *
+     * @tags api
+     * @name ApiV1BackofficeInvoicingCancelInvoicesCreate
+     * @request POST:/api/v1/backoffice/invoicing/cancel_invoices/
+     * @secure
+     */
+    apiV1BackofficeInvoicingCancelInvoicesCreate: (data: InvoiceRequestDTO, params: RequestParams = {}) =>
+      this.request<AsyncInvoiceResponseDTO, any>({
+        path: `/api/v1/backoffice/invoicing/cancel_invoices/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Generate batch of invoices
+     *
+     * @tags api
+     * @name ApiV1BackofficeInvoicingGenerateInvoicesCreate
+     * @request POST:/api/v1/backoffice/invoicing/generate_invoices/
+     * @secure
+     */
+    apiV1BackofficeInvoicingGenerateInvoicesCreate: (data: InvoiceRequestDTO, params: RequestParams = {}) =>
+      this.request<AsyncInvoiceResponseDTO, any>({
+        path: `/api/v1/backoffice/invoicing/generate_invoices/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Re-emit batch of invoices with relation
+     *
+     * @tags api
+     * @name ApiV1BackofficeInvoicingReEmitInvoicesCreate
+     * @request POST:/api/v1/backoffice/invoicing/re_emit_invoices/
+     * @secure
+     */
+    apiV1BackofficeInvoicingReEmitInvoicesCreate: (data: InvoiceRequestDTO, params: RequestParams = {}) =>
+      this.request<AsyncInvoiceResponseDTO, any>({
+        path: `/api/v1/backoffice/invoicing/re_emit_invoices/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Repair individual invoice by syncing with Facturama
+     *
+     * @tags api
+     * @name ApiV1BackofficeInvoicingRepairCreate
+     * @request POST:/api/v1/backoffice/invoicing/repair/
+     * @secure
+     */
+    apiV1BackofficeInvoicingRepairCreate: (data: RepairInvoiceRequestDTO, params: RequestParams = {}) =>
+      this.request<RepairInvoiceResponseDTO, any>({
+        path: `/api/v1/backoffice/invoicing/repair/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Annul pending or failed invoices (deletes invoice and sets invoice_requested=False)
+     *
+     * @tags api
+     * @name ApiV1BackofficeMassiveInvoiceRetryAnnulInvoicesCreate
+     * @request POST:/api/v1/backoffice/massive-invoice-retry/annul_invoices/
+     * @secure
+     */
+    apiV1BackofficeMassiveInvoiceRetryAnnulInvoicesCreate: (data: AnnulInvoiceRequestDTO, params: RequestParams = {}) =>
+      this.request<AnnulInvoiceResponseDTO, any>({
+        path: `/api/v1/backoffice/massive-invoice-retry/annul_invoices/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description A list of all fail invoices.
+     *
+     * @tags api
+     * @name ApiV1BackofficeMassiveInvoiceRetryFailedInvoicesCreate
+     * @request POST:/api/v1/backoffice/massive-invoice-retry/failed_invoices/
+     * @secure
+     */
+    apiV1BackofficeMassiveInvoiceRetryFailedInvoicesCreate: (
+      data: InvoiceMassiveRetryRequestDTO,
+      params: RequestParams = {}
+    ) =>
+      this.request<FailedInvoiceResponseDTO[], any>({
+        path: `/api/v1/backoffice/massive-invoice-retry/failed_invoices/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description A list of all fiscal entities.
+     *
+     * @tags api
+     * @name ApiV1BackofficeMassiveInvoiceRetryFiscalEntitiesList
+     * @request GET:/api/v1/backoffice/massive-invoice-retry/fiscal_entities/
+     * @secure
+     */
+    apiV1BackofficeMassiveInvoiceRetryFiscalEntitiesList: (
+      query?: {
+        /** @minLength 1 */
+        tax_id?: string | null;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<FiscalEntityResponseDTO[], any>({
+        path: `/api/v1/backoffice/massive-invoice-retry/fiscal_entities/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description execute massive retry in fail invoices.
+     *
+     * @tags api
+     * @name ApiV1BackofficeMassiveInvoiceRetryMassiveRetryCreate
+     * @request POST:/api/v1/backoffice/massive-invoice-retry/massive_retry/
+     * @secure
+     */
+    apiV1BackofficeMassiveInvoiceRetryMassiveRetryCreate: (
+      data: InvoiceMassiveRetryRequestDTO,
+      params: RequestParams = {}
+    ) =>
+      this.request<void, any>({
+        path: `/api/v1/backoffice/massive-invoice-retry/massive_retry/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * @description Update a membership
+     *
+     * @tags api
+     * @name ApiV1BackofficeMembershipsUpdateMembershipUpdate
+     * @request PUT:/api/v1/backoffice/memberships/{id}/update_membership/
+     * @secure
+     */
+    apiV1BackofficeMembershipsUpdateMembershipUpdate: (
+      id: string,
+      data: MembershipRequestDto,
+      params: RequestParams = {}
+    ) =>
+      this.request<MembershipResponseDto, any>({
+        path: `/api/v1/backoffice/memberships/${id}/update_membership/`,
+        method: 'PUT',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description List PayinFulfillments without Payouts with pagination. Returns a paginated list of payments that don't have an associated Payout, along with the reason why they don't have one.
+     *
+     * @tags api
+     * @name ApiV1BackofficePayinFulfillmentsList
+     * @request GET:/api/v1/backoffice/payin-fulfillments/
+     * @secure
+     */
+    apiV1BackofficePayinFulfillmentsList: (
+      query?: {
+        /** Filter by payin correlative_id (partial match) */
+        correlative_id?: string;
+        /** Filter by invoice_requested flag (true/false) */
+        invoice_requested?: boolean;
+        /** Page number */
+        page?: number;
+        /** Number of items per page (default: 50) */
+        page_size?: number;
+        /**
+         * Filter by payin ID
+         * @format uuid
+         */
+        payin_id?: string;
+        /**
+         * Filter by school ID
+         * @format uuid
+         */
+        school_id?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<PayinFulfillmentListResponse[], any>({
+        path: `/api/v1/backoffice/payin-fulfillments/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficePayinCredentialsCreate
+     * @request POST:/api/v1/backoffice/payin_credentials/
+     * @secure
+     */
+    apiV1BackofficePayinCredentialsCreate: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/backoffice/payin_credentials/`,
+        method: 'POST',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficePayinsList
+     * @request GET:/api/v1/backoffice/payins/
+     * @secure
+     */
+    apiV1BackofficePayinsList: (
+      query?: {
+        /** check if payin has been collected at school */
+        collected_at_school?: boolean;
+        /** correlative id of payin */
+        correlative_id?: string;
+        /** check if payin has associated fulfillments */
+        has_fulfillments?: boolean;
+        /** check if payin has an associated transaction at school */
+        has_transaction?: boolean;
+        /** limit result size */
+        limit?: number;
+        /** status of payin */
+        status?: string;
+        /** ticket number of payin transaction */
+        ticket_number?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<Record<string, any>[], any>({
+        path: `/api/v1/backoffice/payins/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficePayinsAssignTicketNumberList
+     * @request GET:/api/v1/backoffice/payins/assign_ticket_number/
+     * @secure
+     */
+    apiV1BackofficePayinsAssignTicketNumberList: (
+      query?: {
+        /** check if payin has been collected at school */
+        collected_at_school?: boolean;
+        /** correlative id of payin */
+        correlative_id?: string;
+        /** check if payin has associated fulfillments */
+        has_fulfillments?: boolean;
+        /** check if payin has an associated transaction at school */
+        has_transaction?: boolean;
+        /** limit result size */
+        limit?: number;
+        /** status of payin */
+        status?: string;
+        /** ticket number of payin transaction */
+        ticket_number?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<Record<string, any>[], any>({
+        path: `/api/v1/backoffice/payins/assign_ticket_number/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficePayinsAssignTicketNumberCreate
+     * @request POST:/api/v1/backoffice/payins/assign_ticket_number/
+     * @secure
+     */
+    apiV1BackofficePayinsAssignTicketNumberCreate: (
+      data: PayinAssignTransactionRequestDTO,
+      params: RequestParams = {}
+    ) =>
+      this.request<
+        {
+          message?: string;
+        },
+        any
+      >({
+        path: `/api/v1/backoffice/payins/assign_ticket_number/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficePayinsAssignTicketNumberAssignTicketNumberCreate
+     * @request POST:/api/v1/backoffice/payins/assign_ticket_number/assign_ticket_number/
+     * @secure
+     */
+    apiV1BackofficePayinsAssignTicketNumberAssignTicketNumberCreate: (
+      data: PayinAssignTransactionRequestDTO,
+      params: RequestParams = {}
+    ) =>
+      this.request<
+        {
+          message?: string;
+        },
+        any
+      >({
+        path: `/api/v1/backoffice/payins/assign_ticket_number/assign_ticket_number/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Cancel a pending payin. Only payins with 'pending' status can be canceled.
+     *
+     * @tags api
+     * @name ApiV1BackofficePayinsAssignTicketNumberCancelPendingPayinCreate
+     * @request POST:/api/v1/backoffice/payins/assign_ticket_number/cancel_pending_payin/
+     * @secure
+     */
+    apiV1BackofficePayinsAssignTicketNumberCancelPendingPayinCreate: (
+      data: PayinCancelRequestDTO,
+      params: RequestParams = {}
+    ) =>
+      this.request<
+        {
+          /** @format uuid */
+          id?: string;
+          correlative_id?: string;
+          status?: string;
+          modified_by?: string;
+          message?: string;
+        },
+        any
+      >({
+        path: `/api/v1/backoffice/payins/assign_ticket_number/cancel_pending_payin/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficePayinsAssignTicketNumberRedirectPayinCreate
+     * @request POST:/api/v1/backoffice/payins/assign_ticket_number/redirect_payin/
+     * @secure
+     */
+    apiV1BackofficePayinsAssignTicketNumberRedirectPayinCreate: (
+      data: PayinRedirectRequestDTO,
+      params: RequestParams = {}
+    ) =>
+      this.request<
+        {
+          message?: string;
+        },
+        any
+      >({
+        path: `/api/v1/backoffice/payins/assign_ticket_number/redirect_payin/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Regenerate Kushki ticket number for a pending payin. Creates a new ticket/reference number for OXXO (cash-in) or bank transfer payments. Only works for Kushki payins that are not yet paid and not manual.
+     *
+     * @tags api
+     * @name ApiV1BackofficePayinsAssignTicketNumberRegenerateTicketNumberCreate
+     * @request POST:/api/v1/backoffice/payins/assign_ticket_number/regenerate_ticket_number/
+     * @secure
+     */
+    apiV1BackofficePayinsAssignTicketNumberRegenerateTicketNumberCreate: (
+      data: PayinRegenerateTicketRequestDTO,
+      params: RequestParams = {}
+    ) =>
+      this.request<
+        {
+          /** @format uuid */
+          id?: string;
+          correlative_id?: string;
+          ticket_number?: string;
+          /** @format uuid */
+          transaction_id?: string;
+          /** @format uuid */
+          old_transaction_id?: string;
+          payin_type?: string;
+          modified_by?: string;
+          message?: string;
+        },
+        any
+      >({
+        path: `/api/v1/backoffice/payins/assign_ticket_number/regenerate_ticket_number/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficePayinsAssignTicketNumberSyncPayinCreate
+     * @request POST:/api/v1/backoffice/payins/assign_ticket_number/sync_payin/
+     * @secure
+     */
+    apiV1BackofficePayinsAssignTicketNumberSyncPayinCreate: (data: PayinSyncRequestDTO, params: RequestParams = {}) =>
+      this.request<
+        {
+          message?: string;
+        },
+        any
+      >({
+        path: `/api/v1/backoffice/payins/assign_ticket_number/sync_payin/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Cancel a pending payin. Only payins with 'pending' status can be canceled.
+     *
+     * @tags api
+     * @name ApiV1BackofficePayinsCancelPendingPayinCreate
+     * @request POST:/api/v1/backoffice/payins/cancel_pending_payin/
+     * @secure
+     */
+    apiV1BackofficePayinsCancelPendingPayinCreate: (data: PayinCancelRequestDTO, params: RequestParams = {}) =>
+      this.request<
+        {
+          /** @format uuid */
+          id?: string;
+          correlative_id?: string;
+          status?: string;
+          modified_by?: string;
+          message?: string;
+        },
+        any
+      >({
+        path: `/api/v1/backoffice/payins/cancel_pending_payin/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficePayinsRedirectPayinCreate
+     * @request POST:/api/v1/backoffice/payins/redirect_payin/
+     * @secure
+     */
+    apiV1BackofficePayinsRedirectPayinCreate: (data: PayinRedirectRequestDTO, params: RequestParams = {}) =>
+      this.request<
+        {
+          message?: string;
+        },
+        any
+      >({
+        path: `/api/v1/backoffice/payins/redirect_payin/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Regenerate Kushki ticket number for a pending payin. Creates a new ticket/reference number for OXXO (cash-in) or bank transfer payments. Only works for Kushki payins that are not yet paid and not manual.
+     *
+     * @tags api
+     * @name ApiV1BackofficePayinsRegenerateTicketNumberCreate
+     * @request POST:/api/v1/backoffice/payins/regenerate_ticket_number/
+     * @secure
+     */
+    apiV1BackofficePayinsRegenerateTicketNumberCreate: (
+      data: PayinRegenerateTicketRequestDTO,
+      params: RequestParams = {}
+    ) =>
+      this.request<
+        {
+          /** @format uuid */
+          id?: string;
+          correlative_id?: string;
+          ticket_number?: string;
+          /** @format uuid */
+          transaction_id?: string;
+          /** @format uuid */
+          old_transaction_id?: string;
+          payin_type?: string;
+          modified_by?: string;
+          message?: string;
+        },
+        any
+      >({
+        path: `/api/v1/backoffice/payins/regenerate_ticket_number/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficePayinsSyncPayinCreate
+     * @request POST:/api/v1/backoffice/payins/sync_payin/
+     * @secure
+     */
+    apiV1BackofficePayinsSyncPayinCreate: (data: PayinSyncRequestDTO, params: RequestParams = {}) =>
+      this.request<
+        {
+          message?: string;
+        },
+        any
+      >({
+        path: `/api/v1/backoffice/payins/sync_payin/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description List Payouts with SCHEDULED or DECLINED status. Returns a paginated list of payouts that are scheduled or declined, with basic information about the school, bank account, and amounts.
+     *
+     * @tags api
+     * @name ApiV1BackofficePayoutManagementList
+     * @request GET:/api/v1/backoffice/payout-management/
+     * @secure
+     */
+    apiV1BackofficePayoutManagementList: (
+      query?: {
+        /** Filter by payout correlative_id (partial match) */
+        correlative_id?: string;
+        /** Page number */
+        page?: number;
+        /** Number of items per page (default: 50) */
+        page_size?: number;
+        /**
+         * Filter by school ID
+         * @format uuid
+         */
+        school_id?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<PayoutManagementListResponse[], any>({
+        path: `/api/v1/backoffice/payout-management/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Get detailed information about a specific Payout.
+     *
+     * @tags api
+     * @name ApiV1BackofficePayoutManagementRetrieve
+     * @request GET:/api/v1/backoffice/payout-management/{id}/
+     * @secure
+     */
+    apiV1BackofficePayoutManagementRetrieve: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/backoffice/payout-management/${id}/`,
+        method: 'GET',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description List all active bank accounts for the school associated with the payout.
+     *
+     * @tags api
+     * @name ApiV1BackofficePayoutManagementBankAccountsRetrieve
+     * @request GET:/api/v1/backoffice/payout-management/{id}/bank-accounts/
+     * @secure
+     */
+    apiV1BackofficePayoutManagementBankAccountsRetrieve: (id: string, schoolId: string, params: RequestParams = {}) =>
+      this.request<Record<string, any>, any>({
+        path: `/api/v1/backoffice/payout-management/${id}/bank-accounts/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Change the bank account associated with a payout.
+     *
+     * @tags api
+     * @name ApiV1BackofficePayoutManagementChangeBankAccountUpdate
+     * @request PUT:/api/v1/backoffice/payout-management/{id}/change-bank-account/
+     * @secure
+     */
+    apiV1BackofficePayoutManagementChangeBankAccountUpdate: (
+      id: string,
+      data: ChangeBankAccountRequest,
+      params: RequestParams = {}
+    ) =>
+      this.request<PayoutDetailResponse, any>({
+        path: `/api/v1/backoffice/payout-management/${id}/change-bank-account/`,
+        method: 'PUT',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Execute a single payout immediately. This will process the payout through the payment gateway (Kushki). The user must confirm this action in the frontend before calling this endpoint.
+     *
+     * @tags api
+     * @name ApiV1BackofficePayoutManagementExecuteCreate
+     * @request POST:/api/v1/backoffice/payout-management/{id}/execute/
+     * @secure
+     */
+    apiV1BackofficePayoutManagementExecuteCreate: (id: string, params: RequestParams = {}) =>
+      this.request<ExecutePayoutResponse, any>({
+        path: `/api/v1/backoffice/payout-management/${id}/execute/`,
+        method: 'POST',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Set a bank holiday and reschedule all SCHEDULED and DECLINED payouts from that date to the next available weekday. This endpoint will: 1. Find all payouts scheduled for the holiday date 2. Reschedule them to the next available weekday (Mon-Fri) 3. Set their status to SCHEDULED
+     *
+     * @tags api
+     * @name ApiV1BackofficePayoutManagementBankHolidayCreate
+     * @request POST:/api/v1/backoffice/payout-management/bank-holiday/
+     * @secure
+     */
+    apiV1BackofficePayoutManagementBankHolidayCreate: (data: BankHolidayRequest, params: RequestParams = {}) =>
+      this.request<BankHolidayResponse, any>({
+        path: `/api/v1/backoffice/payout-management/bank-holiday/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficePayoutCredentialsCreate
+     * @request POST:/api/v1/backoffice/payout_credentials/
+     * @secure
+     */
+    apiV1BackofficePayoutCredentialsCreate: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/backoffice/payout_credentials/`,
+        method: 'POST',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficePayoutsList
+     * @request GET:/api/v1/backoffice/payouts/
+     * @secure
+     */
+    apiV1BackofficePayoutsList: (
+      query?: {
+        /** correlative id of payout */
+        correlative_id?: string;
+        /** status of payout */
+        status?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<Record<string, any>[], any>({
+        path: `/api/v1/backoffice/payouts/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficePayoutsRetrieve
+     * @request GET:/api/v1/backoffice/payouts/{id}/
+     * @secure
+     */
+    apiV1BackofficePayoutsRetrieve: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/backoffice/payouts/${id}/`,
+        method: 'GET',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficePayoutsRegisterPayoutBalanceCreate
+     * @request POST:/api/v1/backoffice/payouts/register_payout_balance/
+     * @secure
+     */
+    apiV1BackofficePayoutsRegisterPayoutBalanceCreate: (
+      data: CreatePayoutBalanceRequestDTO,
+      params: RequestParams = {}
+    ) =>
+      this.request<void, any>({
+        path: `/api/v1/backoffice/payouts/register_payout_balance/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficeSchoolsRetrieve
+     * @request GET:/api/v1/backoffice/schools/
+     * @secure
+     */
+    apiV1BackofficeSchoolsRetrieve: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/backoffice/schools/`,
+        method: 'GET',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description Get commissions schema configuration for a school
+     *
+     * @tags api
+     * @name ApiV1BackofficeSchoolsCommissionsRetrieve
+     * @request GET:/api/v1/backoffice/schools/{school_id}/commissions/
+     * @secure
+     */
+    apiV1BackofficeSchoolsCommissionsRetrieve: (schoolId: string, params: RequestParams = {}) =>
+      this.request<CommissionsSchemaResponseDTO, any>({
+        path: `/api/v1/backoffice/schools/${schoolId}/commissions/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Update commissions schema configuration for a school
+     *
+     * @tags api
+     * @name ApiV1BackofficeSchoolsCommissionsUpdate
+     * @request PUT:/api/v1/backoffice/schools/{school_id}/commissions/
+     * @secure
+     */
+    apiV1BackofficeSchoolsCommissionsUpdate: (
+      schoolId: string,
+      data: CommissionsSchemaRequestDTO,
+      params: RequestParams = {}
+    ) =>
+      this.request<CommissionsSchemaUpdateResponseDTO, CommissionsUpdateErrorResponse | SchoolNotFoundResponse>({
+        path: `/api/v1/backoffice/schools/${schoolId}/commissions/`,
+        method: 'PUT',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficeSchoolsConfigsUpdate
+     * @request PUT:/api/v1/backoffice/schools/{school_id}/configs/
+     * @secure
+     */
+    apiV1BackofficeSchoolsConfigsUpdate: (schoolId: string, data: UpdateSchoolConfigDTO, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/backoffice/schools/${schoolId}/configs/`,
+        method: 'PUT',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * @description List fulfillments for a school, optionally filtered by guardian and status
+     *
+     * @tags api
+     * @name ApiV1BackofficeSchoolsFulfillmentsList
+     * @request GET:/api/v1/backoffice/schools/{school_id}/fulfillments/
+     * @secure
+     */
+    apiV1BackofficeSchoolsFulfillmentsList: (
+      schoolId: string,
+      query?: {
+        /**
+         * Filter fulfillments by guardian ID
+         * @format uuid
+         */
+        guardian_id?: string;
+        /** Filter fulfillments by status (e.g., NOT_PAID, PARTIAL_PAID, PAID) */
+        status?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<FulfillmentResponseDTO[], any>({
+        path: `/api/v1/backoffice/schools/${schoolId}/fulfillments/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Get fulfillments by correlative ids
+     *
+     * @tags api
+     * @name ApiV1BackofficeSchoolsFulfillmentsByCorrelativeGetFulfillmentsCreate
+     * @request POST:/api/v1/backoffice/schools/{school_id}/fulfillments-by-correlative/get_fulfillments/
+     * @secure
+     */
+    apiV1BackofficeSchoolsFulfillmentsByCorrelativeGetFulfillmentsCreate: (
+      schoolId: string,
+      data: FulfillmentRequestDTO,
+      params: RequestParams = {}
+    ) =>
+      this.request<FulfillmentResponseDTO[], any>({
+        path: `/api/v1/backoffice/schools/${schoolId}/fulfillments-by-correlative/get_fulfillments/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficeSchoolsGuardianCreditProfileRetrieve
+     * @request GET:/api/v1/backoffice/schools/{school_id}/guardian-credit-profile/
+     * @secure
+     */
+    apiV1BackofficeSchoolsGuardianCreditProfileRetrieve: (schoolId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/backoffice/schools/${schoolId}/guardian-credit-profile/`,
+        method: 'GET',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficeSchoolsGuardianCreditProfileCreate
+     * @request POST:/api/v1/backoffice/schools/{school_id}/guardian-credit-profile/
+     * @secure
+     */
+    apiV1BackofficeSchoolsGuardianCreditProfileCreate: (schoolId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/backoffice/schools/${schoolId}/guardian-credit-profile/`,
+        method: 'POST',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficeSchoolsGuardiansRetrieve
+     * @request GET:/api/v1/backoffice/schools/{school_id}/guardians/
+     * @secure
+     */
+    apiV1BackofficeSchoolsGuardiansRetrieve: (schoolId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/backoffice/schools/${schoolId}/guardians/`,
+        method: 'GET',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficeSchoolsIntegrationsMassiveSyncCreate
+     * @request POST:/api/v1/backoffice/schools/{school_id}/integrations/massive_sync/
+     * @secure
+     */
+    apiV1BackofficeSchoolsIntegrationsMassiveSyncCreate: (
+      schoolId: string,
+      data: SyncRequest,
+      params: RequestParams = {}
+    ) =>
+      this.request<
+        {
+          message?: string;
+        },
+        any
+      >({
+        path: `/api/v1/backoffice/schools/${schoolId}/integrations/massive_sync/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficeSchoolsIntegrationsSingleSyncCreate
+     * @request POST:/api/v1/backoffice/schools/{school_id}/integrations/single_sync/
+     * @secure
+     */
+    apiV1BackofficeSchoolsIntegrationsSingleSyncCreate: (
+      schoolId: string,
+      data: SingleSyncRequest,
+      params: RequestParams = {}
+    ) =>
+      this.request<
+        {
+          message?: string;
+        },
+        any
+      >({
+        path: `/api/v1/backoffice/schools/${schoolId}/integrations/single_sync/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1BackofficeSchoolsMembersRetrieve
+     * @request GET:/api/v1/backoffice/schools/{school_id}/members/
+     * @secure
+     */
+    apiV1BackofficeSchoolsMembersRetrieve: (schoolId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/backoffice/schools/${schoolId}/members/`,
+        method: 'GET',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description List orders for a school, filtered by optional status and/or guardian
+     *
+     * @tags api
+     * @name ApiV1BackofficeSchoolsOrdersList
+     * @request GET:/api/v1/backoffice/schools/{school_id}/orders/
+     * @secure
+     */
+    apiV1BackofficeSchoolsOrdersList: (
+      schoolId: string,
+      query?: {
+        /**
+         * Filter orders by guardian ID
+         * @format uuid
+         */
+        guardian_id?: string;
+        /** Filter by optional orders (true for optional orders) */
+        optional?: boolean;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<OptionalOrderResponseDTO[], any>({
+        path: `/api/v1/backoffice/schools/${schoolId}/orders/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Obtiene metadatos de los filtros disponibles
+     *
+     * @tags Guardian ViewSet for communications
+     * @name ApiV1CommunicationsGuardiansFiltersMetadataRetrieve
+     * @request GET:/api/v1/communications/guardians/filters-metadata/
+     * @secure
+     */
+    apiV1CommunicationsGuardiansFiltersMetadataRetrieve: (params: RequestParams = {}) =>
+      this.request<ListGuardianFiltersMetadataDTO, any>({
+        path: `/api/v1/communications/guardians/filters-metadata/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1CommunicationsGuardiansGetGuardiansCreate
+     * @request POST:/api/v1/communications/guardians/get_guardians/
+     * @secure
+     */
+    apiV1CommunicationsGuardiansGetGuardiansCreate: (data: ListGuardianResponseDTO, params: RequestParams = {}) =>
+      this.request<ListGuardianResponseDTO, any>({
+        path: `/api/v1/communications/guardians/get_guardians/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
      * @name ApiV1DashboardConceptsRetrieve
      * @request GET:/api/v1/dashboard/concepts/
      * @secure
@@ -6844,7 +12371,23 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     apiV1DashboardConceptsOrdersList: (
       conceptId: string,
       query?: {
+        bank_account?: string;
         multiple_search?: string;
+        offering?: ('MIX' | 'OPEN_LOOP' | 'SCHOLAR')[];
+        optional?: boolean;
+        /** Ordering */
+        ordering?: (
+          | '-last_order_price'
+          | '-name'
+          | '-school_cycle_name'
+          | '-students_assigned_count'
+          | '-type'
+          | 'last_order_price'
+          | 'name'
+          | 'school_cycle_name'
+          | 'students_assigned_count'
+          | 'type'
+        )[];
         /** A page number within the paginated result set. */
         page?: number;
         /** Number of results to return per page. */
@@ -6854,15 +12397,19 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         type?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
       },
@@ -7001,23 +12548,31 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
 
     /**
-     * No description
+     * @description Get all distinct product keys (tax codes) for concepts
      *
      * @tags api
-     * @name ApiV1DashboardConceptsProductKeysRetrieve
+     * @name ApiV1DashboardConceptsProductKeysList
      * @request GET:/api/v1/dashboard/concepts/product_keys/
      * @secure
      */
-    apiV1DashboardConceptsProductKeysRetrieve: (params: RequestParams = {}) =>
-      this.request<void, any>({
+    apiV1DashboardConceptsProductKeysList: (
+      query?: {
+        /** Input string to be echoed back */
+        input?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<ProductServiceCatalog[], ProductServiceCatalogError>({
         path: `/api/v1/dashboard/concepts/product_keys/`,
         method: 'GET',
+        query: query,
         secure: true,
+        format: 'json',
         ...params,
       }),
 
     /**
-     * No description
+     * @description Get all distinct tax units for concepts
      *
      * @tags api
      * @name ApiV1DashboardConceptsTaxUnitsRetrieve
@@ -7025,10 +12580,51 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     apiV1DashboardConceptsTaxUnitsRetrieve: (params: RequestParams = {}) =>
-      this.request<void, any>({
+      this.request<string[], any>({
         path: `/api/v1/dashboard/concepts/tax_units/`,
         method: 'GET',
         secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Obtiene una lista de tutores que cumplen con los filtros especificados.
+     *
+     * @tags api
+     * @name ApiV1DashboardGuardiansList
+     * @request GET:/api/v1/dashboard/guardians/
+     * @secure
+     */
+    apiV1DashboardGuardiansList: (
+      query?: {
+        block_cash_payments?: boolean;
+        /**
+         * @format email
+         * @minLength 1
+         */
+        email?: string;
+        /** @minLength 1 */
+        email__icontains?: string;
+        /** @minLength 1 */
+        first_name__icontains?: string;
+        /** @minLength 1 */
+        last_name__icontains?: string;
+        /** @minLength 1 */
+        phone?: string;
+        /** @format uuid */
+        school_id?: string;
+        /** @minLength 1 */
+        search?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<GuardianResponse[], any>({
+        path: `/api/v1/dashboard/guardians/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
         ...params,
       }),
 
@@ -7048,15 +12644,19 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_type?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Multiple values may be separated by commas. */
@@ -7064,6 +12664,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         due_status?: 'future' | 'outstanding';
         /** @format date */
         end_date?: string;
+        /** Group */
+        group?: 'delinquent';
         /** Multiple values may be separated by commas. */
         guardians?: string[];
         /** Multiple values may be separated by commas. */
@@ -7084,16 +12686,17 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         page_size?: number;
         /** Type of the payin */
         payment_methods?: (
-          | 'account_money'
           | 'atm'
           | 'bank_transfer'
           | 'cash_payroll'
+          | 'compensation'
           | 'credit'
           | 'credit_card'
           | 'debit_card'
           | 'deposit_cash'
           | 'deposit_check'
           | 'direct_debit'
+          | 'giving'
           | 'multipay'
           | 'nominal_check'
           | 'prepaid_card'
@@ -7102,12 +12705,16 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         )[];
         /** @format uuid */
         school?: string;
+        /** @format uuid */
+        school_cycle?: string;
         /** Multiple values may be separated by commas. */
         sections?: string[];
         /** @format date */
         start_date?: string;
         /** Payment status of the fulfillment */
         status?: ('NOT_PAID' | 'PAID' | 'PARTIAL_PAID' | 'WAITING_PAID')[];
+        /** @format uuid */
+        student?: string;
         /** Multiple values may be separated by commas. */
         students?: string[];
       },
@@ -7126,6 +12733,121 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * No description
      *
      * @tags api
+     * @name ApiV1DashboardGuardiansFulfillmentsColumnsRetrieve
+     * @summary Retrieve available columns for custom reports
+     * @request GET:/api/v1/dashboard/guardians/{guardian_id}/fulfillments/columns/
+     * @secure
+     */
+    apiV1DashboardGuardiansFulfillmentsColumnsRetrieve: (guardianId: string, params: RequestParams = {}) =>
+      this.request<ColumnsResponse, any>({
+        path: `/api/v1/dashboard/guardians/${guardianId}/fulfillments/columns/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardGuardiansFulfillmentsXlsV2Create
+     * @request POST:/api/v1/dashboard/guardians/{guardian_id}/fulfillments/xls_v2/
+     * @secure
+     */
+    apiV1DashboardGuardiansFulfillmentsXlsV2Create: (
+      guardianId: string,
+      query?: {
+        collected_at?: 'collected_at_portal' | 'collected_at_school';
+        /** Type of the concept. */
+        concept_type?: (
+          | 'BOOKS_AND_MATERIALS'
+          | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
+          | 'EXAMS_AND_CERTIFICATES'
+          | 'EXTRACURRICULAR'
+          | 'INSCRIPTION'
+          | 'INSURANCE'
+          | 'MONTHLY_FEE'
+          | 'OTHER'
+          | 'PRE_DEBT'
+          | 'REINSCRIPTION'
+          | 'SPORTS'
+          | 'TRANSPORT'
+          | 'TRIPS'
+          | 'UNIFORMS_AND_MERCH'
+        )[];
+        /** Multiple values may be separated by commas. */
+        concepts?: string[];
+        due_status?: 'future' | 'outstanding';
+        /** @format date */
+        end_date?: string;
+        /** Group */
+        group?: 'delinquent';
+        /** Multiple values may be separated by commas. */
+        guardians?: string[];
+        /** Multiple values may be separated by commas. */
+        ids?: string[];
+        /** Multiple values may be separated by commas. */
+        invoice_status?: ('canceled' | 'canceling' | 'failed' | 'multiple' | 'not_requested' | 'pending' | 'success')[];
+        is_manual?: boolean;
+        /** Multiple values may be separated by commas. */
+        levels?: string[];
+        multiple_search?: string;
+        /** Ordering */
+        ordering?: ('-due' | 'due')[];
+        /** Multiple values may be separated by commas. */
+        orders?: string[];
+        /** Type of the payin */
+        payment_methods?: (
+          | 'atm'
+          | 'bank_transfer'
+          | 'cash_payroll'
+          | 'compensation'
+          | 'credit'
+          | 'credit_card'
+          | 'debit_card'
+          | 'deposit_cash'
+          | 'deposit_check'
+          | 'direct_debit'
+          | 'giving'
+          | 'multipay'
+          | 'nominal_check'
+          | 'prepaid_card'
+          | 'ticket'
+          | null
+        )[];
+        /** @format uuid */
+        school?: string;
+        /** @format uuid */
+        school_cycle?: string;
+        /** Multiple values may be separated by commas. */
+        sections?: string[];
+        /** @format date */
+        start_date?: string;
+        /** Payment status of the fulfillment */
+        status?: ('NOT_PAID' | 'PAID' | 'PARTIAL_PAID' | 'WAITING_PAID')[];
+        /** @format uuid */
+        student?: string;
+        /** Multiple values may be separated by commas. */
+        students?: string[];
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<ExcelReport, any>({
+        path: `/api/v1/dashboard/guardians/${guardianId}/fulfillments/xls_v2/`,
+        method: 'POST',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
      * @name ApiV1DashboardGuardiansOptionalOrdersList
      * @request GET:/api/v1/dashboard/guardians/{guardian_id}/optional-orders/
      * @secure
@@ -7134,6 +12856,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       guardianId: string,
       query?: {
         multiple_search?: string;
+        /** Offering of the concept */
+        offering?: ('MIX' | 'OPEN_LOOP' | 'SCHOLAR')[];
+        /** Ordering */
+        ordering?: ('-price' | '-sold_units' | '-stock' | 'price' | 'sold_units' | 'stock')[];
         /** A page number within the paginated result set. */
         page?: number;
         /** Number of results to return per page. */
@@ -7180,6 +12906,29 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
 
     /**
+     * @description Actualiza campos del tutor. Actualmente soporta block_cash_payments.
+     *
+     * @tags api
+     * @name ApiV1DashboardGuardiansUpdatePartialUpdate
+     * @request PATCH:/api/v1/dashboard/guardians/{guardian_id}/update/
+     * @secure
+     */
+    apiV1DashboardGuardiansUpdatePartialUpdate: (
+      guardianId: string,
+      data: PatchedUpdateGuardianRequest,
+      params: RequestParams = {}
+    ) =>
+      this.request<GuardianResponse, any>({
+        path: `/api/v1/dashboard/guardians/${guardianId}/update/`,
+        method: 'PATCH',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
      * No description
      *
      * @tags api
@@ -7204,8 +12953,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @request PUT:/api/v1/dashboard/guardians/{id}/
      * @secure
      */
-    apiV1DashboardGuardiansUpdate: (id: string, data: DashboardGuardian, params: RequestParams = {}) =>
-      this.request<DashboardGuardian, any>({
+    apiV1DashboardGuardiansUpdate: (id: string, data: DashboardGuardianSlim, params: RequestParams = {}) =>
+      this.request<DashboardGuardianSlim, any>({
         path: `/api/v1/dashboard/guardians/${id}/`,
         method: 'PUT',
         body: data,
@@ -7223,8 +12972,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @request PATCH:/api/v1/dashboard/guardians/{id}/
      * @secure
      */
-    apiV1DashboardGuardiansPartialUpdate: (id: string, data: PatchedDashboardGuardian, params: RequestParams = {}) =>
-      this.request<DashboardGuardian, any>({
+    apiV1DashboardGuardiansPartialUpdate: (
+      id: string,
+      data: PatchedDashboardGuardianSlim,
+      params: RequestParams = {}
+    ) =>
+      this.request<DashboardGuardianSlim, any>({
         path: `/api/v1/dashboard/guardians/${id}/`,
         method: 'PATCH',
         body: data,
@@ -7242,8 +12995,17 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @request POST:/api/v1/dashboard/guardians/{id}/outbound/
      * @secure
      */
-    apiV1DashboardGuardiansOutboundCreate: (id: string, data: DashboardGuardian, params: RequestParams = {}) =>
-      this.request<DashboardGuardian, any>({
+    apiV1DashboardGuardiansOutboundCreate: (
+      id: string,
+      data: DashboardGuardianSendOutboundRequestDTO,
+      params: RequestParams = {}
+    ) =>
+      this.request<
+        PatchedDashboardGuardianSendOutboundResponseDTO,
+        {
+          error?: string;
+        }
+      >({
         path: `/api/v1/dashboard/guardians/${id}/outbound/`,
         method: 'POST',
         body: data,
@@ -7341,6 +13103,44 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
 
     /**
+     * @description Update school information including logo upload
+     *
+     * @tags api
+     * @name SchoolsUpdate
+     * @request PUT:/api/v1/dashboard/schools/{id}/
+     * @secure
+     */
+    schoolsUpdate: (id: string, data: DashboardSchoolUpdate, params: RequestParams = {}) =>
+      this.request<DashboardSchoolUpdate, any>({
+        path: `/api/v1/dashboard/schools/${id}/`,
+        method: 'PUT',
+        body: data,
+        secure: true,
+        type: ContentType.FormData,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Partially update school information including logo upload
+     *
+     * @tags api
+     * @name SchoolsPartialUpdate
+     * @request PATCH:/api/v1/dashboard/schools/{id}/
+     * @secure
+     */
+    schoolsPartialUpdate: (id: string, data: PatchedDashboardSchoolUpdate, params: RequestParams = {}) =>
+      this.request<DashboardSchoolUpdate, any>({
+        path: `/api/v1/dashboard/schools/${id}/`,
+        method: 'PATCH',
+        body: data,
+        secure: true,
+        type: ContentType.FormData,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
      * No description
      *
      * @tags api
@@ -7349,7 +13149,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     apiV1DashboardSchoolsResumeRetrieve: (id: string, params: RequestParams = {}) =>
-      this.request<DashboardSchoolWithStudents, any>({
+      this.request<DashboardSchoolFilters, any>({
         path: `/api/v1/dashboard/schools/${id}/resume/`,
         method: 'GET',
         secure: true,
@@ -7480,7 +13280,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @tags api
+     * @tags unused
      * @name ApiV1DashboardSchoolsAdminsPermissionsUpdate
      * @request PUT:/api/v1/dashboard/schools/{school_id}/admins/{id}/permissions/
      * @secure
@@ -7488,10 +13288,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     apiV1DashboardSchoolsAdminsPermissionsUpdate: (
       id: string,
       schoolId: string,
-      data: DetailAdmin,
+      data: Membership,
       params: RequestParams = {}
     ) =>
-      this.request<DetailAdmin, any>({
+      this.request<Membership, any>({
         path: `/api/v1/dashboard/schools/${schoolId}/admins/${id}/permissions/`,
         method: 'PUT',
         body: data,
@@ -7656,6 +13456,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     apiV1DashboardSchoolsBankAccountsList: (
       schoolId: string,
       query?: {
+        /** Filter by archived status */
+        archived?: boolean;
         /** Ordering */
         ordering?: ('-id' | 'id')[];
         /** A page number within the paginated result set. */
@@ -7667,6 +13469,204 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     ) =>
       this.request<PaginatedSlimBankAccountList, any>({
         path: `/api/v1/dashboard/schools/${schoolId}/bank_accounts/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Create a new bank account for the school. Only staff users can create bank accounts.
+     *
+     * @tags api
+     * @name BankAccountsCreate
+     * @request POST:/api/v1/dashboard/schools/{school_id}/bank_accounts/
+     * @secure
+     */
+    bankAccountsCreate: (schoolId: string, data: SlimBankAccount, params: RequestParams = {}) =>
+      this.request<Record<string, any>, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/bank_accounts/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsBankAccountsRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/bank_accounts/{id}/
+     * @secure
+     */
+    apiV1DashboardSchoolsBankAccountsRetrieve: (id: string, schoolId: string, params: RequestParams = {}) =>
+      this.request<SlimBankAccount, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/bank_accounts/${id}/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsBankAccountsUpdate
+     * @request PUT:/api/v1/dashboard/schools/{school_id}/bank_accounts/{id}/
+     * @secure
+     */
+    apiV1DashboardSchoolsBankAccountsUpdate: (
+      id: string,
+      schoolId: string,
+      data: SlimBankAccount,
+      params: RequestParams = {}
+    ) =>
+      this.request<SlimBankAccount, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/bank_accounts/${id}/`,
+        method: 'PUT',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Archive or unarchive a bank account. Only users with appropriate permissions can modify bank accounts.
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsBankAccountsPartialUpdate
+     * @request PATCH:/api/v1/dashboard/schools/{school_id}/bank_accounts/{id}/
+     * @secure
+     */
+    apiV1DashboardSchoolsBankAccountsPartialUpdate: (
+      id: string,
+      schoolId: string,
+      data: PatchedSlimBankAccount,
+      params: RequestParams = {}
+    ) =>
+      this.request<SlimBankAccount, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/bank_accounts/${id}/`,
+        method: 'PATCH',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsBankAccountsDestroy
+     * @request DELETE:/api/v1/dashboard/schools/{school_id}/bank_accounts/{id}/
+     * @secure
+     */
+    apiV1DashboardSchoolsBankAccountsDestroy: (id: string, schoolId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/bank_accounts/${id}/`,
+        method: 'DELETE',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description Reassign concepts and payout configs by category to target bank accounts. To reassign all concepts to a single bank account, include all concept types with the same target.
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsBankAccountsReassignCreate
+     * @request POST:/api/v1/dashboard/schools/{school_id}/bank_accounts/{id}/reassign/
+     * @secure
+     */
+    apiV1DashboardSchoolsBankAccountsReassignCreate: (
+      id: string,
+      schoolId: string,
+      data: Record<string, any>,
+      params: RequestParams = {}
+    ) =>
+      this.request<
+        {
+          success?: boolean;
+          message?: string;
+          summary?: {
+            concepts_updated?: number;
+            payout_configs_updated?: number;
+            source_bank_account_id?: string;
+            reassignments?: {
+              target_bank_account_id?: string;
+              concepts_updated?: number;
+              payout_configs_updated?: number;
+            }[];
+          };
+        },
+        any
+      >({
+        path: `/api/v1/dashboard/schools/${schoolId}/bank_accounts/${id}/reassign/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Retrieve the paginated history of all bank account changes for a school including reassignments, deactivations, and deletions. Returns 50 entries per page by default.
+     *
+     * @tags api
+     * @name BankAccountsHistoryList
+     * @request GET:/api/v1/dashboard/schools/{school_id}/bank_accounts/history/
+     * @secure
+     */
+    bankAccountsHistoryList: (
+      schoolId: string,
+      query?: {
+        /** Filter by archived status */
+        archived?: boolean;
+        /** Ordering */
+        ordering?: ('-id' | 'id')[];
+        /** A page number within the paginated result set. */
+        page?: number;
+        /** Number of results to return per page. */
+        page_size?: number;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<PaginatedBankAccountHistoryList, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/bank_accounts/history/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsCollectionEfficiencyColumnsRetrieve
+     * @summary Retrieve available columns for custom reports
+     * @request GET:/api/v1/dashboard/schools/{school_id}/collection_efficiency/columns/
+     * @secure
+     */
+    apiV1DashboardSchoolsCollectionEfficiencyColumnsRetrieve: (
+      schoolId: string,
+      query?: {
+        concept_types?: BaseEnum[];
+        concepts?: ConceptSmall[];
+        school_cycle?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<ColumnsResponse, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/collection_efficiency/columns/`,
         method: 'GET',
         query: query,
         secure: true,
@@ -7688,14 +13688,17 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_types?: BaseEnum[];
         concepts?: ConceptSmall[];
         school_cycle?: string;
+        /** A search term. */
+        search?: string;
       },
       params: RequestParams = {}
     ) =>
-      this.request<void, any>({
+      this.request<ExcelReport, any>({
         path: `/api/v1/dashboard/schools/${schoolId}/collection_efficiency/xls_v2/`,
         method: 'POST',
         query: query,
         secure: true,
+        format: 'json',
         ...params,
       }),
 
@@ -7712,10 +13715,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: {
         /** A page number within the paginated result set. */
         page?: number;
+        /** Number of results to return per page. */
+        page_size?: number;
       },
       params: RequestParams = {}
     ) =>
-      this.request<PaginatedSlimStudentList, any>({
+      this.request<PaginatedSlimStudentSerializerV2List, any>({
         path: `/api/v1/dashboard/schools/${schoolId}/collections/`,
         method: 'GET',
         query: query,
@@ -7733,7 +13738,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     apiV1DashboardSchoolsCollectionsRetrieve: (id: string, schoolId: string, params: RequestParams = {}) =>
-      this.request<SlimStudent, any>({
+      this.request<SlimStudentSerializerV2, any>({
         path: `/api/v1/dashboard/schools/${schoolId}/collections/${id}/`,
         method: 'GET',
         secure: true,
@@ -7757,7 +13762,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {}
     ) =>
-      this.request<ConceptTypes, any>({
+      this.request<ConceptTypes[], any>({
         path: `/api/v1/dashboard/schools/${schoolId}/collections/concept_types/`,
         method: 'GET',
         query: query,
@@ -7770,25 +13775,21 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * No description
      *
      * @tags api
-     * @name ApiV1DashboardSchoolsCollectionsGraphicList
-     * @request GET:/api/v1/dashboard/schools/{school_id}/collections/graphic/
+     * @name ApiV1DashboardSchoolsCollectionsGraphicCreate
+     * @request POST:/api/v1/dashboard/schools/{school_id}/collections/graphic/
      * @secure
      */
-    apiV1DashboardSchoolsCollectionsGraphicList: (
+    apiV1DashboardSchoolsCollectionsGraphicCreate: (
       schoolId: string,
-      query: {
-        /** Concepts */
-        concepts: string[];
-        /** School Cycle */
-        school_cycle: string;
-      },
+      data: CollectionsGraphicRequest,
       params: RequestParams = {}
     ) =>
-      this.request<CollectionsGraphic[], any>({
+      this.request<CollectionsGraphicResponse[], any>({
         path: `/api/v1/dashboard/schools/${schoolId}/collections/graphic/`,
-        method: 'GET',
-        query: query,
+        method: 'POST',
+        body: data,
         secure: true,
+        type: ContentType.Json,
         format: 'json',
         ...params,
       }),
@@ -7805,9 +13806,13 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       schoolId: string,
       query: {
         /** Concepts */
-        concepts: string[];
+        concepts: string;
         /** Month */
         month: number;
+        /** A page number within the paginated result set. */
+        page?: number;
+        /** Number of results to return per page. */
+        page_size?: number;
         /** School Cycle */
         school_cycle: string;
         /** Year */
@@ -7815,7 +13820,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {}
     ) =>
-      this.request<CollectionsTable, any>({
+      this.request<PaginatedSlimStudentList, any>({
         path: `/api/v1/dashboard/schools/${schoolId}/collections/table/`,
         method: 'GET',
         query: query,
@@ -7835,22 +13840,43 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     apiV1DashboardSchoolsConceptsList: (
       schoolId: string,
       query?: {
+        bank_account?: string;
         multiple_search?: string;
+        /** Offering of the concept */
+        offering?: ('MIX' | 'OPEN_LOOP' | 'SCHOLAR')[];
+        optional?: boolean;
+        /** Ordering */
+        ordering?: (
+          | '-last_order_price'
+          | '-name'
+          | '-school_cycle_name'
+          | '-students_assigned_count'
+          | '-type'
+          | 'last_order_price'
+          | 'name'
+          | 'school_cycle_name'
+          | 'students_assigned_count'
+          | 'type'
+        )[];
         /** Multiple values may be separated by commas. */
         school_cycles?: string[];
         /** Type of the concept. */
         type?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
       },
@@ -7887,6 +13913,74 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
+     * @tags ConceptAvailability by Concept Controller
+     * @name ApiV1DashboardSchoolsConceptsConceptAutoAssignList
+     * @request GET:/api/v1/dashboard/schools/{school_id}/concepts/{concept_id}/concept_auto_assign/
+     * @secure
+     */
+    apiV1DashboardSchoolsConceptsConceptAutoAssignList: (
+      conceptId: string,
+      schoolId: string,
+      params: RequestParams = {}
+    ) =>
+      this.request<ListConceptAutoAssignResponseDTO[], any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/concepts/${conceptId}/concept_auto_assign/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags ConceptAvailability by Concept Controller
+     * @name ApiV1DashboardSchoolsConceptsConceptAutoAssignCreate
+     * @request POST:/api/v1/dashboard/schools/{school_id}/concepts/{concept_id}/concept_auto_assign/
+     * @secure
+     */
+    apiV1DashboardSchoolsConceptsConceptAutoAssignCreate: (
+      conceptId: string,
+      schoolId: string,
+      data: CreateConceptAutoAssignRequestDTO,
+      params: RequestParams = {}
+    ) =>
+      this.request<CreateConceptAutoAssignResponseDTO[], any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/concepts/${conceptId}/concept_auto_assign/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags ConceptAvailability by Concept Controller
+     * @name ApiV1DashboardSchoolsConceptsConceptAutoAssignRemove
+     * @request POST:/api/v1/dashboard/schools/{school_id}/concepts/{concept_id}/concept_auto_assign/remove/
+     * @secure
+     */
+    apiV1DashboardSchoolsConceptsConceptAutoAssignRemove: (
+      conceptId: string,
+      schoolId: string,
+      data: DeleteConceptAutoAssignRequestDTO,
+      params: RequestParams = {}
+    ) =>
+      this.request<void, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/concepts/${conceptId}/concept_auto_assign/remove/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
      * @tags api
      * @name ApiV1DashboardSchoolsConceptsOrdersList
      * @request GET:/api/v1/dashboard/schools/{school_id}/concepts/{concept_id}/orders/
@@ -7896,6 +13990,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       conceptId: string,
       schoolId: string,
       query?: {
+        /** Ordering */
+        ordering?: ('-delinquent_students' | '-due' | 'delinquent_students' | 'due')[];
         /** Search by order name */
         search?: string;
       },
@@ -8026,7 +14122,13 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       id: string,
       schoolId: string,
       query?: {
+        bank_account?: string;
         multiple_search?: string;
+        /** Offering of the concept */
+        offering?: ('MIX' | 'OPEN_LOOP' | 'SCHOLAR')[];
+        optional?: boolean;
+        /** Which field to use when ordering the results. Available choices: first_name, section, amount_to_pay (prefix with - for descending) */
+        ordering?: '-amount_to_pay' | '-first_name' | '-section' | 'amount_to_pay' | 'first_name' | 'section';
         /** A page number within the paginated result set. */
         page?: number;
         /** Number of results to return per page. */
@@ -8037,15 +14139,19 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         type?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Include payment data in the response */
@@ -8058,6 +14164,25 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         method: 'GET',
         query: query,
         secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsConceptsBatchCreate
+     * @request POST:/api/v1/dashboard/schools/{school_id}/concepts/batch/
+     * @secure
+     */
+    apiV1DashboardSchoolsConceptsBatchCreate: (schoolId: string, data: DetailConcept, params: RequestParams = {}) =>
+      this.request<DetailConcept, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/concepts/batch/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         format: 'json',
         ...params,
       }),
@@ -8188,17 +14313,115 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * No description
      *
      * @tags api
+     * @name ApiV1DashboardSchoolsCyclesActivatePartialUpdate
+     * @request PATCH:/api/v1/dashboard/schools/{school_id}/cycles/{id}/activate/
+     * @secure
+     */
+    apiV1DashboardSchoolsCyclesActivatePartialUpdate: (id: string, schoolId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/cycles/${id}/activate/`,
+        method: 'PATCH',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsCyclesValidateActivateCreate
+     * @request POST:/api/v1/dashboard/schools/{school_id}/cycles/{id}/validate_activate/
+     * @secure
+     */
+    apiV1DashboardSchoolsCyclesValidateActivateCreate: (id: string, schoolId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/cycles/${id}/validate_activate/`,
+        method: 'POST',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsCyclesCurrentRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/cycles/current/
+     * @secure
+     */
+    apiV1DashboardSchoolsCyclesCurrentRetrieve: (schoolId: string, params: RequestParams = {}) =>
+      this.request<SchoolCycleCurrent, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/cycles/current/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsCyclesStatusChangeCycleRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/cycles/status_change_cycle/
+     * @secure
+     */
+    apiV1DashboardSchoolsCyclesStatusChangeCycleRetrieve: (schoolId: string, params: RequestParams = {}) =>
+      this.request<SchoolCycleStatus, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/cycles/status_change_cycle/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsCyclesTokenList
+     * @request GET:/api/v1/dashboard/schools/{school_id}/cycles/token/
+     * @secure
+     */
+    apiV1DashboardSchoolsCyclesTokenList: (schoolId: string, params: RequestParams = {}) =>
+      this.request<SchoolCycle[], any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/cycles/token/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Retrieve historic delinquency stats filtered by various parameters.
+     *
+     * @tags api
      * @name ApiV1DashboardSchoolsDelinquencyHistoricList
+     * @summary Retrieve historic delinquency stats
      * @request GET:/api/v1/dashboard/schools/{school_id}/delinquency/historic/
      * @secure
      */
     apiV1DashboardSchoolsDelinquencyHistoricList: (
       schoolId: string,
       query?: {
+        /** Filter by concept IDs (comma-separated UUIDs). */
+        concepts?: string;
+        /**
+         * Filter by end date (YYYY-MM-DD).
+         * @format date
+         */
+        end_date?: string;
         /** A page number within the paginated result set. */
         page?: number;
         /** Number of results to return per page. */
         page_size?: number;
+        /**
+         * Filter by start date (YYYY-MM-DD).
+         * @format date
+         */
+        start_date?: string;
       },
       params: RequestParams = {}
     ) =>
@@ -8340,11 +14563,20 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @request GET:/api/v1/dashboard/schools/{school_id}/due_orders/resume/
      * @secure
      */
-    apiV1DashboardSchoolsDueOrdersResumeRetrieve: (schoolId: string, params: RequestParams = {}) =>
-      this.request<void, any>({
+    apiV1DashboardSchoolsDueOrdersResumeRetrieve: (
+      schoolId: string,
+      query?: {
+        /** SchoolCycleId */
+        school_cycle?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<DashboardSchoolDueOrdersResume, any>({
         path: `/api/v1/dashboard/schools/${schoolId}/due_orders/resume/`,
         method: 'GET',
+        query: query,
         secure: true,
+        format: 'json',
         ...params,
       }),
 
@@ -8363,15 +14595,19 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_types?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Filter by Concept */
@@ -8389,9 +14625,9 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         /** Search by identifier */
         identifier?: string;
         /** Filter by student inscription status */
-        inscription_status?: ('Inscrito' | 'NOT_AVAILABLE' | 'No inscrito' | 'Pendiente' | 'Reinscrito')[];
+        inscription_status?: ('Inscrito' | 'No inscrito' | 'Pendiente' | 'Reinscrito')[];
         is_active?: boolean;
-        /** Filter by level UUID(str), use "null" for students without level */
+        /** Multiple values may be separated by commas. */
         levels?: string[];
         /** Ordering */
         ordering?: (
@@ -8414,13 +14650,20 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         page?: number;
         /** Number of results to return per page. */
         page_size?: number;
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        scholarship_school_cycle?: string;
         /** Filter by scholarships */
         scholarships?: string[];
         school_cycle?: string;
         /** Search by fullname or enrollment code */
         search?: string;
-        /** Filter by section UUID(str), use "null" for students without section */
+        /** Multiple values may be separated by commas. */
         sections?: string[];
+        /** Filter by state */
+        state?: ('active' | 'dropped_out' | 'graduated' | 'inactive' | 'lead' | 'new_student')[];
       },
       params: RequestParams = {}
     ) =>
@@ -8485,6 +14728,42 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
 
     /**
+     * @description Create a new fiscal entity for the school. Only staff users can create fiscal entities.
+     *
+     * @tags api
+     * @name FiscalEntitiesCreate
+     * @request POST:/api/v1/dashboard/schools/{school_id}/fiscal_entities/
+     * @secure
+     */
+    fiscalEntitiesCreate: (schoolId: string, data: FiscalEntity, params: RequestParams = {}) =>
+      this.request<Record<string, any>, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/fiscal_entities/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsFiscalEntitiesRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/fiscal_entities/{id}/
+     * @secure
+     */
+    apiV1DashboardSchoolsFiscalEntitiesRetrieve: (id: string, schoolId: string, params: RequestParams = {}) =>
+      this.request<FiscalEntity, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/fiscal_entities/${id}/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
      * @description Esta es el endpoint para devolver el listado de fulfillments por colegio
      *
      * @tags api
@@ -8500,21 +14779,27 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_type?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Multiple values may be separated by commas. */
         concepts?: string[];
         /** @format date */
         end_date?: string;
+        /** Group */
+        group?: 'delinquent';
         /** Multiple values may be separated by commas. */
         guardians?: string[];
         /** Multiple values may be separated by commas. */
@@ -8526,7 +14811,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         levels?: string[];
         multiple_search?: string;
         /** Ordering */
-        ordering?: ('-paid_date' | 'paid_date')[];
+        ordering?: ('-due' | '-paid_date' | 'due' | 'paid_date')[];
         /** Multiple values may be separated by commas. */
         orders?: string[];
         /** A page number within the paginated result set. */
@@ -8535,22 +14820,25 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         page_size?: number;
         /** Type of the payin */
         payment_methods?: (
-          | 'account_money'
           | 'atm'
           | 'bank_transfer'
           | 'cash_payroll'
+          | 'compensation'
           | 'credit'
           | 'credit_card'
           | 'debit_card'
           | 'deposit_cash'
           | 'deposit_check'
           | 'direct_debit'
+          | 'giving'
           | 'multipay'
           | 'nominal_check'
           | 'prepaid_card'
           | 'ticket'
           | null
         )[];
+        /** @format uuid */
+        school_cycle?: string;
         /** A search term. */
         search?: string;
         /** Multiple values may be separated by commas. */
@@ -8559,6 +14847,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         start_date?: string;
         /** Payment status of the fulfillment */
         status?: ('NOT_PAID' | 'PAID' | 'PARTIAL_PAID' | 'WAITING_PAID')[];
+        /** @format uuid */
+        student?: string;
         /** Multiple values may be separated by commas. */
         students?: string[];
       },
@@ -8594,6 +14884,102 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * No description
      *
      * @tags api
+     * @name ApiV1DashboardSchoolsFulfillmentsAvoidScholarshipPartialUpdate
+     * @request PATCH:/api/v1/dashboard/schools/{school_id}/fulfillments/{id}/avoid_scholarship/
+     * @secure
+     */
+    apiV1DashboardSchoolsFulfillmentsAvoidScholarshipPartialUpdate: (
+      id: string,
+      schoolId: string,
+      data: PatchedAvoidScholarship,
+      params: RequestParams = {}
+    ) =>
+      this.request<SuccessResponse, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/fulfillments/${id}/avoid_scholarship/`,
+        method: 'PATCH',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsFulfillmentsEditBasePartialUpdate
+     * @request PATCH:/api/v1/dashboard/schools/{school_id}/fulfillments/{id}/edit_base/
+     * @secure
+     */
+    apiV1DashboardSchoolsFulfillmentsEditBasePartialUpdate: (
+      id: string,
+      schoolId: string,
+      data: PatchedEditFulfillmentBase,
+      params: RequestParams = {}
+    ) =>
+      this.request<SuccessResponse, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/fulfillments/${id}/edit_base/`,
+        method: 'PATCH',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsFulfillmentsEditDuePartialUpdate
+     * @request PATCH:/api/v1/dashboard/schools/{school_id}/fulfillments/{id}/edit_due/
+     * @secure
+     */
+    apiV1DashboardSchoolsFulfillmentsEditDuePartialUpdate: (
+      id: string,
+      schoolId: string,
+      data: PatchedEditFulfillmentDue,
+      params: RequestParams = {}
+    ) =>
+      this.request<SuccessResponse, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/fulfillments/${id}/edit_due/`,
+        method: 'PATCH',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsFulfillmentsForceScholarshipPartialUpdate
+     * @request PATCH:/api/v1/dashboard/schools/{school_id}/fulfillments/{id}/force_scholarship/
+     * @secure
+     */
+    apiV1DashboardSchoolsFulfillmentsForceScholarshipPartialUpdate: (
+      id: string,
+      schoolId: string,
+      data: PatchedForceScholarship,
+      params: RequestParams = {}
+    ) =>
+      this.request<SuccessResponse, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/fulfillments/${id}/force_scholarship/`,
+        method: 'PATCH',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
      * @name ApiV1DashboardSchoolsFulfillmentsSwitchInterestForgivenPartialUpdate
      * @request PATCH:/api/v1/dashboard/schools/{school_id}/fulfillments/{id}/switch_interest_forgiven/
      * @secure
@@ -8607,6 +14993,24 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         path: `/api/v1/dashboard/schools/${schoolId}/fulfillments/${id}/switch_interest_forgiven/`,
         method: 'PATCH',
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsFulfillmentsColumnsRetrieve
+     * @summary Retrieve available columns for custom reports
+     * @request GET:/api/v1/dashboard/schools/{school_id}/fulfillments/columns/
+     * @secure
+     */
+    apiV1DashboardSchoolsFulfillmentsColumnsRetrieve: (schoolId: string, params: RequestParams = {}) =>
+      this.request<ColumnsResponse, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/fulfillments/columns/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
         ...params,
       }),
 
@@ -8661,21 +15065,27 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_type?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Multiple values may be separated by commas. */
         concepts?: string[];
         /** @format date */
         end_date?: string;
+        /** Group */
+        group?: 'delinquent';
         /** Multiple values may be separated by commas. */
         guardians?: string[];
         /** Multiple values may be separated by commas. */
@@ -8687,27 +15097,30 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         levels?: string[];
         multiple_search?: string;
         /** Ordering */
-        ordering?: ('-paid_date' | 'paid_date')[];
+        ordering?: ('-due' | '-paid_date' | 'due' | 'paid_date')[];
         /** Multiple values may be separated by commas. */
         orders?: string[];
         /** Type of the payin */
         payment_methods?: (
-          | 'account_money'
           | 'atm'
           | 'bank_transfer'
           | 'cash_payroll'
+          | 'compensation'
           | 'credit'
           | 'credit_card'
           | 'debit_card'
           | 'deposit_cash'
           | 'deposit_check'
           | 'direct_debit'
+          | 'giving'
           | 'multipay'
           | 'nominal_check'
           | 'prepaid_card'
           | 'ticket'
           | null
         )[];
+        /** @format uuid */
+        school_cycle?: string;
         /** A search term. */
         search?: string;
         /** Multiple values may be separated by commas. */
@@ -8716,6 +15129,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         start_date?: string;
         /** Payment status of the fulfillment */
         status?: ('NOT_PAID' | 'PAID' | 'PARTIAL_PAID' | 'WAITING_PAID')[];
+        /** @format uuid */
+        student?: string;
         /** Multiple values may be separated by commas. */
         students?: string[];
       },
@@ -8724,6 +15139,102 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       this.request<ZipReport, any>({
         path: `/api/v1/dashboard/schools/${schoolId}/fulfillments/pdf/`,
         method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsFulfillmentsXlsV2Create
+     * @request POST:/api/v1/dashboard/schools/{school_id}/fulfillments/xls_v2/
+     * @secure
+     */
+    apiV1DashboardSchoolsFulfillmentsXlsV2Create: (
+      schoolId: string,
+      query?: {
+        collected_at?: 'collected_at_portal' | 'collected_at_school';
+        /** Type of the concept. */
+        concept_type?: (
+          | 'BOOKS_AND_MATERIALS'
+          | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
+          | 'EXAMS_AND_CERTIFICATES'
+          | 'EXTRACURRICULAR'
+          | 'INSCRIPTION'
+          | 'INSURANCE'
+          | 'MONTHLY_FEE'
+          | 'OTHER'
+          | 'PRE_DEBT'
+          | 'REINSCRIPTION'
+          | 'SPORTS'
+          | 'TRANSPORT'
+          | 'TRIPS'
+          | 'UNIFORMS_AND_MERCH'
+        )[];
+        /** Multiple values may be separated by commas. */
+        concepts?: string[];
+        /** @format date */
+        end_date?: string;
+        /** Group */
+        group?: 'delinquent';
+        /** Multiple values may be separated by commas. */
+        guardians?: string[];
+        /** Multiple values may be separated by commas. */
+        ids?: string[];
+        /** Multiple values may be separated by commas. */
+        invoice_status?: ('canceled' | 'canceling' | 'failed' | 'multiple' | 'not_requested' | 'pending' | 'success')[];
+        is_manual?: boolean;
+        /** Multiple values may be separated by commas. */
+        levels?: string[];
+        multiple_search?: string;
+        /** Ordering */
+        ordering?: ('-due' | '-paid_date' | 'due' | 'paid_date')[];
+        /** Multiple values may be separated by commas. */
+        orders?: string[];
+        /** Type of the payin */
+        payment_methods?: (
+          | 'atm'
+          | 'bank_transfer'
+          | 'cash_payroll'
+          | 'compensation'
+          | 'credit'
+          | 'credit_card'
+          | 'debit_card'
+          | 'deposit_cash'
+          | 'deposit_check'
+          | 'direct_debit'
+          | 'giving'
+          | 'multipay'
+          | 'nominal_check'
+          | 'prepaid_card'
+          | 'ticket'
+          | null
+        )[];
+        /** @format uuid */
+        school_cycle?: string;
+        /** A search term. */
+        search?: string;
+        /** Multiple values may be separated by commas. */
+        sections?: string[];
+        /** @format date */
+        start_date?: string;
+        /** Payment status of the fulfillment */
+        status?: ('NOT_PAID' | 'PAID' | 'PARTIAL_PAID' | 'WAITING_PAID')[];
+        /** @format uuid */
+        student?: string;
+        /** Multiple values may be separated by commas. */
+        students?: string[];
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<ExcelReport, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/fulfillments/xls_v2/`,
+        method: 'POST',
         query: query,
         secure: true,
         format: 'json',
@@ -8746,21 +15257,27 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_type?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Multiple values may be separated by commas. */
         concepts?: string[];
         /** @format date */
         end_date?: string;
+        /** Group */
+        group?: 'delinquent';
         /** Multiple values may be separated by commas. */
         guardians?: string[];
         /** Multiple values may be separated by commas. */
@@ -8772,27 +15289,30 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         levels?: string[];
         multiple_search?: string;
         /** Ordering */
-        ordering?: ('-paid_date' | 'paid_date')[];
+        ordering?: ('-due' | '-paid_date' | 'due' | 'paid_date')[];
         /** Multiple values may be separated by commas. */
         orders?: string[];
         /** Type of the payin */
         payment_methods?: (
-          | 'account_money'
           | 'atm'
           | 'bank_transfer'
           | 'cash_payroll'
+          | 'compensation'
           | 'credit'
           | 'credit_card'
           | 'debit_card'
           | 'deposit_cash'
           | 'deposit_check'
           | 'direct_debit'
+          | 'giving'
           | 'multipay'
           | 'nominal_check'
           | 'prepaid_card'
           | 'ticket'
           | null
         )[];
+        /** @format uuid */
+        school_cycle?: string;
         /** A search term. */
         search?: string;
         /** Multiple values may be separated by commas. */
@@ -8801,6 +15321,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         start_date?: string;
         /** Payment status of the fulfillment */
         status?: ('NOT_PAID' | 'PAID' | 'PARTIAL_PAID' | 'WAITING_PAID')[];
+        /** @format uuid */
+        student?: string;
         /** Multiple values may be separated by commas. */
         students?: string[];
       },
@@ -8850,8 +15372,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @request POST:/api/v1/dashboard/schools/{school_id}/guardians/
      * @secure
      */
-    apiV1DashboardSchoolsGuardiansCreate: (schoolId: string, data: SlimGuardian, params: RequestParams = {}) =>
-      this.request<SlimGuardian, any>({
+    apiV1DashboardSchoolsGuardiansCreate: (schoolId: string, data: CreateAssignGuardian, params: RequestParams = {}) =>
+      this.request<DashboardGuardianSlim, RetrieveGuardian>({
         path: `/api/v1/dashboard/schools/${schoolId}/guardians/`,
         method: 'POST',
         body: data,
@@ -8896,6 +15418,104 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
 
     /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsGuardiansPortalUrlRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/guardians/{id}/portal_url/
+     * @secure
+     */
+    apiV1DashboardSchoolsGuardiansPortalUrlRetrieve: (id: string, schoolId: string, params: RequestParams = {}) =>
+      this.request<GuardianSignIn, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/guardians/${id}/portal_url/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsInscriptionsUpdate
+     * @request PUT:/api/v1/dashboard/schools/{school_id}/inscriptions/{id}/
+     * @secure
+     */
+    apiV1DashboardSchoolsInscriptionsUpdate: (
+      id: string,
+      schoolId: string,
+      data: InscriptionUpdate,
+      params: RequestParams = {}
+    ) =>
+      this.request<InscriptionUpdate, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/inscriptions/${id}/`,
+        method: 'PUT',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsInscriptionsPartialUpdate
+     * @request PATCH:/api/v1/dashboard/schools/{school_id}/inscriptions/{id}/
+     * @secure
+     */
+    apiV1DashboardSchoolsInscriptionsPartialUpdate: (id: string, schoolId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/inscriptions/${id}/`,
+        method: 'PATCH',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsInscriptionsSectionsCreate
+     * @request POST:/api/v1/dashboard/schools/{school_id}/inscriptions/sections/
+     * @secure
+     */
+    apiV1DashboardSchoolsInscriptionsSectionsCreate: (schoolId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/inscriptions/sections/`,
+        method: 'POST',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsInvoiceSeriesList
+     * @request GET:/api/v1/dashboard/schools/{school_id}/invoice_series/
+     * @secure
+     */
+    apiV1DashboardSchoolsInvoiceSeriesList: (
+      schoolId: string,
+      query?: {
+        /** A page number within the paginated result set. */
+        page?: number;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<PaginatedInvoiceSeriesList, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/invoice_series/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
      * @description Endpoint con el listado de facturas por colegio
      *
      * @tags School Invoice ViewSet
@@ -8927,7 +15547,30 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @tags api
+     * @tags School Invoice ViewSet
+     * @name ApiV1DashboardSchoolsInvoicesCreate
+     * @request POST:/api/v1/dashboard/schools/{school_id}/invoices/
+     * @secure
+     */
+    apiV1DashboardSchoolsInvoicesCreate: (
+      schoolId: string,
+      data: CreateDashboardInvoiceRequestDTO,
+      params: RequestParams = {}
+    ) =>
+      this.request<CreateDashboardInvoiceResponseDTO, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/invoices/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Endpoint para obtener una factura por id
+     *
+     * @tags School Invoice ViewSet
      * @name ApiV1DashboardSchoolsInvoicesRetrieve
      * @request GET:/api/v1/dashboard/schools/{school_id}/invoices/{id}/
      * @secure
@@ -8942,7 +15585,248 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
 
     /**
+     * @description Endpoint para cancelar una factura
+     *
+     * @tags School Invoice ViewSet
+     * @name ApiV1DashboardSchoolsInvoicesDestroy
+     * @request DELETE:/api/v1/dashboard/schools/{school_id}/invoices/{id}/
+     * @secure
+     */
+    apiV1DashboardSchoolsInvoicesDestroy: (id: string, schoolId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/invoices/${id}/`,
+        method: 'DELETE',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description Endpoint to emit credit notes for an invoice
+     *
+     * @tags School Invoice ViewSet
+     * @name ApiV1DashboardSchoolsInvoicesCreditNoteCreate
+     * @request POST:/api/v1/dashboard/schools/{school_id}/invoices/{id}/credit_note/
+     * @secure
+     */
+    apiV1DashboardSchoolsInvoicesCreditNoteCreate: (
+      id: string,
+      schoolId: string,
+      data: CreateDashboardCreditNoteRequestDTO,
+      params: RequestParams = {}
+    ) =>
+      this.request<CreateDashboardCreditNoteResponseDTO, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/invoices/${id}/credit_note/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Endpoint to send an email with the invoice attached to the guardian
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsInvoicesSendEmailCreate
+     * @request POST:/api/v1/dashboard/schools/{school_id}/invoices/{id}/send_email/
+     * @secure
+     */
+    apiV1DashboardSchoolsInvoicesSendEmailCreate: (
+      id: string,
+      schoolId: string,
+      data: InvoiceSendEmailRequestDTO,
+      params: RequestParams = {}
+    ) =>
+      this.request<void, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/invoices/${id}/send_email/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
      * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsInvoicesZipInvoiceCreate
+     * @request POST:/api/v1/dashboard/schools/{school_id}/invoices/{id}/zip_invoice/
+     * @secure
+     */
+    apiV1DashboardSchoolsInvoicesZipInvoiceCreate: (
+      id: string,
+      schoolId: string,
+      query?: {
+        /** A search term. */
+        search?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<ZipReport, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/invoices/${id}/zip_invoice/`,
+        method: 'POST',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsInvoicesColumnsRetrieve
+     * @summary Retrieve available columns for custom reports
+     * @request GET:/api/v1/dashboard/schools/{school_id}/invoices/columns/
+     * @secure
+     */
+    apiV1DashboardSchoolsInvoicesColumnsRetrieve: (schoolId: string, params: RequestParams = {}) =>
+      this.request<ColumnsResponse, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/invoices/columns/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Endpoint que lista los queryparams (y valores) disponibles para el endpoint raiz
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsInvoicesFiltersRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/invoices/filters/
+     * @secure
+     */
+    apiV1DashboardSchoolsInvoicesFiltersRetrieve: (schoolId: string, params: RequestParams = {}) =>
+      this.request<FilterViewInvoice, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/invoices/filters/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsInvoicesPdfRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/invoices/pdf/
+     * @secure
+     */
+    apiV1DashboardSchoolsInvoicesPdfRetrieve: (
+      schoolId: string,
+      query?: {
+        /** A search term. */
+        search?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<ZipReport, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/invoices/pdf/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Generar una reinvoice.
+     *
+     * @tags School Invoice ViewSet
+     * @name ApiV1DashboardSchoolsInvoicesReinvoiceCreate
+     * @request POST:/api/v1/dashboard/schools/{school_id}/invoices/reinvoice/
+     * @secure
+     */
+    apiV1DashboardSchoolsInvoicesReinvoiceCreate: (
+      schoolId: string,
+      data: ReinvoiceRequestDTO,
+      params: RequestParams = {}
+    ) =>
+      this.request<ReinvoiceRequestDTO, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/invoices/reinvoice/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Reintentar factura en error.
+     *
+     * @tags School Invoice ViewSet
+     * @name ApiV1DashboardSchoolsInvoicesRetryCreate
+     * @request POST:/api/v1/dashboard/schools/{school_id}/invoices/retry/
+     * @secure
+     */
+    apiV1DashboardSchoolsInvoicesRetryCreate: (schoolId: string, data: RetryRequestDTO, params: RequestParams = {}) =>
+      this.request<RetryRequestDTO, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/invoices/retry/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsInvoicesXlsV2Create
+     * @request POST:/api/v1/dashboard/schools/{school_id}/invoices/xls_v2/
+     * @secure
+     */
+    apiV1DashboardSchoolsInvoicesXlsV2Create: (
+      schoolId: string,
+      query?: {
+        /** A search term. */
+        search?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<ExcelReport, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/invoices/xls_v2/`,
+        method: 'POST',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsInvoicesXmlRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/invoices/xml/
+     * @secure
+     */
+    apiV1DashboardSchoolsInvoicesXmlRetrieve: (
+      schoolId: string,
+      query?: {
+        /** A search term. */
+        search?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<ZipReport, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/invoices/xml/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description ViewSet for managing school levels. This viewset handles CRUD operations for school levels, with special handling for list and create operations.
      *
      * @tags api
      * @name ApiV1DashboardSchoolsLevelsList
@@ -8967,10 +15851,30 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
 
     /**
-     * No description
+     * @description ViewSet for managing school levels. This viewset handles CRUD operations for school levels, with special handling for list and create operations.
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsLevelsCreate
+     * @request POST:/api/v1/dashboard/schools/{school_id}/levels/
+     * @secure
+     */
+    apiV1DashboardSchoolsLevelsCreate: (schoolId: string, data: LevelCreate, params: RequestParams = {}) =>
+      this.request<LevelCreate, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/levels/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description List massive concept assignments filtered by various parameters.
      *
      * @tags api
      * @name ApiV1DashboardSchoolsMassiveAssignmentsList
+     * @summary List massive concept assignments
      * @request GET:/api/v1/dashboard/schools/{school_id}/massive_assignments/
      * @secure
      */
@@ -9004,7 +15908,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: CreateMassiveConceptAssignments,
       params: RequestParams = {}
     ) =>
-      this.request<CreateMassiveConceptAssignments, any>({
+      this.request<MassiveConceptAssignmentHistory, MassiveConceptAssignmentHistory>({
         path: `/api/v1/dashboard/schools/${schoolId}/massive_assignments/`,
         method: 'POST',
         body: data,
@@ -9088,10 +15992,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     apiV1DashboardSchoolsMassiveAssignmentsDestroy: (id: string, schoolId: string, params: RequestParams = {}) =>
-      this.request<void, any>({
+      this.request<DestroyMassiveConceptAssignment, any>({
         path: `/api/v1/dashboard/schools/${schoolId}/massive_assignments/${id}/`,
         method: 'DELETE',
         secure: true,
+        format: 'json',
         ...params,
       }),
 
@@ -9264,6 +16169,109 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
 
     /**
+     * @description Create massive scholarship assignment with sponsored payment pre-validation. Query Parameters: - confirm_sponsored_payment: Set to true to bypass sponsored payment warning
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsMassiveScholarshipAssignmentsCreate
+     * @request POST:/api/v1/dashboard/schools/{school_id}/massive_scholarship_assignments/
+     * @secure
+     */
+    apiV1DashboardSchoolsMassiveScholarshipAssignmentsCreate: (
+      schoolId: string,
+      data: MassiveScholarshipAssignmentCreateRequest,
+      query?: {
+        /** Set to true to confirm massive assignment despite sponsored payment warning */
+        confirm_sponsored_payment?: boolean;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<MassiveScholarshipAssignmentCreateResponse, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/massive_scholarship_assignments/`,
+        method: 'POST',
+        query: query,
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsMassiveScholarshipAssignmentsRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/massive_scholarship_assignments/{id}/
+     * @secure
+     */
+    apiV1DashboardSchoolsMassiveScholarshipAssignmentsRetrieve: (
+      id: string,
+      schoolId: string,
+      params: RequestParams = {}
+    ) =>
+      this.request<MassiveScholarshipAssignmentRetrieveResponse, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/massive_scholarship_assignments/${id}/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsMassiveScholarshipAssignmentsDestroy
+     * @request DELETE:/api/v1/dashboard/schools/{school_id}/massive_scholarship_assignments/{id}/
+     * @secure
+     */
+    apiV1DashboardSchoolsMassiveScholarshipAssignmentsDestroy: (
+      id: string,
+      schoolId: string,
+      params: RequestParams = {}
+    ) =>
+      this.request<void, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/massive_scholarship_assignments/${id}/`,
+        method: 'DELETE',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsOptionalOrdersList
+     * @request GET:/api/v1/dashboard/schools/{school_id}/optional-orders/
+     * @secure
+     */
+    apiV1DashboardSchoolsOptionalOrdersList: (
+      schoolId: string,
+      query?: {
+        multiple_search?: string;
+        /** Offering of the concept */
+        offering?: ('MIX' | 'OPEN_LOOP' | 'SCHOLAR')[];
+        /** Ordering */
+        ordering?: ('-price' | '-sold_units' | '-stock' | 'price' | 'sold_units' | 'stock')[];
+        /** A page number within the paginated result set. */
+        page?: number;
+        /** Number of results to return per page. */
+        page_size?: number;
+        /** @format uuid */
+        school?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<PaginatedOptionalOrderList, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/optional-orders/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
      * No description
      *
      * @tags Optional Orders
@@ -9276,6 +16284,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       schoolId: string,
       query?: {
         multiple_search?: string;
+        /** Offering of the concept */
+        offering?: ('MIX' | 'OPEN_LOOP' | 'SCHOLAR')[];
+        /** Ordering */
+        ordering?: ('-price' | '-sold_units' | '-stock' | 'price' | 'sold_units' | 'stock')[];
         /** @format uuid */
         school?: string;
       },
@@ -9313,11 +16325,24 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         is_manual?: boolean;
         multiple_search?: string;
         /** Ordering */
-        ordering?: ('-created' | '-paid_date' | 'created' | 'paid_date')[];
+        ordering?: (
+          | '-correlative_id'
+          | '-created'
+          | '-created_by'
+          | '-paid_date'
+          | '-total'
+          | 'correlative_id'
+          | 'created'
+          | 'created_by'
+          | 'paid_date'
+          | 'total'
+        )[];
         /** A page number within the paginated result set. */
         page?: number;
         /** Number of results to return per page. */
         page_size?: number;
+        /** Multiple values may be separated by commas. */
+        school_cycles?: string[];
         /** A search term. */
         search?: string;
         /** @format date */
@@ -9326,16 +16351,17 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         students?: string[];
         /** Type of the payin */
         types?: (
-          | 'account_money'
           | 'atm'
           | 'bank_transfer'
           | 'cash_payroll'
+          | 'compensation'
           | 'credit'
           | 'credit_card'
           | 'debit_card'
           | 'deposit_cash'
           | 'deposit_check'
           | 'direct_debit'
+          | 'giving'
           | 'multipay'
           | 'nominal_check'
           | 'prepaid_card'
@@ -9347,7 +16373,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {}
     ) =>
-      this.request<PaginatedDashboardPayinList, any>({
+      this.request<PaginatedPayinListResponseDTOList, any>({
         path: `/api/v1/dashboard/schools/${schoolId}/payins/`,
         method: 'GET',
         query: query,
@@ -9409,20 +16435,36 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
 
     /**
-     * @description - Class that implements this mixin and need overwrite get_serializer_context must call super().get_serializer_context() - This class must be in first posición in the class inheritance
+     * @description Mixin que maneja la logica para crear reportes XLS. Se accede a través de la ruta /xls de la url del viewset al cual se agrega. Se espera que los siguientes atributos estén definidos en el viewset que use el mixin: - xls_filename (str): nombre del reporte que se generara - - get_xls_queryset (Queryset): función que define el queryset a usar para generar el reporte.
      *
      * @tags api
-     * @name ApiV1DashboardSchoolsPayinsExcelCreate
-     * @request POST:/api/v1/dashboard/schools/{school_id}/payins/excel/
+     * @name ApiV1DashboardSchoolsPayinsExcelColumnsRetrieve
+     * @summary Retrieve available columns for custom reports
+     * @request GET:/api/v1/dashboard/schools/{school_id}/payins/excel/columns/
      * @secure
      */
-    apiV1DashboardSchoolsPayinsExcelCreate: (schoolId: string, data: ExcelReport, params: RequestParams = {}) =>
-      this.request<ExcelReport, any>({
-        path: `/api/v1/dashboard/schools/${schoolId}/payins/excel/`,
-        method: 'POST',
-        body: data,
+    apiV1DashboardSchoolsPayinsExcelColumnsRetrieve: (schoolId: string, params: RequestParams = {}) =>
+      this.request<ColumnsResponse, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/payins/excel/columns/`,
+        method: 'GET',
         secure: true,
-        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Mixin que maneja la logica para crear reportes XLS. Se accede a través de la ruta /xls de la url del viewset al cual se agrega. Se espera que los siguientes atributos estén definidos en el viewset que use el mixin: - xls_filename (str): nombre del reporte que se generara - - get_xls_queryset (Queryset): función que define el queryset a usar para generar el reporte.
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsPayinsExcelXlsV2Create
+     * @request POST:/api/v1/dashboard/schools/{school_id}/payins/excel/xls_v2/
+     * @secure
+     */
+    apiV1DashboardSchoolsPayinsExcelXlsV2Create: (schoolId: string, params: RequestParams = {}) =>
+      this.request<ExcelReport, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/payins/excel/xls_v2/`,
+        method: 'POST',
+        secure: true,
         format: 'json',
         ...params,
       }),
@@ -9467,7 +16509,20 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         is_manual?: boolean;
         multiple_search?: string;
         /** Ordering */
-        ordering?: ('-created' | '-paid_date' | 'created' | 'paid_date')[];
+        ordering?: (
+          | '-correlative_id'
+          | '-created'
+          | '-created_by'
+          | '-paid_date'
+          | '-total'
+          | 'correlative_id'
+          | 'created'
+          | 'created_by'
+          | 'paid_date'
+          | 'total'
+        )[];
+        /** Multiple values may be separated by commas. */
+        school_cycles?: string[];
         /** A search term. */
         search?: string;
         /** @format date */
@@ -9476,16 +16531,17 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         students?: string[];
         /** Type of the payin */
         types?: (
-          | 'account_money'
           | 'atm'
           | 'bank_transfer'
           | 'cash_payroll'
+          | 'compensation'
           | 'credit'
           | 'credit_card'
           | 'debit_card'
           | 'deposit_cash'
           | 'deposit_check'
           | 'direct_debit'
+          | 'giving'
           | 'multipay'
           | 'nominal_check'
           | 'prepaid_card'
@@ -9529,7 +16585,20 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         is_manual?: boolean;
         multiple_search?: string;
         /** Ordering */
-        ordering?: ('-created' | '-paid_date' | 'created' | 'paid_date')[];
+        ordering?: (
+          | '-correlative_id'
+          | '-created'
+          | '-created_by'
+          | '-paid_date'
+          | '-total'
+          | 'correlative_id'
+          | 'created'
+          | 'created_by'
+          | 'paid_date'
+          | 'total'
+        )[];
+        /** Multiple values may be separated by commas. */
+        school_cycles?: string[];
         /** A search term. */
         search?: string;
         /** @format date */
@@ -9538,16 +16607,17 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         students?: string[];
         /** Type of the payin */
         types?: (
-          | 'account_money'
           | 'atm'
           | 'bank_transfer'
           | 'cash_payroll'
+          | 'compensation'
           | 'credit'
           | 'credit_card'
           | 'debit_card'
           | 'deposit_cash'
           | 'deposit_check'
           | 'direct_debit'
+          | 'giving'
           | 'multipay'
           | 'nominal_check'
           | 'prepaid_card'
@@ -9586,15 +16656,19 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_types?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Multiple values may be separated by commas. */
@@ -9610,7 +16684,18 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         levels?: string[];
         multiple_search?: string;
         /** Ordering */
-        ordering?: ('-created' | '-paid_date' | 'created' | 'paid_date')[];
+        ordering?: (
+          | '-created'
+          | '-fulfillment_correlative_id'
+          | '-invoice_status'
+          | '-payin_correlative_id'
+          | '-payin_paid_date'
+          | 'created'
+          | 'fulfillment_correlative_id'
+          | 'invoice_status'
+          | 'payin_correlative_id'
+          | 'payin_paid_date'
+        )[];
         /** Multiple values may be separated by commas. */
         orders?: string[];
         /** A page number within the paginated result set. */
@@ -9631,16 +16716,17 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         students?: string[];
         /** Type of the payin */
         types?: (
-          | 'account_money'
           | 'atm'
           | 'bank_transfer'
           | 'cash_payroll'
+          | 'compensation'
           | 'credit'
           | 'credit_card'
           | 'debit_card'
           | 'deposit_cash'
           | 'deposit_check'
           | 'direct_debit'
+          | 'giving'
           | 'multipay'
           | 'nominal_check'
           | 'prepaid_card'
@@ -9662,9 +16748,9 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @tags School PayinFulfillment ViewSet
+     * @tags api
      * @name ApiV1DashboardSchoolsPayinsFulfillmentsColumnsRetrieve
-     * @summary Retrieve Available Columns
+     * @summary Retrieve available columns for custom reports
      * @request GET:/api/v1/dashboard/schools/{school_id}/payins_fulfillments/columns/
      * @secure
      */
@@ -9712,15 +16798,19 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_types?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Multiple values may be separated by commas. */
@@ -9736,7 +16826,18 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         levels?: string[];
         multiple_search?: string;
         /** Ordering */
-        ordering?: ('-created' | '-paid_date' | 'created' | 'paid_date')[];
+        ordering?: (
+          | '-created'
+          | '-fulfillment_correlative_id'
+          | '-invoice_status'
+          | '-payin_correlative_id'
+          | '-payin_paid_date'
+          | 'created'
+          | 'fulfillment_correlative_id'
+          | 'invoice_status'
+          | 'payin_correlative_id'
+          | 'payin_paid_date'
+        )[];
         /** Multiple values may be separated by commas. */
         orders?: string[];
         /** Multiple values may be separated by commas. */
@@ -9753,16 +16854,17 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         students?: string[];
         /** Type of the payin */
         types?: (
-          | 'account_money'
           | 'atm'
           | 'bank_transfer'
           | 'cash_payroll'
+          | 'compensation'
           | 'credit'
           | 'credit_card'
           | 'debit_card'
           | 'deposit_cash'
           | 'deposit_check'
           | 'direct_debit'
+          | 'giving'
           | 'multipay'
           | 'nominal_check'
           | 'prepaid_card'
@@ -9799,15 +16901,19 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_types?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Multiple values may be separated by commas. */
@@ -9823,7 +16929,18 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         levels?: string[];
         multiple_search?: string;
         /** Ordering */
-        ordering?: ('-created' | '-paid_date' | 'created' | 'paid_date')[];
+        ordering?: (
+          | '-created'
+          | '-fulfillment_correlative_id'
+          | '-invoice_status'
+          | '-payin_correlative_id'
+          | '-payin_paid_date'
+          | 'created'
+          | 'fulfillment_correlative_id'
+          | 'invoice_status'
+          | 'payin_correlative_id'
+          | 'payin_paid_date'
+        )[];
         /** Multiple values may be separated by commas. */
         orders?: string[];
         /** Multiple values may be separated by commas. */
@@ -9840,16 +16957,17 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         students?: string[];
         /** Type of the payin */
         types?: (
-          | 'account_money'
           | 'atm'
           | 'bank_transfer'
           | 'cash_payroll'
+          | 'compensation'
           | 'credit'
           | 'credit_card'
           | 'debit_card'
           | 'deposit_cash'
           | 'deposit_check'
           | 'direct_debit'
+          | 'giving'
           | 'multipay'
           | 'nominal_check'
           | 'prepaid_card'
@@ -9878,15 +16996,95 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      */
     apiV1DashboardSchoolsPayinsFulfillmentsXlsV2Create: (
       schoolId: string,
-      data: DashboardPayinFulfillment,
+      query?: {
+        /** Multiple values may be separated by commas. */
+        billing_to?: string[];
+        collected_at?: ('collected_at_portal' | 'collected_at_school')[];
+        /** Type of the concept. */
+        concept_types?: (
+          | 'BOOKS_AND_MATERIALS'
+          | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
+          | 'EXAMS_AND_CERTIFICATES'
+          | 'EXTRACURRICULAR'
+          | 'INSCRIPTION'
+          | 'INSURANCE'
+          | 'MONTHLY_FEE'
+          | 'OTHER'
+          | 'PRE_DEBT'
+          | 'REINSCRIPTION'
+          | 'SPORTS'
+          | 'TRANSPORT'
+          | 'TRIPS'
+          | 'UNIFORMS_AND_MERCH'
+        )[];
+        /** Multiple values may be separated by commas. */
+        concepts?: string[];
+        /** @format date */
+        end_date?: string;
+        /** Multiple values may be separated by commas. */
+        guardians?: string[];
+        /** Multiple values may be separated by commas. */
+        ids?: string[];
+        invoice_statuses?: ('canceled' | 'canceling' | 'failed' | 'not_requested' | 'pending' | 'success')[];
+        /** Multiple values may be separated by commas. */
+        levels?: string[];
+        multiple_search?: string;
+        /** Ordering */
+        ordering?: (
+          | '-created'
+          | '-fulfillment_correlative_id'
+          | '-invoice_status'
+          | '-payin_correlative_id'
+          | '-payin_paid_date'
+          | 'created'
+          | 'fulfillment_correlative_id'
+          | 'invoice_status'
+          | 'payin_correlative_id'
+          | 'payin_paid_date'
+        )[];
+        /** Multiple values may be separated by commas. */
+        orders?: string[];
+        /** Multiple values may be separated by commas. */
+        registered_by?: string[];
+        /** Multiple values may be separated by commas. */
+        school_cycles?: string[];
+        /** A search term. */
+        search?: string;
+        /** Multiple values may be separated by commas. */
+        sections?: string[];
+        /** @format date */
+        start_date?: string;
+        /** Multiple values may be separated by commas. */
+        students?: string[];
+        /** Type of the payin */
+        types?: (
+          | 'atm'
+          | 'bank_transfer'
+          | 'cash_payroll'
+          | 'compensation'
+          | 'credit'
+          | 'credit_card'
+          | 'debit_card'
+          | 'deposit_cash'
+          | 'deposit_check'
+          | 'direct_debit'
+          | 'giving'
+          | 'multipay'
+          | 'nominal_check'
+          | 'prepaid_card'
+          | 'ticket'
+          | null
+        )[];
+      },
       params: RequestParams = {}
     ) =>
-      this.request<DashboardPayinFulfillment, any>({
+      this.request<ExcelReport, any>({
         path: `/api/v1/dashboard/schools/${schoolId}/payins_fulfillments/xls_v2/`,
         method: 'POST',
-        body: data,
+        query: query,
         secure: true,
-        type: ContentType.Json,
         format: 'json',
         ...params,
       }),
@@ -9909,15 +17107,19 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_types?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Multiple values may be separated by commas. */
@@ -9933,7 +17135,18 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         levels?: string[];
         multiple_search?: string;
         /** Ordering */
-        ordering?: ('-created' | '-paid_date' | 'created' | 'paid_date')[];
+        ordering?: (
+          | '-created'
+          | '-fulfillment_correlative_id'
+          | '-invoice_status'
+          | '-payin_correlative_id'
+          | '-payin_paid_date'
+          | 'created'
+          | 'fulfillment_correlative_id'
+          | 'invoice_status'
+          | 'payin_correlative_id'
+          | 'payin_paid_date'
+        )[];
         /** Multiple values may be separated by commas. */
         orders?: string[];
         /** Multiple values may be separated by commas. */
@@ -9950,16 +17163,17 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         students?: string[];
         /** Type of the payin */
         types?: (
-          | 'account_money'
           | 'atm'
           | 'bank_transfer'
           | 'cash_payroll'
+          | 'compensation'
           | 'credit'
           | 'credit_card'
           | 'debit_card'
           | 'deposit_cash'
           | 'deposit_check'
           | 'direct_debit'
+          | 'giving'
           | 'multipay'
           | 'nominal_check'
           | 'prepaid_card'
@@ -9996,15 +17210,19 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_types?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Multiple values may be separated by commas. */
@@ -10020,7 +17238,18 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         levels?: string[];
         multiple_search?: string;
         /** Ordering */
-        ordering?: ('-created' | '-paid_date' | 'created' | 'paid_date')[];
+        ordering?: (
+          | '-created'
+          | '-fulfillment_correlative_id'
+          | '-invoice_status'
+          | '-payin_correlative_id'
+          | '-payin_paid_date'
+          | 'created'
+          | 'fulfillment_correlative_id'
+          | 'invoice_status'
+          | 'payin_correlative_id'
+          | 'payin_paid_date'
+        )[];
         /** Multiple values may be separated by commas. */
         orders?: string[];
         /** Multiple values may be separated by commas. */
@@ -10037,16 +17266,17 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         students?: string[];
         /** Type of the payin */
         types?: (
-          | 'account_money'
           | 'atm'
           | 'bank_transfer'
           | 'cash_payroll'
+          | 'compensation'
           | 'credit'
           | 'credit_card'
           | 'debit_card'
           | 'deposit_cash'
           | 'deposit_check'
           | 'direct_debit'
+          | 'giving'
           | 'multipay'
           | 'nominal_check'
           | 'prepaid_card'
@@ -10084,11 +17314,26 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         ids?: string[];
         multiple_search?: string;
         /** Ordering */
-        ordering?: ('-transaction_started' | 'transaction_started')[];
+        ordering?: (
+          | '-correlative_id'
+          | '-deposit_date'
+          | '-orders_count'
+          | '-status'
+          | '-total_emitted'
+          | '-transaction_started'
+          | 'correlative_id'
+          | 'deposit_date'
+          | 'orders_count'
+          | 'status'
+          | 'total_emitted'
+          | 'transaction_started'
+        )[];
         /** A page number within the paginated result set. */
         page?: number;
         /** Number of results to return per page. */
         page_size?: number;
+        /** Multiple values may be separated by commas. */
+        school_cycles?: string[];
         /** @format date */
         start_date?: string;
         statuses?: (
@@ -10121,6 +17366,24 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     apiV1DashboardSchoolsPayoutsRetrieve: (id: string, schoolId: string, params: RequestParams = {}) =>
       this.request<DashboardSchoolPayoutDetails, any>({
         path: `/api/v1/dashboard/schools/${schoolId}/payouts/${id}/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsPayoutsColumnsRetrieve
+     * @summary Retrieve available columns for custom reports
+     * @request GET:/api/v1/dashboard/schools/{school_id}/payouts/columns/
+     * @secure
+     */
+    apiV1DashboardSchoolsPayoutsColumnsRetrieve: (schoolId: string, params: RequestParams = {}) =>
+      this.request<ColumnsResponse, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/payouts/columns/`,
         method: 'GET',
         secure: true,
         format: 'json',
@@ -10182,7 +17445,22 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         ids?: string[];
         multiple_search?: string;
         /** Ordering */
-        ordering?: ('-transaction_started' | 'transaction_started')[];
+        ordering?: (
+          | '-correlative_id'
+          | '-deposit_date'
+          | '-orders_count'
+          | '-status'
+          | '-total_emitted'
+          | '-transaction_started'
+          | 'correlative_id'
+          | 'deposit_date'
+          | 'orders_count'
+          | 'status'
+          | 'total_emitted'
+          | 'transaction_started'
+        )[];
+        /** Multiple values may be separated by commas. */
+        school_cycles?: string[];
         /** @format date */
         start_date?: string;
         statuses?: (
@@ -10213,9 +17491,65 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     apiV1DashboardSchoolsPayoutsResumeRetrieve: (schoolId: string, params: RequestParams = {}) =>
-      this.request<DashboardSchoolPayoutDetails, any>({
+      this.request<SchoolPayoutsResume, any>({
         path: `/api/v1/dashboard/schools/${schoolId}/payouts/resume/`,
         method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsPayoutsXlsV2Create
+     * @request POST:/api/v1/dashboard/schools/{school_id}/payouts/xls_v2/
+     * @secure
+     */
+    apiV1DashboardSchoolsPayoutsXlsV2Create: (
+      schoolId: string,
+      query?: {
+        /** Multiple values may be separated by commas. */
+        bank_accounts?: string[];
+        /** @format date */
+        end_date?: string;
+        /** Multiple values may be separated by commas. */
+        ids?: string[];
+        multiple_search?: string;
+        /** Ordering */
+        ordering?: (
+          | '-correlative_id'
+          | '-deposit_date'
+          | '-orders_count'
+          | '-status'
+          | '-total_emitted'
+          | '-transaction_started'
+          | 'correlative_id'
+          | 'deposit_date'
+          | 'orders_count'
+          | 'status'
+          | 'total_emitted'
+          | 'transaction_started'
+        )[];
+        /** Multiple values may be separated by commas. */
+        school_cycles?: string[];
+        /** @format date */
+        start_date?: string;
+        statuses?: (
+          | 'APPROVED_STATUS'
+          | 'CANCELED_STATUS'
+          | 'DECLINED_STATUS'
+          | 'PROCESSING_STATUS'
+          | 'SCHEDULED_STATUS'
+        )[];
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<ExcelReport, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/payouts/xls_v2/`,
+        method: 'POST',
+        query: query,
         secure: true,
         format: 'json',
         ...params,
@@ -10240,7 +17574,22 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         ids?: string[];
         multiple_search?: string;
         /** Ordering */
-        ordering?: ('-transaction_started' | 'transaction_started')[];
+        ordering?: (
+          | '-correlative_id'
+          | '-deposit_date'
+          | '-orders_count'
+          | '-status'
+          | '-total_emitted'
+          | '-transaction_started'
+          | 'correlative_id'
+          | 'deposit_date'
+          | 'orders_count'
+          | 'status'
+          | 'total_emitted'
+          | 'transaction_started'
+        )[];
+        /** Multiple values may be separated by commas. */
+        school_cycles?: string[];
         /** @format date */
         start_date?: string;
         statuses?: (
@@ -10255,6 +17604,77 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     ) =>
       this.request<ZipReport, any>({
         path: `/api/v1/dashboard/schools/${schoolId}/payouts/xml/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Create Refund
+     * @name ApiV1DashboardSchoolsRefundCreate
+     * @request POST:/api/v1/dashboard/schools/{school_id}/refund/
+     * @secure
+     */
+    apiV1DashboardSchoolsRefundCreate: (
+      schoolId: string,
+      data: CreateRefundDashboardRequestDTO,
+      params: RequestParams = {}
+    ) =>
+      this.request<CreateRefundDashboardResponseDTO, HTTP400BadRequest>({
+        path: `/api/v1/dashboard/schools/${schoolId}/refund/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsReportsYearlyInvoicesZipYearlyInvoicesZipCreate
+     * @request POST:/api/v1/dashboard/schools/{school_id}/reports/yearly_invoices_zip/yearly_invoices_zip/
+     * @secure
+     */
+    apiV1DashboardSchoolsReportsYearlyInvoicesZipYearlyInvoicesZipCreate: (
+      schoolId: string,
+      data: YearlyInvoiceZipRequest,
+      params: RequestParams = {}
+    ) =>
+      this.request<YearlyInvoiceZipResponse, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/reports/yearly_invoices_zip/yearly_invoices_zip/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsReportsYearlyInvoicesZipYearlyInvoicesZipStatusRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/reports/yearly_invoices_zip/yearly_invoices_zip/status/
+     * @secure
+     */
+    apiV1DashboardSchoolsReportsYearlyInvoicesZipYearlyInvoicesZipStatusRetrieve: (
+      schoolId: string,
+      query: {
+        /** Year to check status for invoices from January 1 to December 15. */
+        year: number;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<YearlyInvoiceZipStatusResponse, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/reports/yearly_invoices_zip/yearly_invoices_zip/status/`,
         method: 'GET',
         query: query,
         secure: true,
@@ -10325,6 +17745,127 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * No description
      *
      * @tags api
+     * @name ApiV1DashboardSchoolsScholarshipAssignmentsList
+     * @request GET:/api/v1/dashboard/schools/{school_id}/scholarship_assignments/
+     * @secure
+     */
+    apiV1DashboardSchoolsScholarshipAssignmentsList: (
+      schoolId: string,
+      query?: {
+        levels?: string[];
+        /** A page number within the paginated result set. */
+        page?: number;
+        /** Number of results to return per page. */
+        page_size?: number;
+        scholarships?: string[];
+        school_cycle?: string;
+        /** A search term. */
+        search?: string;
+        sections?: string[];
+        state?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<PaginatedStudentsScholarshipList, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/scholarship_assignments/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsScholarshipAssignmentsColumnsRetrieve
+     * @summary Retrieve available columns for custom reports
+     * @request GET:/api/v1/dashboard/schools/{school_id}/scholarship_assignments/columns/
+     * @secure
+     */
+    apiV1DashboardSchoolsScholarshipAssignmentsColumnsRetrieve: (
+      schoolId: string,
+      query?: {
+        levels?: string[];
+        scholarships?: string[];
+        school_cycle?: string;
+        sections?: string[];
+        state?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<ColumnsResponse, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/scholarship_assignments/columns/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Endpoint que lista los queryparams (y valores) disponibles para el endpoint raiz
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsScholarshipAssignmentsFiltersRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/scholarship_assignments/filters/
+     * @secure
+     */
+    apiV1DashboardSchoolsScholarshipAssignmentsFiltersRetrieve: (
+      schoolId: string,
+      query?: {
+        levels?: string[];
+        scholarships?: string[];
+        school_cycle?: string;
+        sections?: string[];
+        state?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<StudentsScholarship, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/scholarship_assignments/filters/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsScholarshipAssignmentsXlsV2Create
+     * @request POST:/api/v1/dashboard/schools/{school_id}/scholarship_assignments/xls_v2/
+     * @secure
+     */
+    apiV1DashboardSchoolsScholarshipAssignmentsXlsV2Create: (
+      schoolId: string,
+      query?: {
+        levels?: string[];
+        scholarships?: string[];
+        school_cycle?: string;
+        /** A search term. */
+        search?: string;
+        sections?: string[];
+        state?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<ExcelReport, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/scholarship_assignments/xls_v2/`,
+        method: 'POST',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Scholarships ViewSet
      * @name ApiV1DashboardSchoolsScholarshipsList
      * @request GET:/api/v1/dashboard/schools/{school_id}/scholarships/
      * @secure
@@ -10332,13 +17873,120 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     apiV1DashboardSchoolsScholarshipsList: (
       schoolId: string,
       query?: {
+        /** Filter by level UUID(str), use "null" for students without level */
+        levels?: string[];
+        /** Which field to use when ordering the results. Available choices are 'name'. */
+        ordering?: '-name' | 'name';
         /** A page number within the paginated result set. */
         page?: number;
+        /** Number of results to return per page. */
+        page_size?: number;
+        /** Filter by scholarships */
+        scholarships?: string[];
+        /** Search scholarships by name */
+        search?: string;
+        /** Filter by section UUID(str), use "null" for students without section */
+        sections?: string[];
       },
       params: RequestParams = {}
     ) =>
-      this.request<PaginatedScholarshipList, any>({
+      this.request<PaginatedScholarshipListList, any>({
         path: `/api/v1/dashboard/schools/${schoolId}/scholarships/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Retrieve a scholarship by ID
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsScholarshipsRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/scholarships/{id}/
+     * @secure
+     */
+    apiV1DashboardSchoolsScholarshipsRetrieve: (
+      id: string,
+      schoolId: string,
+      query?: {
+        /** Filter by level UUID(str), use "null" for students without level */
+        levels?: string[];
+        /** Which field to use when ordering the results. Available choices are 'name'. */
+        ordering?: '-name' | 'name';
+        /** Search scholarships by name */
+        search?: string;
+        /** Filter by section UUID(str), use "null" for students without section */
+        sections?: string[];
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<ScholarshipDetail, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/scholarships/${id}/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Validate if a scholarship can be updated or deleted
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsScholarshipsValidateRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/scholarships/{id}/validate/
+     * @secure
+     */
+    apiV1DashboardSchoolsScholarshipsValidateRetrieve: (
+      id: string,
+      schoolId: string,
+      query?: {
+        /** Filter by level UUID(str), use "null" for students without level */
+        levels?: string[];
+        /** Which field to use when ordering the results. Available choices are 'name'. */
+        ordering?: '-name' | 'name';
+        /** Search scholarships by name */
+        search?: string;
+        /** Filter by section UUID(str), use "null" for students without section */
+        sections?: string[];
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<ScholarshipValidate, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/scholarships/${id}/validate/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Endpoint que lista los queryparams (y valores) disponibles para el endpoint raiz
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsScholarshipsFiltersRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/scholarships/filters/
+     * @secure
+     */
+    apiV1DashboardSchoolsScholarshipsFiltersRetrieve: (
+      schoolId: string,
+      query?: {
+        /** Filter by level UUID(str), use "null" for students without level */
+        levels?: string[];
+        /** Which field to use when ordering the results. Available choices are 'name'. */
+        ordering?: '-name' | 'name';
+        /** Search scholarships by name */
+        search?: string;
+        /** Filter by section UUID(str), use "null" for students without section */
+        sections?: string[];
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<FilterViewScholarship, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/scholarships/filters/`,
         method: 'GET',
         query: query,
         secure: true,
@@ -10357,6 +18005,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     apiV1DashboardSchoolsSectionsList: (
       schoolId: string,
       query?: {
+        /** join_by_pipe */
+        join_by_pipe?: boolean;
         /** Multiple values may be separated by commas. */
         levels?: string[];
       },
@@ -10375,13 +18025,30 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * No description
      *
      * @tags api
+     * @name ApiV1DashboardSchoolsSectionsTokenList
+     * @request GET:/api/v1/dashboard/schools/{school_id}/sections/token/
+     * @secure
+     */
+    apiV1DashboardSchoolsSectionsTokenList: (schoolId: string, params: RequestParams = {}) =>
+      this.request<SectionFilter[], any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/sections/token/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Crea los descuentos especiales
+     *
+     * @tags api
      * @name ApiV1DashboardSchoolsSpecialDiscountsCreate
      * @request POST:/api/v1/dashboard/schools/{school_id}/special_discounts/
      * @secure
      */
     apiV1DashboardSchoolsSpecialDiscountsCreate: (
       schoolId: string,
-      data: SpecialDiscount,
+      data: CreateSpecialDiscountDashboardRequestDTO,
       params: RequestParams = {}
     ) =>
       this.request<SpecialDiscount, any>({
@@ -10446,6 +18113,30 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         path: `/api/v1/dashboard/schools/${schoolId}/special_over_charges/${id}/`,
         method: 'DELETE',
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description Validate if deleting this special overcharge would create a sponsored payment. This endpoint simulates the deletion without actually performing it, allowing the frontend to show appropriate confirmation messages.
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsSpecialOverChargesValidateDeletionCreate
+     * @request POST:/api/v1/dashboard/schools/{school_id}/special_over_charges/{id}/validate-deletion/
+     * @secure
+     */
+    apiV1DashboardSchoolsSpecialOverChargesValidateDeletionCreate: (
+      id: string,
+      schoolId: string,
+      data: ValidateSpecialOverChargeDeletion,
+      params: RequestParams = {}
+    ) =>
+      this.request<ValidateDeletionResponse, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/special_over_charges/${id}/validate-deletion/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
         ...params,
       }),
 
@@ -10540,15 +18231,19 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_types?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Filter by Concept */
@@ -10565,12 +18260,21 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         identifier?: string;
         /** Filter by active status */
         is_active?: boolean;
-        /** Filter by level UUID(str), use "null" for students without level */
+        /** Multiple values may be separated by commas. */
         levels?: string[];
+        /** Ordering */
+        ordering?: ('-first_name' | '-section' | 'first_name' | 'section')[];
         /** Filter by order UUID(str) */
         orders?: string[];
         /** A page number within the paginated result set. */
         page?: number;
+        /** Number of results to return per page. */
+        page_size?: number;
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        scholarship_school_cycle?: string;
         /** Filter by scholarships */
         scholarships?: string[];
         /**
@@ -10580,8 +18284,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         school_cycle?: string;
         /** Search by fullname or enrollment code */
         search?: string;
-        /** Filter by section UUID(str), use "null" for students without section */
+        /** Multiple values may be separated by commas. */
         sections?: string[];
+        /** Filter by state */
+        state?: ('active' | 'dropped_out' | 'graduated' | 'inactive' | 'lead' | 'new_student')[];
       },
       params: RequestParams = {}
     ) =>
@@ -10610,15 +18316,19 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_types?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Filter by Concept */
@@ -10635,10 +18345,17 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         identifier?: string;
         /** Filter by active status */
         is_active?: boolean;
-        /** Filter by level UUID(str), use "null" for students without level */
+        /** Multiple values may be separated by commas. */
         levels?: string[];
+        /** Ordering */
+        ordering?: ('-first_name' | '-section' | 'first_name' | 'section')[];
         /** Filter by order UUID(str) */
         orders?: string[];
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        scholarship_school_cycle?: string;
         /** Filter by scholarships */
         scholarships?: string[];
         /**
@@ -10648,8 +18365,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         school_cycle?: string;
         /** Search by fullname or enrollment code */
         search?: string;
-        /** Filter by section UUID(str), use "null" for students without section */
+        /** Multiple values may be separated by commas. */
         sections?: string[];
+        /** Filter by state */
+        state?: ('active' | 'dropped_out' | 'graduated' | 'inactive' | 'lead' | 'new_student')[];
       },
       params: RequestParams = {}
     ) =>
@@ -10680,15 +18399,19 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_types?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Filter by Concept */
@@ -10705,10 +18428,17 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         identifier?: string;
         /** Filter by active status */
         is_active?: boolean;
-        /** Filter by level UUID(str), use "null" for students without level */
+        /** Multiple values may be separated by commas. */
         levels?: string[];
+        /** Ordering */
+        ordering?: ('-first_name' | '-section' | 'first_name' | 'section')[];
         /** Filter by order UUID(str) */
         orders?: string[];
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        scholarship_school_cycle?: string;
         /** Filter by scholarships */
         scholarships?: string[];
         /**
@@ -10718,8 +18448,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         school_cycle?: string;
         /** Search by fullname or enrollment code */
         search?: string;
-        /** Filter by section UUID(str), use "null" for students without section */
+        /** Multiple values may be separated by commas. */
         sections?: string[];
+        /** Filter by state */
+        state?: ('active' | 'dropped_out' | 'graduated' | 'inactive' | 'lead' | 'new_student')[];
       },
       params: RequestParams = {}
     ) =>
@@ -10749,15 +18481,19 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_types?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Filter by Concept */
@@ -10774,10 +18510,17 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         identifier?: string;
         /** Filter by active status */
         is_active?: boolean;
-        /** Filter by level UUID(str), use "null" for students without level */
+        /** Multiple values may be separated by commas. */
         levels?: string[];
+        /** Ordering */
+        ordering?: ('-first_name' | '-section' | 'first_name' | 'section')[];
         /** Filter by order UUID(str) */
         orders?: string[];
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        scholarship_school_cycle?: string;
         /** Filter by scholarships */
         scholarships?: string[];
         /**
@@ -10787,8 +18530,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         school_cycle?: string;
         /** Search by fullname or enrollment code */
         search?: string;
-        /** Filter by section UUID(str), use "null" for students without section */
+        /** Multiple values may be separated by commas. */
         sections?: string[];
+        /** Filter by state */
+        state?: ('active' | 'dropped_out' | 'graduated' | 'inactive' | 'lead' | 'new_student')[];
       },
       params: RequestParams = {}
     ) =>
@@ -10820,15 +18565,19 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_types?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Filter by Concept */
@@ -10845,10 +18594,17 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         identifier?: string;
         /** Filter by active status */
         is_active?: boolean;
-        /** Filter by level UUID(str), use "null" for students without level */
+        /** Multiple values may be separated by commas. */
         levels?: string[];
+        /** Ordering */
+        ordering?: ('-first_name' | '-section' | 'first_name' | 'section')[];
         /** Filter by order UUID(str) */
         orders?: string[];
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        scholarship_school_cycle?: string;
         /** Filter by scholarships */
         scholarships?: string[];
         /**
@@ -10858,43 +18614,16 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         school_cycle?: string;
         /** Search by fullname or enrollment code */
         search?: string;
-        /** Filter by section UUID(str), use "null" for students without section */
+        /** Multiple values may be separated by commas. */
         sections?: string[];
+        /** Filter by state */
+        state?: ('active' | 'dropped_out' | 'graduated' | 'inactive' | 'lead' | 'new_student')[];
       },
       params: RequestParams = {}
     ) =>
       this.request<DashboardStudent, any>({
         path: `/api/v1/dashboard/schools/${schoolId}/students/${id}/`,
         method: 'PATCH',
-        query: query,
-        body: data,
-        secure: true,
-        type: ContentType.Json,
-        format: 'json',
-        ...params,
-      }),
-
-    /**
-     * @description Edit a section for a specific student by their ID.
-     *
-     * @tags Students
-     * @name ApiV1DashboardSchoolsStudentsEditSectionUpdate
-     * @request PUT:/api/v1/dashboard/schools/{school_id}/students/{id}/edit-section/
-     * @secure
-     */
-    apiV1DashboardSchoolsStudentsEditSectionUpdate: (
-      id: string,
-      schoolId: string,
-      data: SectionUpdate,
-      query?: {
-        /** ID de la sección a editar */
-        section_id?: string;
-      },
-      params: RequestParams = {}
-    ) =>
-      this.request<PaginatedSectionUpdateList, void>({
-        path: `/api/v1/dashboard/schools/${schoolId}/students/${id}/edit-section/`,
-        method: 'PUT',
         query: query,
         body: data,
         secure: true,
@@ -10935,15 +18664,19 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_types?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Filter by Concept */
@@ -10960,14 +18693,21 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         identifier?: string;
         /** Filter by active status */
         is_active?: boolean;
-        /** Filter by level UUID(str), use "null" for students without level */
+        /** Multiple values may be separated by commas. */
         levels?: string[];
+        /** Ordering */
+        ordering?: ('-first_name' | '-section' | 'first_name' | 'section')[];
         /** Filter by order UUID(str) */
         orders?: string[];
         /** A page number within the paginated result set. */
         page?: number;
         /** Number of results to return per page. */
         page_size?: number;
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        scholarship_school_cycle?: string;
         /** Filter by scholarships */
         scholarships?: string[];
         /**
@@ -10977,13 +18717,398 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         school_cycle?: string;
         /** Search by fullname or enrollment code */
         search?: string;
-        /** Filter by section UUID(str), use "null" for students without section */
+        /** Multiple values may be separated by commas. */
         sections?: string[];
+        /** Filter by state */
+        state?: ('active' | 'dropped_out' | 'graduated' | 'inactive' | 'lead' | 'new_student')[];
       },
       params: RequestParams = {}
     ) =>
       this.request<PaginatedDashboardStudentDelinquencyList, any>({
         path: `/api/v1/dashboard/schools/${schoolId}/students/delinquency/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags School FulfillmentDelinquency ViewSet
+     * @name ApiV1DashboardSchoolsStudentsDelinquencySummaryList
+     * @request GET:/api/v1/dashboard/schools/{school_id}/students/delinquency-summary/
+     * @secure
+     */
+    apiV1DashboardSchoolsStudentsDelinquencySummaryList: (
+      schoolId: string,
+      query?: {
+        /** Filter by concept type */
+        concept_types?: (
+          | 'BOOKS_AND_MATERIALS'
+          | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
+          | 'EXAMS_AND_CERTIFICATES'
+          | 'EXTRACURRICULAR'
+          | 'INSCRIPTION'
+          | 'INSURANCE'
+          | 'MONTHLY_FEE'
+          | 'OTHER'
+          | 'PRE_DEBT'
+          | 'REINSCRIPTION'
+          | 'SPORTS'
+          | 'TRANSPORT'
+          | 'TRIPS'
+          | 'UNIFORMS_AND_MERCH'
+        )[];
+        /** Filter by Concept */
+        concepts?: string[];
+        /** Filter by only due_orders of MONTHLY_FEE concept type */
+        due_monthly_concepts?: ('high' | 'low' | 'mid' | 'zero')[];
+        /** Filter by due_orders value */
+        due_orders?: ('high' | 'low' | 'mid' | 'zero')[];
+        /** Filter by fulfillment status */
+        fulfillment_statuses?: ('NOT_PAID' | 'PAID' | 'PARTIAL_PAID' | 'WAITING_PAID')[];
+        /** Filter by guardian UUID(str) */
+        guardian?: string[];
+        /** Search by identifier */
+        identifier?: string;
+        /** Filter by active status */
+        is_active?: boolean;
+        /** Multiple values may be separated by commas. */
+        levels?: string[];
+        /** Ordering */
+        ordering?: ('-first_name' | '-section' | 'first_name' | 'section')[];
+        /** Filter by order UUID(str) */
+        orders?: string[];
+        /** A page number within the paginated result set. */
+        page?: number;
+        /** Number of results to return per page. */
+        page_size?: number;
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        scholarship_school_cycle?: string;
+        /** Filter by scholarships */
+        scholarships?: string[];
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        school_cycle?: string;
+        /** Search by fullname or enrollment code */
+        search?: string;
+        /** Multiple values may be separated by commas. */
+        sections?: string[];
+        /** Filter by state */
+        state?: ('active' | 'dropped_out' | 'graduated' | 'inactive' | 'lead' | 'new_student')[];
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<PaginatedDashboardStudentDelinquencySummaryList, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/students/delinquency-summary/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsStudentsDelinquencySummaryRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/students/delinquency-summary/{id}/
+     * @secure
+     */
+    apiV1DashboardSchoolsStudentsDelinquencySummaryRetrieve: (
+      id: string,
+      schoolId: string,
+      params: RequestParams = {}
+    ) =>
+      this.request<DashboardStudentDelinquencyDetailSummary, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/students/delinquency-summary/${id}/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsStudentsDelinquencySummaryColumnsRetrieve
+     * @summary Retrieve available columns for custom reports
+     * @request GET:/api/v1/dashboard/schools/{school_id}/students/delinquency-summary/columns/
+     * @secure
+     */
+    apiV1DashboardSchoolsStudentsDelinquencySummaryColumnsRetrieve: (schoolId: string, params: RequestParams = {}) =>
+      this.request<ColumnsResponse, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/students/delinquency-summary/columns/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsStudentsDelinquencySummaryFiltersRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/students/delinquency-summary/filters/
+     * @secure
+     */
+    apiV1DashboardSchoolsStudentsDelinquencySummaryFiltersRetrieve: (schoolId: string, params: RequestParams = {}) =>
+      this.request<FilterViewDelinquentStudents, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/students/delinquency-summary/filters/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsStudentsDelinquencySummaryPdfRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/students/delinquency-summary/pdf/
+     * @secure
+     */
+    apiV1DashboardSchoolsStudentsDelinquencySummaryPdfRetrieve: (
+      schoolId: string,
+      query?: {
+        /** Filter by concept type */
+        concept_types?: (
+          | 'BOOKS_AND_MATERIALS'
+          | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
+          | 'EXAMS_AND_CERTIFICATES'
+          | 'EXTRACURRICULAR'
+          | 'INSCRIPTION'
+          | 'INSURANCE'
+          | 'MONTHLY_FEE'
+          | 'OTHER'
+          | 'PRE_DEBT'
+          | 'REINSCRIPTION'
+          | 'SPORTS'
+          | 'TRANSPORT'
+          | 'TRIPS'
+          | 'UNIFORMS_AND_MERCH'
+        )[];
+        /** Filter by Concept */
+        concepts?: string[];
+        /** Filter by only due_orders of MONTHLY_FEE concept type */
+        due_monthly_concepts?: ('high' | 'low' | 'mid' | 'zero')[];
+        /** Filter by due_orders value */
+        due_orders?: ('high' | 'low' | 'mid' | 'zero')[];
+        /** Filter by fulfillment status */
+        fulfillment_statuses?: ('NOT_PAID' | 'PAID' | 'PARTIAL_PAID' | 'WAITING_PAID')[];
+        /** Filter by guardian UUID(str) */
+        guardian?: string[];
+        /** Search by identifier */
+        identifier?: string;
+        /** Filter by active status */
+        is_active?: boolean;
+        /** Multiple values may be separated by commas. */
+        levels?: string[];
+        /** Ordering */
+        ordering?: ('-first_name' | '-section' | 'first_name' | 'section')[];
+        /** Filter by order UUID(str) */
+        orders?: string[];
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        scholarship_school_cycle?: string;
+        /** Filter by scholarships */
+        scholarships?: string[];
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        school_cycle?: string;
+        /** Search by fullname or enrollment code */
+        search?: string;
+        /** Multiple values may be separated by commas. */
+        sections?: string[];
+        /** Filter by state */
+        state?: ('active' | 'dropped_out' | 'graduated' | 'inactive' | 'lead' | 'new_student')[];
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<ZipReport, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/students/delinquency-summary/pdf/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags School Fulfillment Delinquency Report
+     * @name ApiV1DashboardSchoolsStudentsDelinquencySummaryXlsV2Create
+     * @request POST:/api/v1/dashboard/schools/{school_id}/students/delinquency-summary/xls_v2/
+     * @secure
+     */
+    apiV1DashboardSchoolsStudentsDelinquencySummaryXlsV2Create: (
+      schoolId: string,
+      data: FulfillmentXLSReportParameters,
+      query?: {
+        /** Filter by concept type */
+        concept_types?: (
+          | 'BOOKS_AND_MATERIALS'
+          | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
+          | 'EXAMS_AND_CERTIFICATES'
+          | 'EXTRACURRICULAR'
+          | 'INSCRIPTION'
+          | 'INSURANCE'
+          | 'MONTHLY_FEE'
+          | 'OTHER'
+          | 'PRE_DEBT'
+          | 'REINSCRIPTION'
+          | 'SPORTS'
+          | 'TRANSPORT'
+          | 'TRIPS'
+          | 'UNIFORMS_AND_MERCH'
+        )[];
+        /** Filter by Concept */
+        concepts?: string[];
+        /** Filter by only due_orders of MONTHLY_FEE concept type */
+        due_monthly_concepts?: ('high' | 'low' | 'mid' | 'zero')[];
+        /** Filter by due_orders value */
+        due_orders?: ('high' | 'low' | 'mid' | 'zero')[];
+        /** Filter by fulfillment status */
+        fulfillment_statuses?: ('NOT_PAID' | 'PAID' | 'PARTIAL_PAID' | 'WAITING_PAID')[];
+        /** Filter by guardian UUID(str) */
+        guardian?: string[];
+        /** Search by identifier */
+        identifier?: string;
+        /** Filter by active status */
+        is_active?: boolean;
+        /** Multiple values may be separated by commas. */
+        levels?: string[];
+        /** Ordering */
+        ordering?: ('-first_name' | '-section' | 'first_name' | 'section')[];
+        /** Filter by order UUID(str) */
+        orders?: string[];
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        scholarship_school_cycle?: string;
+        /** Filter by scholarships */
+        scholarships?: string[];
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        school_cycle?: string;
+        /** Search by fullname or enrollment code */
+        search?: string;
+        /** Multiple values may be separated by commas. */
+        sections?: string[];
+        /** Filter by state */
+        state?: ('active' | 'dropped_out' | 'graduated' | 'inactive' | 'lead' | 'new_student')[];
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<ExcelReport, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/students/delinquency-summary/xls_v2/`,
+        method: 'POST',
+        query: query,
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsStudentsDelinquencySummaryXmlRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/students/delinquency-summary/xml/
+     * @secure
+     */
+    apiV1DashboardSchoolsStudentsDelinquencySummaryXmlRetrieve: (
+      schoolId: string,
+      query?: {
+        /** Filter by concept type */
+        concept_types?: (
+          | 'BOOKS_AND_MATERIALS'
+          | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
+          | 'EXAMS_AND_CERTIFICATES'
+          | 'EXTRACURRICULAR'
+          | 'INSCRIPTION'
+          | 'INSURANCE'
+          | 'MONTHLY_FEE'
+          | 'OTHER'
+          | 'PRE_DEBT'
+          | 'REINSCRIPTION'
+          | 'SPORTS'
+          | 'TRANSPORT'
+          | 'TRIPS'
+          | 'UNIFORMS_AND_MERCH'
+        )[];
+        /** Filter by Concept */
+        concepts?: string[];
+        /** Filter by only due_orders of MONTHLY_FEE concept type */
+        due_monthly_concepts?: ('high' | 'low' | 'mid' | 'zero')[];
+        /** Filter by due_orders value */
+        due_orders?: ('high' | 'low' | 'mid' | 'zero')[];
+        /** Filter by fulfillment status */
+        fulfillment_statuses?: ('NOT_PAID' | 'PAID' | 'PARTIAL_PAID' | 'WAITING_PAID')[];
+        /** Filter by guardian UUID(str) */
+        guardian?: string[];
+        /** Search by identifier */
+        identifier?: string;
+        /** Filter by active status */
+        is_active?: boolean;
+        /** Multiple values may be separated by commas. */
+        levels?: string[];
+        /** Ordering */
+        ordering?: ('-first_name' | '-section' | 'first_name' | 'section')[];
+        /** Filter by order UUID(str) */
+        orders?: string[];
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        scholarship_school_cycle?: string;
+        /** Filter by scholarships */
+        scholarships?: string[];
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        school_cycle?: string;
+        /** Search by fullname or enrollment code */
+        search?: string;
+        /** Multiple values may be separated by commas. */
+        sections?: string[];
+        /** Filter by state */
+        state?: ('active' | 'dropped_out' | 'graduated' | 'inactive' | 'lead' | 'new_student')[];
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<ZipReport, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/students/delinquency-summary/xml/`,
         method: 'GET',
         query: query,
         secure: true,
@@ -11009,7 +19134,25 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
 
     /**
-     * @description Endpoint que lista los queryparams (y valores) disponibles para el endpoint raiz
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsStudentsDelinquencyColumnsRetrieve
+     * @summary Retrieve available columns for custom reports
+     * @request GET:/api/v1/dashboard/schools/{school_id}/students/delinquency/columns/
+     * @secure
+     */
+    apiV1DashboardSchoolsStudentsDelinquencyColumnsRetrieve: (schoolId: string, params: RequestParams = {}) =>
+      this.request<ColumnsResponse, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/students/delinquency/columns/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
      *
      * @tags api
      * @name ApiV1DashboardSchoolsStudentsDelinquencyFiltersRetrieve
@@ -11040,15 +19183,19 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_types?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Filter by Concept */
@@ -11065,10 +19212,17 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         identifier?: string;
         /** Filter by active status */
         is_active?: boolean;
-        /** Filter by level UUID(str), use "null" for students without level */
+        /** Multiple values may be separated by commas. */
         levels?: string[];
+        /** Ordering */
+        ordering?: ('-first_name' | '-section' | 'first_name' | 'section')[];
         /** Filter by order UUID(str) */
         orders?: string[];
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        scholarship_school_cycle?: string;
         /** Filter by scholarships */
         scholarships?: string[];
         /**
@@ -11078,8 +19232,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         school_cycle?: string;
         /** Search by fullname or enrollment code */
         search?: string;
-        /** Filter by section UUID(str), use "null" for students without section */
+        /** Multiple values may be separated by commas. */
         sections?: string[];
+        /** Filter by state */
+        state?: ('active' | 'dropped_out' | 'graduated' | 'inactive' | 'lead' | 'new_student')[];
       },
       params: RequestParams = {}
     ) =>
@@ -11095,27 +19251,32 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @tags api
-     * @name ApiV1DashboardSchoolsStudentsDelinquencyXlsCreate
-     * @request POST:/api/v1/dashboard/schools/{school_id}/students/delinquency/xls/
+     * @tags School Fulfillment Delinquency Report
+     * @name ApiV1DashboardSchoolsStudentsDelinquencyXlsV2Create
+     * @request POST:/api/v1/dashboard/schools/{school_id}/students/delinquency/xls_v2/
      * @secure
      */
-    apiV1DashboardSchoolsStudentsDelinquencyXlsCreate: (
+    apiV1DashboardSchoolsStudentsDelinquencyXlsV2Create: (
       schoolId: string,
+      data: FulfillmentXLSReportParameters,
       query?: {
         /** Filter by concept type */
         concept_types?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Filter by Concept */
@@ -11132,10 +19293,17 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         identifier?: string;
         /** Filter by active status */
         is_active?: boolean;
-        /** Filter by level UUID(str), use "null" for students without level */
+        /** Multiple values may be separated by commas. */
         levels?: string[];
+        /** Ordering */
+        ordering?: ('-first_name' | '-section' | 'first_name' | 'section')[];
         /** Filter by order UUID(str) */
         orders?: string[];
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        scholarship_school_cycle?: string;
         /** Filter by scholarships */
         scholarships?: string[];
         /**
@@ -11145,16 +19313,20 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         school_cycle?: string;
         /** Search by fullname or enrollment code */
         search?: string;
-        /** Filter by section UUID(str), use "null" for students without section */
+        /** Multiple values may be separated by commas. */
         sections?: string[];
+        /** Filter by state */
+        state?: ('active' | 'dropped_out' | 'graduated' | 'inactive' | 'lead' | 'new_student')[];
       },
       params: RequestParams = {}
     ) =>
       this.request<ExcelReport, any>({
-        path: `/api/v1/dashboard/schools/${schoolId}/students/delinquency/xls/`,
+        path: `/api/v1/dashboard/schools/${schoolId}/students/delinquency/xls_v2/`,
         method: 'POST',
         query: query,
+        body: data,
         secure: true,
+        type: ContentType.Json,
         format: 'json',
         ...params,
       }),
@@ -11174,15 +19346,19 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_types?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Filter by Concept */
@@ -11199,10 +19375,17 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         identifier?: string;
         /** Filter by active status */
         is_active?: boolean;
-        /** Filter by level UUID(str), use "null" for students without level */
+        /** Multiple values may be separated by commas. */
         levels?: string[];
+        /** Ordering */
+        ordering?: ('-first_name' | '-section' | 'first_name' | 'section')[];
         /** Filter by order UUID(str) */
         orders?: string[];
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        scholarship_school_cycle?: string;
         /** Filter by scholarships */
         scholarships?: string[];
         /**
@@ -11212,8 +19395,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         school_cycle?: string;
         /** Search by fullname or enrollment code */
         search?: string;
-        /** Filter by section UUID(str), use "null" for students without section */
+        /** Multiple values may be separated by commas. */
         sections?: string[];
+        /** Filter by state */
+        state?: ('active' | 'dropped_out' | 'graduated' | 'inactive' | 'lead' | 'new_student')[];
       },
       params: RequestParams = {}
     ) =>
@@ -11242,15 +19427,19 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_types?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Filter by Concept */
@@ -11268,9 +19457,9 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         /** Search by identifier */
         identifier?: string;
         /** Filter by student inscription status */
-        inscription_status?: ('Inscrito' | 'NOT_AVAILABLE' | 'No inscrito' | 'Pendiente' | 'Reinscrito')[];
+        inscription_status?: ('Inscrito' | 'No inscrito' | 'Pendiente' | 'Reinscrito')[];
         is_active?: boolean;
-        /** Filter by level UUID(str), use "null" for students without level */
+        /** Multiple values may be separated by commas. */
         levels?: string[];
         /** Ordering */
         ordering?: (
@@ -11289,13 +19478,20 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         )[];
         /** Filter by order UUID(str) */
         orders?: string[];
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        scholarship_school_cycle?: string;
         /** Filter by scholarships */
         scholarships?: string[];
         school_cycle?: string;
         /** Search by fullname or enrollment code */
         search?: string;
-        /** Filter by section UUID(str), use "null" for students without section */
+        /** Multiple values may be separated by commas. */
         sections?: string[];
+        /** Filter by state */
+        state?: ('active' | 'dropped_out' | 'graduated' | 'inactive' | 'lead' | 'new_student')[];
       },
       params: RequestParams = {}
     ) =>
@@ -11311,6 +19507,86 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
 
     /**
+     * @description Endpoint que lista los queryparams (y valores) disponibles para el endpoint raiz
+     *
+     * @tags Students
+     * @name ApiV1DashboardSchoolsStudentsFiltersRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/students/filters/
+     * @secure
+     */
+    apiV1DashboardSchoolsStudentsFiltersRetrieve: (
+      schoolId: string,
+      query?: {
+        /** Filter by concept type */
+        concept_types?: (
+          | 'BOOKS_AND_MATERIALS'
+          | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
+          | 'EXAMS_AND_CERTIFICATES'
+          | 'EXTRACURRICULAR'
+          | 'INSCRIPTION'
+          | 'INSURANCE'
+          | 'MONTHLY_FEE'
+          | 'OTHER'
+          | 'PRE_DEBT'
+          | 'REINSCRIPTION'
+          | 'SPORTS'
+          | 'TRANSPORT'
+          | 'TRIPS'
+          | 'UNIFORMS_AND_MERCH'
+        )[];
+        /** Filter by Concept */
+        concepts?: string[];
+        /** Filter by only due_orders of MONTHLY_FEE concept type */
+        due_monthly_concepts?: ('high' | 'low' | 'mid' | 'zero')[];
+        /** Filter by due_orders value */
+        due_orders?: ('high' | 'low' | 'mid' | 'zero')[];
+        /** Filter by fulfillment status */
+        fulfillment_statuses?: ('NOT_PAID' | 'PAID' | 'PARTIAL_PAID' | 'WAITING_PAID')[];
+        /** Filter by guardian UUID(str) */
+        guardian?: string[];
+        /** Search by identifier */
+        identifier?: string;
+        /** Filter by active status */
+        is_active?: boolean;
+        /** Multiple values may be separated by commas. */
+        levels?: string[];
+        /** Ordering */
+        ordering?: ('-first_name' | '-section' | 'first_name' | 'section')[];
+        /** Filter by order UUID(str) */
+        orders?: string[];
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        scholarship_school_cycle?: string;
+        /** Filter by scholarships */
+        scholarships?: string[];
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        school_cycle?: string;
+        /** Search by fullname or enrollment code */
+        search?: string;
+        /** Multiple values may be separated by commas. */
+        sections?: string[];
+        /** Filter by state */
+        state?: ('active' | 'dropped_out' | 'graduated' | 'inactive' | 'lead' | 'new_student')[];
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<DashboardStudentSearch, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/students/filters/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
      * No description
      *
      * @tags api
@@ -11318,11 +19594,20 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @request GET:/api/v1/dashboard/schools/{school_id}/students/inscriptions/summary/
      * @secure
      */
-    apiV1DashboardSchoolsStudentsInscriptionsSummaryRetrieve: (schoolId: string, params: RequestParams = {}) =>
-      this.request<void, any>({
+    apiV1DashboardSchoolsStudentsInscriptionsSummaryRetrieve: (
+      schoolId: string,
+      query: {
+        /** @format uuid */
+        school_cycle_id: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<StudentInscriptionsSummary, any>({
         path: `/api/v1/dashboard/schools/${schoolId}/students/inscriptions/summary/`,
         method: 'GET',
+        query: query,
         secure: true,
+        format: 'json',
         ...params,
       }),
 
@@ -11341,15 +19626,19 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_types?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Filter by Concept */
@@ -11366,10 +19655,17 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         identifier?: string;
         /** Filter by active status */
         is_active?: boolean;
-        /** Filter by level UUID(str), use "null" for students without level */
+        /** Multiple values may be separated by commas. */
         levels?: string[];
+        /** Ordering */
+        ordering?: ('-first_name' | '-section' | 'first_name' | 'section')[];
         /** Filter by order UUID(str) */
         orders?: string[];
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        scholarship_school_cycle?: string;
         /** Filter by scholarships */
         scholarships?: string[];
         /**
@@ -11379,8 +19675,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         school_cycle?: string;
         /** Search by fullname or enrollment code */
         search?: string;
-        /** Filter by section UUID(str), use "null" for students without section */
+        /** Multiple values may be separated by commas. */
         sections?: string[];
+        /** Filter by state */
+        state?: ('active' | 'dropped_out' | 'graduated' | 'inactive' | 'lead' | 'new_student')[];
       },
       params: RequestParams = {}
     ) =>
@@ -11397,26 +19695,30 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @description Retrieve a resume by school.
      *
      * @tags Students
-     * @name ApiV1DashboardSchoolsStudentsResumeBySchoolRetrieve
-     * @request GET:/api/v1/dashboard/schools/{school_id}/students/resume_by_school/
+     * @name ApiV1DashboardSchoolsStudentsResumeBySchoolV2Retrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/students/resume_by_school_v2/
      * @secure
      */
-    apiV1DashboardSchoolsStudentsResumeBySchoolRetrieve: (
+    apiV1DashboardSchoolsStudentsResumeBySchoolV2Retrieve: (
       schoolId: string,
       query?: {
         /** Filter by concept type */
         concept_types?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Filter by Concept */
@@ -11433,10 +19735,17 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         identifier?: string;
         /** Filter by active status */
         is_active?: boolean;
-        /** Filter by level UUID(str), use "null" for students without level */
+        /** Multiple values may be separated by commas. */
         levels?: string[];
+        /** Ordering */
+        ordering?: ('-first_name' | '-section' | 'first_name' | 'section')[];
         /** Filter by order UUID(str) */
         orders?: string[];
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        scholarship_school_cycle?: string;
         /** Filter by scholarships */
         scholarships?: string[];
         /**
@@ -11446,13 +19755,15 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         school_cycle?: string;
         /** Search by fullname or enrollment code */
         search?: string;
-        /** Filter by section UUID(str), use "null" for students without section */
+        /** Multiple values may be separated by commas. */
         sections?: string[];
+        /** Filter by state */
+        state?: ('active' | 'dropped_out' | 'graduated' | 'inactive' | 'lead' | 'new_student')[];
       },
       params: RequestParams = {}
     ) =>
-      this.request<DashboardStudentResume, any>({
-        path: `/api/v1/dashboard/schools/${schoolId}/students/resume_by_school/`,
+      this.request<DashboardStudentResumeSerializerV2, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/students/resume_by_school_v2/`,
         method: 'GET',
         query: query,
         secure: true,
@@ -11475,15 +19786,19 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_types?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Filter by Concept */
@@ -11500,10 +19815,17 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         identifier?: string;
         /** Filter by active status */
         is_active?: boolean;
-        /** Filter by level UUID(str), use "null" for students without level */
+        /** Multiple values may be separated by commas. */
         levels?: string[];
+        /** Ordering */
+        ordering?: ('-first_name' | '-section' | 'first_name' | 'section')[];
         /** Filter by order UUID(str) */
         orders?: string[];
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        scholarship_school_cycle?: string;
         /** Filter by scholarships */
         scholarships?: string[];
         /**
@@ -11513,8 +19835,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         school_cycle?: string;
         /** Search by fullname or enrollment code */
         search?: string;
-        /** Filter by section UUID(str), use "null" for students without section */
+        /** Multiple values may be separated by commas. */
         sections?: string[];
+        /** Filter by state */
+        state?: ('active' | 'dropped_out' | 'graduated' | 'inactive' | 'lead' | 'new_student')[];
       },
       params: RequestParams = {}
     ) =>
@@ -11542,15 +19866,19 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_types?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Filter by Concept */
@@ -11567,10 +19895,17 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         identifier?: string;
         /** Filter by active status */
         is_active?: boolean;
-        /** Filter by level UUID(str), use "null" for students without level */
+        /** Multiple values may be separated by commas. */
         levels?: string[];
+        /** Ordering */
+        ordering?: ('-first_name' | '-section' | 'first_name' | 'section')[];
         /** Filter by order UUID(str) */
         orders?: string[];
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        scholarship_school_cycle?: string;
         /** Filter by scholarships */
         scholarships?: string[];
         /**
@@ -11580,8 +19915,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         school_cycle?: string;
         /** Search by fullname or enrollment code */
         search?: string;
-        /** Filter by section UUID(str), use "null" for students without section */
+        /** Multiple values may be separated by commas. */
         sections?: string[];
+        /** Filter by state */
+        state?: ('active' | 'dropped_out' | 'graduated' | 'inactive' | 'lead' | 'new_student')[];
       },
       params: RequestParams = {}
     ) =>
@@ -11618,6 +19955,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         page?: number;
         /** Filter by scholarships */
         scholarships?: string[];
+        /** Filter by school cycle UUID(str) */
+        school_cycle?: string;
         /** Search by fullname or enrollment code */
         search?: string;
       },
@@ -11650,6 +19989,512 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         method: 'GET',
         secure: true,
         format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Dashboard - Users
+     * @name ApiV1DashboardSchoolsUsersList
+     * @request GET:/api/v1/dashboard/schools/{school_id}/users/
+     * @secure
+     */
+    apiV1DashboardSchoolsUsersList: (
+      schoolId: string,
+      query?: {
+        ignore_company_members?: boolean;
+        membership?: string[];
+        /** @minLength 1 */
+        search?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<UserDTO[], any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/users/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Dashboard - Users
+     * @name ApiV1DashboardSchoolsUsersCreate
+     * @request POST:/api/v1/dashboard/schools/{school_id}/users/
+     * @secure
+     */
+    apiV1DashboardSchoolsUsersCreate: (schoolId: string, data: CreateUpdateUserDTO, params: RequestParams = {}) =>
+      this.request<UserDTO, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/users/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Dashboard - Users
+     * @name ApiV1DashboardSchoolsUsersRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/users/{id}/
+     * @secure
+     */
+    apiV1DashboardSchoolsUsersRetrieve: (id: string, schoolId: string, params: RequestParams = {}) =>
+      this.request<UserDTO, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/users/${id}/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Dashboard - Users
+     * @name ApiV1DashboardSchoolsUsersUpdate
+     * @request PUT:/api/v1/dashboard/schools/{school_id}/users/{id}/
+     * @secure
+     */
+    apiV1DashboardSchoolsUsersUpdate: (
+      id: string,
+      schoolId: string,
+      data: CreateUpdateUserDTO,
+      params: RequestParams = {}
+    ) =>
+      this.request<UserDTO, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/users/${id}/`,
+        method: 'PUT',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Dashboard - Users
+     * @name ApiV1DashboardSchoolsUsersDestroy
+     * @request DELETE:/api/v1/dashboard/schools/{school_id}/users/{id}/
+     * @secure
+     */
+    apiV1DashboardSchoolsUsersDestroy: (id: string, schoolId: string, params: RequestParams = {}) =>
+      this.request<UserDTO, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/users/${id}/`,
+        method: 'DELETE',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Dashboard - Users
+     * @name ApiV1DashboardSchoolsUsersPermissionsPartialUpdate
+     * @request PATCH:/api/v1/dashboard/schools/{school_id}/users/{id}/permissions/
+     * @secure
+     */
+    apiV1DashboardSchoolsUsersPermissionsPartialUpdate: (
+      id: string,
+      schoolId: string,
+      data: PatchedPatchMembershipPermissionsRequestDTO,
+      params: RequestParams = {}
+    ) =>
+      this.request<MembershipPermissionsResponseDTO, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/users/${id}/permissions/`,
+        method: 'PATCH',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Dashboard - Users
+     * @name ApiV1DashboardSchoolsUsersPermissionsAllRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/users/{id}/permissions/all/
+     * @secure
+     */
+    apiV1DashboardSchoolsUsersPermissionsAllRetrieve: (id: string, schoolId: string, params: RequestParams = {}) =>
+      this.request<MembershipPermissionsResponseDTO, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/users/${id}/permissions/all/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Dashboard - Users
+     * @name ApiV1DashboardSchoolsUsersByEmailRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/users/by-email/
+     * @secure
+     */
+    apiV1DashboardSchoolsUsersByEmailRetrieve: (
+      schoolId: string,
+      query: {
+        email: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<UserDTO, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/users/by-email/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Dashboard - Users
+     * @name ApiV1DashboardSchoolsUsersByMembershipRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/users/by-membership/
+     * @secure
+     */
+    apiV1DashboardSchoolsUsersByMembershipRetrieve: (
+      schoolId: string,
+      query: {
+        membership_id: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<UserDTO, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/users/by-membership/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Dashboard - Users
+     * @name ApiV1DashboardSchoolsUsersFiltersRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_id}/users/filters/
+     * @secure
+     */
+    apiV1DashboardSchoolsUsersFiltersRetrieve: (schoolId: string, params: RequestParams = {}) =>
+      this.request<UserListFiltersDTO, any>({
+        path: `/api/v1/dashboard/schools/${schoolId}/users/filters/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description List all adjustment rules for a school
+     *
+     * @tags Adjustment Rules
+     * @name AdjustmentRulesList
+     * @request GET:/api/v1/dashboard/schools/{school_pk}/adjustment-rules/
+     * @secure
+     */
+    adjustmentRulesList: (
+      schoolPk: string,
+      query?: {
+        /** A page number within the paginated result set. */
+        page?: number;
+        /** Number of results to return per page. */
+        page_size?: number;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<PaginatedAdjustmentRuleList, any>({
+        path: `/api/v1/dashboard/schools/${schoolPk}/adjustment-rules/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Create a new adjustment rule
+     *
+     * @tags Adjustment Rules
+     * @name AdjustmentRulesCreate
+     * @request POST:/api/v1/dashboard/schools/{school_pk}/adjustment-rules/
+     * @secure
+     */
+    adjustmentRulesCreate: (schoolPk: string, data: AdjustmentRule, params: RequestParams = {}) =>
+      this.request<AdjustmentRule, any>({
+        path: `/api/v1/dashboard/schools/${schoolPk}/adjustment-rules/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Get details of a specific adjustment rule
+     *
+     * @tags Adjustment Rules
+     * @name AdjustmentRulesRetrieve
+     * @request GET:/api/v1/dashboard/schools/{school_pk}/adjustment-rules/{id}/
+     * @secure
+     */
+    adjustmentRulesRetrieve: (id: string, schoolPk: string, params: RequestParams = {}) =>
+      this.request<AdjustmentRule, any>({
+        path: `/api/v1/dashboard/schools/${schoolPk}/adjustment-rules/${id}/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Update an adjustment rule
+     *
+     * @tags Adjustment Rules
+     * @name AdjustmentRulesUpdate
+     * @request PUT:/api/v1/dashboard/schools/{school_pk}/adjustment-rules/{id}/
+     * @secure
+     */
+    adjustmentRulesUpdate: (id: string, schoolPk: string, data: AdjustmentRule, params: RequestParams = {}) =>
+      this.request<AdjustmentRule, any>({
+        path: `/api/v1/dashboard/schools/${schoolPk}/adjustment-rules/${id}/`,
+        method: 'PUT',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Partially update an adjustment rule
+     *
+     * @tags Adjustment Rules
+     * @name AdjustmentRulesPartialUpdate
+     * @request PATCH:/api/v1/dashboard/schools/{school_pk}/adjustment-rules/{id}/
+     * @secure
+     */
+    adjustmentRulesPartialUpdate: (
+      id: string,
+      schoolPk: string,
+      data: PatchedAdjustmentRule,
+      params: RequestParams = {}
+    ) =>
+      this.request<AdjustmentRule, any>({
+        path: `/api/v1/dashboard/schools/${schoolPk}/adjustment-rules/${id}/`,
+        method: 'PATCH',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Soft delete an adjustment rule (sets is_active=False)
+     *
+     * @tags Adjustment Rules
+     * @name AdjustmentRulesDestroy
+     * @request DELETE:/api/v1/dashboard/schools/{school_pk}/adjustment-rules/{id}/
+     * @secure
+     */
+    adjustmentRulesDestroy: (id: string, schoolPk: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/dashboard/schools/${schoolPk}/adjustment-rules/${id}/`,
+        method: 'DELETE',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description Create all adjustment rules at once (used in onboarding and reconfiguration)
+     *
+     * @tags Adjustment Rules
+     * @name AdjustmentRulesBulkCreate
+     * @request POST:/api/v1/dashboard/schools/{school_pk}/adjustment-rules/bulk-create/
+     * @secure
+     */
+    adjustmentRulesBulkCreate: (
+      schoolPk: string,
+      data: {
+        /** True for independent mode (all on base), False for sequential mode (cascading) */
+        apply_independently: boolean;
+        rules: {
+          rule_type?: 'scholarship' | 'early_bird' | 'interest' | 'special_discount' | 'special_overcharge';
+          order?: number;
+          is_active?: boolean;
+          config?: object;
+        }[];
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<
+        {
+          message?: string;
+          rules_created?: number;
+          apply_discounts_independently?: boolean;
+          recalculation_triggered?: boolean;
+          created?: AdjustmentRule[];
+        },
+        any
+      >({
+        path: `/api/v1/dashboard/schools/${schoolPk}/adjustment-rules/bulk-create/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Get configuration change history from custom AdjustmentRuleConfigurationHistory table. Each record represents one bulk_create operation with complete snapshot.
+     *
+     * @tags Adjustment Rules
+     * @name AdjustmentRulesConfigurationHistory
+     * @request GET:/api/v1/dashboard/schools/{school_pk}/adjustment-rules/configuration-history/
+     * @secure
+     */
+    adjustmentRulesConfigurationHistory: (
+      schoolPk: string,
+      query?: {
+        /** A page number within the paginated result set. */
+        page?: number;
+        /** Number of results to return per page. */
+        page_size?: number;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<PaginatedConfigurationHistoryList, any>({
+        path: `/api/v1/dashboard/schools/${schoolPk}/adjustment-rules/configuration-history/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Simulate adjustment calculations without side effects (for real-time preview). Adjustments can use either percentage (e.g., "10.5") or fixed amount (e.g., "1000.00"), but not both.
+     *
+     * @tags Adjustment Rules
+     * @name AdjustmentRulesSimulate
+     * @request POST:/api/v1/dashboard/schools/{school_pk}/adjustment-rules/simulate/
+     * @secure
+     */
+    adjustmentRulesSimulate: (schoolPk: string, data: Simulate, params: RequestParams = {}) =>
+      this.request<
+        {
+          base_amount?: string;
+          mode?: string;
+          steps?: {
+            name?: string;
+            base?: string;
+            percentage?: string;
+            applied?: string;
+            balance?: string;
+          }[];
+          final_amount?: string;
+        },
+        any
+      >({
+        path: `/api/v1/dashboard/schools/${schoolPk}/adjustment-rules/simulate/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Retrieve the default CFDI configuration. Returns a mapping of tax regimes to concept types and their corresponding CFDI codes.
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsDefaultCfdiConfigRetrieve
+     * @request GET:/api/v1/dashboard/schools/default-cfdi-config/
+     * @secure
+     */
+    apiV1DashboardSchoolsDefaultCfdiConfigRetrieve: (params: RequestParams = {}) =>
+      this.request<
+        Record<
+          string,
+          {
+            MONTHLY_FEE?: string | null;
+            INSCRIPTION?: string | null;
+            REINSCRIPTION?: string | null;
+            EXTRACURRICULAR?: string | null;
+            SPORTS?: string | null;
+            CAFETERIA?: string | null;
+            BOOKS_AND_MATERIALS?: string | null;
+            EXAMS_AND_CERTIFICATES?: string | null;
+            UNIFORMS_AND_MERCH?: string | null;
+            PRE_DEBT?: string | null;
+            TRANSPORT?: string | null;
+            DONATION?: string | null;
+            EVENTS?: string | null;
+            TRIPS?: string | null;
+            INSURANCE?: string | null;
+            OTHER?: string | null;
+          }
+        >,
+        any
+      >({
+        path: `/api/v1/dashboard/schools/default-cfdi-config/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsFiltersRetrieve
+     * @request GET:/api/v1/dashboard/schools/filters/{school_id}/
+     * @secure
+     */
+    apiV1DashboardSchoolsFiltersRetrieve: (schoolId: string, params: RequestParams = {}) =>
+      this.request<DashboardSchoolWithStudents, any>({
+        path: `/api/v1/dashboard/schools/filters/${schoolId}/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardSchoolsSectionsRetrieve
+     * @request GET:/api/v1/dashboard/schools/sections/{id}/
+     * @secure
+     */
+    apiV1DashboardSchoolsSectionsRetrieve: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/dashboard/schools/sections/${id}/`,
+        method: 'GET',
+        secure: true,
         ...params,
       }),
 
@@ -11721,6 +20566,23 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         path: `/api/v1/dashboard/students/${id}/inactivate/`,
         method: 'DELETE',
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1DashboardStudentsReactivatePartialUpdate
+     * @request PATCH:/api/v1/dashboard/students/{id}/reactivate/
+     * @secure
+     */
+    apiV1DashboardStudentsReactivatePartialUpdate: (id: string, params: RequestParams = {}) =>
+      this.request<SuccessResponse, any>({
+        path: `/api/v1/dashboard/students/${id}/reactivate/`,
+        method: 'PATCH',
+        secure: true,
+        format: 'json',
         ...params,
       }),
 
@@ -11944,6 +20806,25 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         /** Multiple values may be separated by commas. */
         cycle_id?: string[];
         optional?: boolean;
+        /** Type of the concept. */
+        type?: (
+          | 'BOOKS_AND_MATERIALS'
+          | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
+          | 'EXAMS_AND_CERTIFICATES'
+          | 'EXTRACURRICULAR'
+          | 'INSCRIPTION'
+          | 'INSURANCE'
+          | 'MONTHLY_FEE'
+          | 'OTHER'
+          | 'PRE_DEBT'
+          | 'REINSCRIPTION'
+          | 'SPORTS'
+          | 'TRANSPORT'
+          | 'TRIPS'
+          | 'UNIFORMS_AND_MERCH'
+        )[];
       },
       params: RequestParams = {}
     ) =>
@@ -12031,21 +20912,27 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_type?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Multiple values may be separated by commas. */
         concepts?: string[];
         /** @format date */
         end_date?: string;
+        /** Group */
+        group?: 'delinquent';
         /** Multiple values may be separated by commas. */
         guardians?: string[];
         /** Multiple values may be separated by commas. */
@@ -12057,35 +20944,40 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         levels?: string[];
         multiple_search?: string;
         /** Ordering */
-        ordering?: ('-paid_date' | 'paid_date')[];
+        ordering?: ('-due' | '-paid_date' | 'due' | 'paid_date')[];
         /** Multiple values may be separated by commas. */
         orders?: string[];
         /** A page number within the paginated result set. */
         page?: number;
         /** Type of the payin */
         payment_methods?: (
-          | 'account_money'
           | 'atm'
           | 'bank_transfer'
           | 'cash_payroll'
+          | 'compensation'
           | 'credit'
           | 'credit_card'
           | 'debit_card'
           | 'deposit_cash'
           | 'deposit_check'
           | 'direct_debit'
+          | 'giving'
           | 'multipay'
           | 'nominal_check'
           | 'prepaid_card'
           | 'ticket'
           | null
         )[];
+        /** @format uuid */
+        school_cycle?: string;
         /** Multiple values may be separated by commas. */
         sections?: string[];
         /** @format date */
         start_date?: string;
         /** Payment status of the fulfillment */
         status?: ('NOT_PAID' | 'PAID' | 'PARTIAL_PAID' | 'WAITING_PAID')[];
+        /** @format uuid */
+        student?: string;
         /** Multiple values may be separated by commas. */
         students?: string[];
       },
@@ -12133,21 +21025,27 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_type?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Multiple values may be separated by commas. */
         concepts?: string[];
         /** @format date */
         end_date?: string;
+        /** Group */
+        group?: 'delinquent';
         /** Multiple values may be separated by commas. */
         guardians?: string[];
         /** Multiple values may be separated by commas. */
@@ -12159,33 +21057,38 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         levels?: string[];
         multiple_search?: string;
         /** Ordering */
-        ordering?: ('-paid_date' | 'paid_date')[];
+        ordering?: ('-due' | '-paid_date' | 'due' | 'paid_date')[];
         /** Multiple values may be separated by commas. */
         orders?: string[];
         /** Type of the payin */
         payment_methods?: (
-          | 'account_money'
           | 'atm'
           | 'bank_transfer'
           | 'cash_payroll'
+          | 'compensation'
           | 'credit'
           | 'credit_card'
           | 'debit_card'
           | 'deposit_cash'
           | 'deposit_check'
           | 'direct_debit'
+          | 'giving'
           | 'multipay'
           | 'nominal_check'
           | 'prepaid_card'
           | 'ticket'
           | null
         )[];
+        /** @format uuid */
+        school_cycle?: string;
         /** Multiple values may be separated by commas. */
         sections?: string[];
         /** @format date */
         start_date?: string;
         /** Payment status of the fulfillment */
         status?: ('NOT_PAID' | 'PAID' | 'PARTIAL_PAID' | 'WAITING_PAID')[];
+        /** @format uuid */
+        student?: string;
         /** Multiple values may be separated by commas. */
         students?: string[];
       },
@@ -12216,21 +21119,27 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_type?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Multiple values may be separated by commas. */
         concepts?: string[];
         /** @format date */
         end_date?: string;
+        /** Group */
+        group?: 'delinquent';
         /** Multiple values may be separated by commas. */
         guardians?: string[];
         /** Multiple values may be separated by commas. */
@@ -12242,33 +21151,38 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         levels?: string[];
         multiple_search?: string;
         /** Ordering */
-        ordering?: ('-paid_date' | 'paid_date')[];
+        ordering?: ('-due' | '-paid_date' | 'due' | 'paid_date')[];
         /** Multiple values may be separated by commas. */
         orders?: string[];
         /** Type of the payin */
         payment_methods?: (
-          | 'account_money'
           | 'atm'
           | 'bank_transfer'
           | 'cash_payroll'
+          | 'compensation'
           | 'credit'
           | 'credit_card'
           | 'debit_card'
           | 'deposit_cash'
           | 'deposit_check'
           | 'direct_debit'
+          | 'giving'
           | 'multipay'
           | 'nominal_check'
           | 'prepaid_card'
           | 'ticket'
           | null
         )[];
+        /** @format uuid */
+        school_cycle?: string;
         /** Multiple values may be separated by commas. */
         sections?: string[];
         /** @format date */
         start_date?: string;
         /** Payment status of the fulfillment */
         status?: ('NOT_PAID' | 'PAID' | 'PARTIAL_PAID' | 'WAITING_PAID')[];
+        /** @format uuid */
+        student?: string;
         /** Multiple values may be separated by commas. */
         students?: string[];
       },
@@ -12334,6 +21248,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         page?: number;
         /** Number of results to return per page. */
         page_size?: number;
+        /** @format uuid */
+        school_cycle?: string;
         status?: ('DUE' | 'OUTSTANDING' | 'PAID' | 'PENDING')[];
       },
       params: RequestParams = {}
@@ -12396,6 +21312,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: {
         /** A page number within the paginated result set. */
         page?: number;
+        /** SchoolCycleId */
+        school_cycle_id?: string;
       },
       params: RequestParams = {}
     ) =>
@@ -12421,6 +21339,240 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         path: `/api/v1/dashboard/students/${studentId}/scholarships/${id}/`,
         method: 'DELETE',
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description Generic Viewset extension for endpoint with a student_id in the kwargs
+     *
+     * @tags api
+     * @name ApiV1DashboardStudentsStudentScholarshipsList
+     * @request GET:/api/v1/dashboard/students/{student_id}/student_scholarships/
+     * @secure
+     */
+    apiV1DashboardStudentsStudentScholarshipsList: (
+      studentId: string,
+      query?: {
+        /** ScholarshipId */
+        scholarship_id?: string;
+        /** SchoolCycleId */
+        school_cycle_id?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<StudentScholarshipRetrieve[], any>({
+        path: `/api/v1/dashboard/students/${studentId}/student_scholarships/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Create scholarship assignments with sponsored payment pre-validation. Query Parameters: - confirm_sponsored_payment: Set to true to bypass sponsored payment warning
+     *
+     * @tags api
+     * @name ApiV1DashboardStudentsStudentScholarshipsCreate
+     * @request POST:/api/v1/dashboard/students/{student_id}/student_scholarships/
+     * @secure
+     */
+    apiV1DashboardStudentsStudentScholarshipsCreate: (
+      studentId: string,
+      data: StudentScholarshipCreate[],
+      query?: {
+        /** Set to true to confirm scholarship assignment despite sponsored payment warning */
+        confirm_sponsored_payment?: boolean;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<StudentScholarshipCreate, any>({
+        path: `/api/v1/dashboard/students/${studentId}/student_scholarships/`,
+        method: 'POST',
+        query: query,
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Generic Viewset extension for endpoint with a student_id in the kwargs
+     *
+     * @tags api
+     * @name ApiV1DashboardStudentsStudentScholarshipsRetrieve
+     * @request GET:/api/v1/dashboard/students/{student_id}/student_scholarships/{id}/
+     * @secure
+     */
+    apiV1DashboardStudentsStudentScholarshipsRetrieve: (id: string, studentId: string, params: RequestParams = {}) =>
+      this.request<StudentScholarshipRetrieve, any>({
+        path: `/api/v1/dashboard/students/${studentId}/student_scholarships/${id}/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Generic Viewset extension for endpoint with a student_id in the kwargs
+     *
+     * @tags api
+     * @name ApiV1DashboardStudentsStudentScholarshipsUpdate
+     * @request PUT:/api/v1/dashboard/students/{student_id}/student_scholarships/{id}/
+     * @secure
+     */
+    apiV1DashboardStudentsStudentScholarshipsUpdate: (
+      id: string,
+      studentId: string,
+      data: StudentScholarshipUpdate[],
+      params: RequestParams = {}
+    ) =>
+      this.request<StudentScholarshipUpdate, any>({
+        path: `/api/v1/dashboard/students/${studentId}/student_scholarships/${id}/`,
+        method: 'PUT',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Generic Viewset extension for endpoint with a student_id in the kwargs
+     *
+     * @tags api
+     * @name ApiV1DashboardStudentsStudentScholarshipsPartialUpdate
+     * @request PATCH:/api/v1/dashboard/students/{student_id}/student_scholarships/{id}/
+     * @secure
+     */
+    apiV1DashboardStudentsStudentScholarshipsPartialUpdate: (
+      id: string,
+      studentId: string,
+      data: PatchedStudentScholarshipCreate,
+      params: RequestParams = {}
+    ) =>
+      this.request<StudentScholarshipCreate, any>({
+        path: `/api/v1/dashboard/students/${studentId}/student_scholarships/${id}/`,
+        method: 'PATCH',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Generic Viewset extension for endpoint with a student_id in the kwargs
+     *
+     * @tags api
+     * @name ApiV1DashboardStudentsStudentScholarshipsDestroy
+     * @request DELETE:/api/v1/dashboard/students/{student_id}/student_scholarships/{id}/
+     * @secure
+     */
+    apiV1DashboardStudentsStudentScholarshipsDestroy: (id: string, studentId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/dashboard/students/${studentId}/student_scholarships/${id}/`,
+        method: 'DELETE',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description Generic Viewset extension for endpoint with a student_id in the kwargs
+     *
+     * @tags api
+     * @name ApiV1DashboardStudentsStudentScholarshipsManyDestroy
+     * @request DELETE:/api/v1/dashboard/students/{student_id}/student_scholarships/many/
+     * @secure
+     */
+    apiV1DashboardStudentsStudentScholarshipsManyDestroy: (
+      studentId: string,
+      query?: {
+        /** Scholarship Ids */
+        scholarship_ids?: string[];
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<void, any>({
+        path: `/api/v1/dashboard/students/${studentId}/student_scholarships/many/`,
+        method: 'DELETE',
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description Create a new table link with filters and column customizer
+     *
+     * @tags Table Links
+     * @name ApiV1DashboardTableLinksCreateCreate
+     * @request POST:/api/v1/dashboard/table-links/create/
+     * @secure
+     */
+    apiV1DashboardTableLinksCreateCreate: (data: TableLinkCreateRequest, params: RequestParams = {}) =>
+      this.request<TableLinkResponse, ErrorResponse>({
+        path: `/api/v1/dashboard/table-links/create/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Retrieve a table link by its hash value
+     *
+     * @tags Table Links
+     * @name ApiV1DashboardTableLinksHashRetrieve
+     * @request GET:/api/v1/dashboard/table-links/hash/{hash}/
+     * @secure
+     */
+    apiV1DashboardTableLinksHashRetrieve: (hash: string, params: RequestParams = {}) =>
+      this.request<TableLinkResponse, ErrorResponse>({
+        path: `/api/v1/dashboard/table-links/hash/${hash}/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Update a table link with new filters or column customizer
+     *
+     * @tags Table Links
+     * @name ApiV1DashboardTableLinksUpdateUpdate
+     * @request PUT:/api/v1/dashboard/table-links/update/{hash}/
+     * @secure
+     */
+    apiV1DashboardTableLinksUpdateUpdate: (hash: string, data: TableLinkUpdateRequest, params: RequestParams = {}) =>
+      this.request<TableLinkResponse, ErrorResponse>({
+        path: `/api/v1/dashboard/table-links/update/${hash}/`,
+        method: 'PUT',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Create a new table link or update if exists based on user, school, and table name
+     *
+     * @tags Table Links
+     * @name ApiV1DashboardTableLinksUpsertCreate
+     * @request POST:/api/v1/dashboard/table-links/upsert/
+     * @secure
+     */
+    apiV1DashboardTableLinksUpsertCreate: (data: TableLinkCreateRequest, params: RequestParams = {}) =>
+      this.request<TableLinkResponse, ErrorResponse>({
+        path: `/api/v1/dashboard/table-links/upsert/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
         ...params,
       }),
 
@@ -13033,16 +22185,32 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
 
     /**
-     * @description Webhook to receive mercadopago notifications.
+     * No description
      *
      * @tags api
-     * @name ApiV1MpcpNotificationsCreate
-     * @request POST:/api/v1/mpcp/notifications/
+     * @name ApiV1PayinsStatsRetrieve
+     * @request GET:/api/v1/payins/stats/
      * @secure
      */
-    apiV1MpcpNotificationsCreate: (data: CreateMercadoPagoCPGatewayNotification, params: RequestParams = {}) =>
-      this.request<CreateMercadoPagoCPGatewayNotification, any>({
-        path: `/api/v1/mpcp/notifications/`,
+    apiV1PayinsStatsRetrieve: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/payins/stats/`,
+        method: 'GET',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description Create Checkout
+     *
+     * @tags api
+     * @name ApiV1PaymentsV2CheckoutCreate
+     * @request POST:/api/v1/payments_v2/checkout/
+     * @secure
+     */
+    apiV1PaymentsV2CheckoutCreate: (data: PaymentRequest, params: RequestParams = {}) =>
+      this.request<PaymentResponse, any>({
+        path: `/api/v1/payments_v2/checkout/`,
         method: 'POST',
         body: data,
         secure: true,
@@ -13052,20 +22220,44 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
 
     /**
-     * @description Exec Mercadopago checkout preferences
+     * @description Mark Payment as Blocked
      *
      * @tags api
-     * @name ApiV1MpcpPreferencesCreate
-     * @request POST:/api/v1/mpcp/preferences/
+     * @name ApiV1PaymentsV2MarkPaymentAsBlockedCreate
+     * @request POST:/api/v1/payments_v2/mark_payment_as_blocked/
      * @secure
      */
-    apiV1MpcpPreferencesCreate: (data: CreateMerPagoCPPreference, params: RequestParams = {}) =>
-      this.request<Record<string, any>, any>({
-        path: `/api/v1/mpcp/preferences/`,
+    apiV1PaymentsV2MarkPaymentAsBlockedCreate: (data: PaymentBlockedRequest, params: RequestParams = {}) =>
+      this.request<void, void>({
+        path: `/api/v1/payments_v2/mark_payment_as_blocked/`,
         method: 'POST',
         body: data,
         secure: true,
         type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * @description Get Payment Status
+     *
+     * @tags api
+     * @name ApiV1PaymentsV2PaymentStatusRetrieve
+     * @request GET:/api/v1/payments_v2/payment-status/{payment_id}/
+     * @secure
+     */
+    apiV1PaymentsV2PaymentStatusRetrieve: (paymentId: string, params: RequestParams = {}) =>
+      this.request<
+        {
+          /** Payment status */
+          status?: string;
+          /** Payment content */
+          content?: object;
+        },
+        void
+      >({
+        path: `/api/v1/payments_v2/payment-status/${paymentId}/`,
+        method: 'GET',
+        secure: true,
         format: 'json',
         ...params,
       }),
@@ -13088,6 +22280,137 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
 
     /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1SchoolsRetrieve
+     * @request GET:/api/v1/schools/{id}/
+     * @secure
+     */
+    apiV1SchoolsRetrieve: (id: string, params: RequestParams = {}) =>
+      this.request<School, any>({
+        path: `/api/v1/schools/${id}/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description List blocked periods for school
+     *
+     * @tags api
+     * @name ApiV1SchoolsBlockedPeriodsList
+     * @request GET:/api/v1/schools/{school_id}/blocked-periods/
+     * @secure
+     */
+    apiV1SchoolsBlockedPeriodsList: (
+      schoolId: string,
+      query?: {
+        /** A page number within the paginated result set. */
+        page?: number;
+        /** Number of results to return per page. */
+        page_size?: number;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<PaginatedSchoolBlockedPeriodResponseList, any>({
+        path: `/api/v1/schools/${schoolId}/blocked-periods/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Create school blocked period
+     *
+     * @tags api
+     * @name ApiV1SchoolsBlockedPeriodsCreate
+     * @request POST:/api/v1/schools/{school_id}/blocked-periods/
+     * @secure
+     */
+    apiV1SchoolsBlockedPeriodsCreate: (
+      schoolId: string,
+      data: CreateSchoolBlockedPeriodRequest,
+      params: RequestParams = {}
+    ) =>
+      this.request<SchoolBlockedPeriodResponse, void>({
+        path: `/api/v1/schools/${schoolId}/blocked-periods/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Delete school blocked period
+     *
+     * @tags api
+     * @name ApiV1SchoolsBlockedPeriodsDestroy
+     * @request DELETE:/api/v1/schools/{school_id}/blocked-periods/{id}/
+     * @secure
+     */
+    apiV1SchoolsBlockedPeriodsDestroy: (id: string, schoolId: string, params: RequestParams = {}) =>
+      this.request<void, void>({
+        path: `/api/v1/schools/${schoolId}/blocked-periods/${id}/`,
+        method: 'DELETE',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description Check if payments are blocked for a school
+     *
+     * @tags api
+     * @name ApiV1SchoolsBlockedPeriodsCheckRetrieve
+     * @request GET:/api/v1/schools/{school_id}/blocked-periods/check/
+     * @secure
+     */
+    apiV1SchoolsBlockedPeriodsCheckRetrieve: (
+      schoolId: string,
+      query?: {
+        /** @format date */
+        date?: string | null;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<CheckBlockActiveResponse, void>({
+        path: `/api/v1/schools/${schoolId}/blocked-periods/check/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Create school blocked period without restrictions (Staff only)
+     *
+     * @tags api
+     * @name ApiV1SchoolsBlockedPeriodsWithoutRestrictionsCreate
+     * @request POST:/api/v1/schools/{school_id}/blocked-periods/without-restrictions/
+     * @secure
+     */
+    apiV1SchoolsBlockedPeriodsWithoutRestrictionsCreate: (
+      schoolId: string,
+      data: CreateSchoolBlockedPeriodRequest,
+      params: RequestParams = {}
+    ) =>
+      this.request<SchoolBlockedPeriodResponse, void>({
+        path: `/api/v1/schools/${schoolId}/blocked-periods/without-restrictions/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
      * @description Viewset to interact with a student (payment) fulfillments.
      *
      * @tags api
@@ -13105,7 +22428,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
 
     /**
-     * No description
+     * @description ViewSet for managing school levels. This viewset handles CRUD operations for school levels, with special handling for list and create operations.
      *
      * @tags api
      * @name ApiV1SchoolsLevelsList
@@ -13130,6 +22453,59 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
 
     /**
+     * @description ViewSet for managing school levels. This viewset handles CRUD operations for school levels, with special handling for list and create operations.
+     *
+     * @tags api
+     * @name ApiV1SchoolsLevelsCreate
+     * @request POST:/api/v1/schools/{school_id}/levels/
+     * @secure
+     */
+    apiV1SchoolsLevelsCreate: (schoolId: string, data: LevelCreate, params: RequestParams = {}) =>
+      this.request<LevelCreate, any>({
+        path: `/api/v1/schools/${schoolId}/levels/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV1SchoolsOnlineStoreList
+     * @request GET:/api/v1/schools/{school_id}/online-store/
+     * @secure
+     */
+    apiV1SchoolsOnlineStoreList: (
+      schoolId: string,
+      query?: {
+        multiple_search?: string;
+        /** Offering of the concept */
+        offering?: ('MIX' | 'OPEN_LOOP' | 'SCHOLAR')[];
+        /** Ordering */
+        ordering?: ('-price' | '-sold_units' | '-stock' | 'price' | 'sold_units' | 'stock')[];
+        /** A page number within the paginated result set. */
+        page?: number;
+        /** Number of results to return per page. */
+        page_size?: number;
+        /** @format uuid */
+        school?: string;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<PaginatedOptionalOrderList, any>({
+        path: `/api/v1/schools/${schoolId}/online-store/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
      * No description
      *
      * @tags api
@@ -13141,12 +22517,20 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       schoolId: string,
       query?: {
         multiple_search?: string;
+        /** Offering of the concept */
+        offering?: ('MIX' | 'OPEN_LOOP' | 'SCHOLAR')[];
+        /** Ordering */
+        ordering?: ('-price' | '-sold_units' | '-stock' | 'price' | 'sold_units' | 'stock')[];
+        /** A page number within the paginated result set. */
+        page?: number;
+        /** Number of results to return per page. */
+        page_size?: number;
         /** @format uuid */
         school?: string;
       },
       params: RequestParams = {}
     ) =>
-      this.request<GuardianDependentOrder[], any>({
+      this.request<PaginatedGuardianDependentOrderList, any>({
         path: `/api/v1/schools/${schoolId}/optional-orders/`,
         method: 'GET',
         query: query,
@@ -13171,15 +22555,19 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         concept_type?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Multiple values may be separated by commas. */
@@ -13187,6 +22575,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         due_status?: 'future' | 'outstanding';
         /** @format date */
         end_date?: string;
+        /** Group */
+        group?: 'delinquent';
         /** Multiple values may be separated by commas. */
         guardians?: string[];
         /** Multiple values may be separated by commas. */
@@ -13201,18 +22591,23 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         ordering?: ('-due' | 'due')[];
         /** Multiple values may be separated by commas. */
         orders?: string[];
+        /** A page number within the paginated result set. */
+        page?: number;
+        /** Number of results to return per page. */
+        page_size?: number;
         /** Type of the payin */
         payment_methods?: (
-          | 'account_money'
           | 'atm'
           | 'bank_transfer'
           | 'cash_payroll'
+          | 'compensation'
           | 'credit'
           | 'credit_card'
           | 'debit_card'
           | 'deposit_cash'
           | 'deposit_check'
           | 'direct_debit'
+          | 'giving'
           | 'multipay'
           | 'nominal_check'
           | 'prepaid_card'
@@ -13221,18 +22616,22 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         )[];
         /** @format uuid */
         school?: string;
+        /** @format uuid */
+        school_cycle?: string;
         /** Multiple values may be separated by commas. */
         sections?: string[];
         /** @format date */
         start_date?: string;
         /** Payment status of the fulfillment */
         status?: ('NOT_PAID' | 'PAID' | 'PARTIAL_PAID' | 'WAITING_PAID')[];
+        /** @format uuid */
+        student?: string;
         /** Multiple values may be separated by commas. */
         students?: string[];
       },
       params: RequestParams = {}
     ) =>
-      this.request<GuardianDependentFulfillment[], any>({
+      this.request<PaginatedGuardianDependentFulfillmentList, any>({
         path: `/api/v1/schools/${schoolId}/orders/`,
         method: 'GET',
         query: query,
@@ -13298,6 +22697,47 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
 
     /**
+     * @description Endpoint to send invoices via email to guardian.
+     *
+     * @tags api
+     * @name ApiV1SchoolsPayinsSendInvoicesToEmailCreate
+     * @request POST:/api/v1/schools/{school_id}/payins/{id}/send_invoices_to_email/
+     * @secure
+     */
+    apiV1SchoolsPayinsSendInvoicesToEmailCreate: (id: string, schoolId: string, params: RequestParams = {}) =>
+      this.request<GuardianDependentPayin, any>({
+        path: `/api/v1/schools/${schoolId}/payins/${id}/send_invoices_to_email/`,
+        method: 'POST',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Endpoint to upload file as proof that payment was done.
+     *
+     * @tags api
+     * @name ApiV1SchoolsPayinsUploadProofOfPaymentUpdate
+     * @request PUT:/api/v1/schools/{school_id}/payins/{id}/upload-proof-of-payment/
+     * @secure
+     */
+    apiV1SchoolsPayinsUploadProofOfPaymentUpdate: (
+      id: string,
+      schoolId: string,
+      data: PayinProofOfPaymentRequest,
+      params: RequestParams = {}
+    ) =>
+      this.request<GuardianDependentPayin, any>({
+        path: `/api/v1/schools/${schoolId}/payins/${id}/upload-proof-of-payment/`,
+        method: 'PUT',
+        body: data,
+        secure: true,
+        type: ContentType.FormData,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
      * No description
      *
      * @tags api
@@ -13308,6 +22748,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     apiV1SchoolsSectionsList: (
       schoolId: string,
       query?: {
+        /** join_by_pipe */
+        join_by_pipe?: boolean;
         /** Multiple values may be separated by commas. */
         levels?: string[];
       },
@@ -13440,16 +22882,18 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @tags api
-     * @name ApiV1SchoolsRetrieve
-     * @request GET:/api/v1/schools/{short_slug}/
+     * @tags Validate order stock quantity
+     * @name ApiV1SchoolsValidateStockCreate
+     * @request POST:/api/v1/schools/{school_id}/validate_stock/
      * @secure
      */
-    apiV1SchoolsRetrieve: (shortSlug: string, params: RequestParams = {}) =>
-      this.request<School, any>({
-        path: `/api/v1/schools/${shortSlug}/`,
-        method: 'GET',
+    apiV1SchoolsValidateStockCreate: (schoolId: string, data: OrderStockValidate, params: RequestParams = {}) =>
+      this.request<OrderStockValidateResponse[], any>({
+        path: `/api/v1/schools/${schoolId}/validate_stock/`,
+        method: 'POST',
+        body: data,
         secure: true,
+        type: ContentType.Json,
         format: 'json',
         ...params,
       }),
@@ -13645,7 +23089,23 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
 
     /**
-     * @description Creates user accounts
+     * @description Returns the authentication url and subscription info for a guardian.
+     *
+     * @tags api
+     * @name ApiV1TwilioGuardianUrlCreate
+     * @request POST:/api/v1/twilio/guardian_url/
+     * @secure
+     */
+    apiV1TwilioGuardianUrlCreate: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/twilio/guardian_url/`,
+        method: 'POST',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
      *
      * @tags api
      * @name ApiV1UsersCreate
@@ -13724,11 +23184,28 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @tags api
      * @name ApiV1UsersAuthCreate
      * @request POST:/api/v1/users/auth/
+     */
+    apiV1UsersAuthCreate: (data: AuthDashboardRequestDTO, params: RequestParams = {}) =>
+      this.request<AuthDashboardResponseDTO, any>({
+        path: `/api/v1/users/auth/`,
+        method: 'POST',
+        body: data,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Updates,retrieves and auth user accounts
+     *
+     * @tags api
+     * @name ApiV1UsersEmailCreate
+     * @request POST:/api/v1/users/email/
      * @secure
      */
-    apiV1UsersAuthCreate: (data: User, params: RequestParams = {}) =>
+    apiV1UsersEmailCreate: (data: EmailRequestDTO, params: RequestParams = {}) =>
       this.request<User, any>({
-        path: `/api/v1/users/auth/`,
+        path: `/api/v1/users/email/`,
         method: 'POST',
         body: data,
         secure: true,
@@ -13740,7 +23217,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * @description Updates,retrieves and auth user accounts
      *
-     * @tags api
+     * @tags unused
      * @name ApiV1UsersMeRetrieve
      * @request GET:/api/v1/users/me/
      * @secure
@@ -13774,108 +23251,41 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
 
     /**
-     * No description
+     * @description Returns students grouped by level. Supports required_fields parameter to validate student information completeness and add counters.
      *
-     * @tags Students Due Orders ViewSet
-     * @name ApiV2DashboardSchoolsDueOrdersStudentsList
-     * @request GET:/api/v2/dashboard/schools/{school_id}/due_orders/students/
+     * @tags Student By Level ViewSet V2
+     * @name ApiV2DashboardSchoolsStudentsByLevelList
+     * @request GET:/api/v2/dashboard/schools/{school_id}/students_by_level/
      * @secure
      */
-    apiV2DashboardSchoolsDueOrdersStudentsList: (
+    apiV2DashboardSchoolsStudentsByLevelList: (
       schoolId: string,
       query?: {
-        /** Filter by concept type */
-        concept_types?: (
-          | 'BOOKS_AND_MATERIALS'
-          | 'CAFETERIA'
-          | 'EXAMS_AND_CERTIFICATES'
-          | 'EXTRACURRICULAR'
-          | 'INSCRIPTION'
-          | 'MONTHLY_FEE'
-          | 'OTHER'
-          | 'PRE_DEBT'
-          | 'REINSCRIPTION'
-          | 'SPORTS'
-          | 'TRANSPORT'
-          | 'UNIFORMS_AND_MERCH'
-        )[];
-        /** Filter by Concept */
+        /** Filter by Concept UUID(str) */
         concepts?: string[];
         /** Filter by delinquency value */
         delinquency?: ('high' | 'low' | 'mid' | 'zero')[];
-        /** Filter by only due_orders of MONTHLY_FEE concept type */
-        due_monthly_concepts?: ('high' | 'low' | 'mid' | 'zero')[];
-        /** Filter by due_orders value */
-        due_orders?: ('high' | 'low' | 'mid' | 'zero')[];
-        /** Filter by fulfillment status */
-        fulfillment_statuses?: ('NOT_PAID' | 'PAID' | 'PARTIAL_PAID' | 'WAITING_PAID')[];
-        /** Filter by guardian UUID(str) */
-        guardian?: string[];
-        /** Search by identifier */
-        identifier?: string;
-        /** Filter by student inscription status */
-        inscription_status?: ('Inscrito' | 'NOT_AVAILABLE' | 'No inscrito' | 'Pendiente' | 'Reinscrito')[];
-        is_active?: boolean;
-        /** Filter by level UUID(str), use "null" for students without level */
-        levels?: string[];
-        /** Ordering */
-        ordering?: (
-          | '-created'
-          | '-due_orders'
-          | '-due_orders_total'
-          | '-due_total'
-          | '-enrollment_code'
-          | '-first_name'
-          | '-last_name'
-          | '-level'
-          | '-section'
-          | 'created'
-          | 'due_orders'
-          | 'due_orders_total'
-          | 'due_total'
-          | 'enrollment_code'
-          | 'first_name'
-          | 'last_name'
-          | 'level'
-          | 'section'
-        )[];
-        /** Filter by order UUID(str) */
-        orders?: string[];
+        /** @format date */
+        entry_date?: string;
+        /** Filter by debt */
+        has_debt?: boolean;
         /** A page number within the paginated result set. */
         page?: number;
-        /** Number of results to return per page. */
-        page_size?: number;
+        /** Comma-separated list of fields to validate for completeness. Valid values: name, last_name, enrollment_code, identifier, photo, level, grade, group. */
+        required_fields?: string;
         /** Filter by scholarships */
         scholarships?: string[];
+        /** Filter by school cycle UUID(str) */
         school_cycle?: string;
         /** Search by fullname or enrollment code */
         search?: string;
-        /** Filter by section UUID(str), use "null" for students without section */
-        sections?: string[];
       },
       params: RequestParams = {}
     ) =>
-      this.request<PaginatedDashboardStudentListDueOrderSerializerV2List, any>({
-        path: `/api/v2/dashboard/schools/${schoolId}/due_orders/students/`,
+      this.request<PaginatedStudentByLevelSerializerV2List, any>({
+        path: `/api/v2/dashboard/schools/${schoolId}/students_by_level/`,
         method: 'GET',
         query: query,
-        secure: true,
-        format: 'json',
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags api
-     * @name ApiV2DashboardSchoolsDueOrdersStudentsRetrieve
-     * @request GET:/api/v2/dashboard/schools/{school_id}/due_orders/students/{id}/
-     * @secure
-     */
-    apiV2DashboardSchoolsDueOrdersStudentsRetrieve: (id: string, schoolId: string, params: RequestParams = {}) =>
-      this.request<DashboardStudentDetail, any>({
-        path: `/api/v2/dashboard/schools/${schoolId}/due_orders/students/${id}/`,
-        method: 'GET',
         secure: true,
         format: 'json',
         ...params,
@@ -13885,101 +23295,14 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @description Endpoint que lista los queryparams (y valores) disponibles para el endpoint raiz
      *
      * @tags api
-     * @name ApiV2DashboardSchoolsDueOrdersStudentsFiltersRetrieve
-     * @request GET:/api/v2/dashboard/schools/{school_id}/due_orders/students/filters/
+     * @name ApiV2DashboardSchoolsStudentsByLevelFiltersRetrieve
+     * @request GET:/api/v2/dashboard/schools/{school_id}/students_by_level/filters/
      * @secure
      */
-    apiV2DashboardSchoolsDueOrdersStudentsFiltersRetrieve: (schoolId: string, params: RequestParams = {}) =>
-      this.request<FilterViewStudents, any>({
-        path: `/api/v2/dashboard/schools/${schoolId}/due_orders/students/filters/`,
+    apiV2DashboardSchoolsStudentsByLevelFiltersRetrieve: (schoolId: string, params: RequestParams = {}) =>
+      this.request<FilterViewStudentsByLevel, any>({
+        path: `/api/v2/dashboard/schools/${schoolId}/students_by_level/filters/`,
         method: 'GET',
-        secure: true,
-        format: 'json',
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags api
-     * @name ApiV2DashboardSchoolsDueOrdersStudentsXlsCreate
-     * @request POST:/api/v2/dashboard/schools/{school_id}/due_orders/students/xls/
-     * @secure
-     */
-    apiV2DashboardSchoolsDueOrdersStudentsXlsCreate: (
-      schoolId: string,
-      query?: {
-        /** Filter by concept type */
-        concept_types?: (
-          | 'BOOKS_AND_MATERIALS'
-          | 'CAFETERIA'
-          | 'EXAMS_AND_CERTIFICATES'
-          | 'EXTRACURRICULAR'
-          | 'INSCRIPTION'
-          | 'MONTHLY_FEE'
-          | 'OTHER'
-          | 'PRE_DEBT'
-          | 'REINSCRIPTION'
-          | 'SPORTS'
-          | 'TRANSPORT'
-          | 'UNIFORMS_AND_MERCH'
-        )[];
-        /** Filter by Concept */
-        concepts?: string[];
-        /** Filter by delinquency value */
-        delinquency?: ('high' | 'low' | 'mid' | 'zero')[];
-        /** Filter by only due_orders of MONTHLY_FEE concept type */
-        due_monthly_concepts?: ('high' | 'low' | 'mid' | 'zero')[];
-        /** Filter by due_orders value */
-        due_orders?: ('high' | 'low' | 'mid' | 'zero')[];
-        /** Filter by fulfillment status */
-        fulfillment_statuses?: ('NOT_PAID' | 'PAID' | 'PARTIAL_PAID' | 'WAITING_PAID')[];
-        /** Filter by guardian UUID(str) */
-        guardian?: string[];
-        /** Search by identifier */
-        identifier?: string;
-        /** Filter by student inscription status */
-        inscription_status?: ('Inscrito' | 'NOT_AVAILABLE' | 'No inscrito' | 'Pendiente' | 'Reinscrito')[];
-        is_active?: boolean;
-        /** Filter by level UUID(str), use "null" for students without level */
-        levels?: string[];
-        /** Ordering */
-        ordering?: (
-          | '-created'
-          | '-due_orders'
-          | '-due_orders_total'
-          | '-due_total'
-          | '-enrollment_code'
-          | '-first_name'
-          | '-last_name'
-          | '-level'
-          | '-section'
-          | 'created'
-          | 'due_orders'
-          | 'due_orders_total'
-          | 'due_total'
-          | 'enrollment_code'
-          | 'first_name'
-          | 'last_name'
-          | 'level'
-          | 'section'
-        )[];
-        /** Filter by order UUID(str) */
-        orders?: string[];
-        /** Filter by scholarships */
-        scholarships?: string[];
-        school_cycle?: string;
-        /** Search by fullname or enrollment code */
-        search?: string;
-        /** Filter by section UUID(str), use "null" for students without section */
-        sections?: string[];
-      },
-      params: RequestParams = {}
-    ) =>
-      this.request<ExcelReport, any>({
-        path: `/api/v2/dashboard/schools/${schoolId}/due_orders/students/xls/`,
-        method: 'POST',
-        query: query,
         secure: true,
         format: 'json',
         ...params,
@@ -13999,6 +23322,25 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         /** Multiple values may be separated by commas. */
         cycle_id?: string[];
         optional?: boolean;
+        /** Type of the concept. */
+        type?: (
+          | 'BOOKS_AND_MATERIALS'
+          | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
+          | 'EXAMS_AND_CERTIFICATES'
+          | 'EXTRACURRICULAR'
+          | 'INSCRIPTION'
+          | 'INSURANCE'
+          | 'MONTHLY_FEE'
+          | 'OTHER'
+          | 'PRE_DEBT'
+          | 'REINSCRIPTION'
+          | 'SPORTS'
+          | 'TRANSPORT'
+          | 'TRIPS'
+          | 'UNIFORMS_AND_MERCH'
+        )[];
       },
       params: RequestParams = {}
     ) =>
@@ -14094,27 +23436,82 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @tags Students Due Orders ViewSet
-     * @name ApiV3DashboardSchoolsDueOrdersStudentsList
-     * @request GET:/api/v3/dashboard/schools/{school_id}/due_orders/students/
+     * @tags api
+     * @name ApiV2SchoolsInscriptionsCheckPaymentsCreate
+     * @request POST:/api/v2/schools/inscriptions/check_payments/
      * @secure
      */
-    apiV3DashboardSchoolsDueOrdersStudentsList: (
+    apiV2SchoolsInscriptionsCheckPaymentsCreate: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v2/schools/inscriptions/check_payments/`,
+        method: 'POST',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV2SchoolsSchoolCycleRetrieve
+     * @request GET:/api/v2/schools/school_cycle/{school_cycle_id}/
+     * @secure
+     */
+    apiV2SchoolsSchoolCycleRetrieve: (schoolCycleId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v2/schools/school_cycle/${schoolCycleId}/`,
+        method: 'GET',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV2StudentsUploadPhotoUpdate
+     * @request PUT:/api/v2/students/{id}/upload_photo/
+     * @secure
+     */
+    apiV2StudentsUploadPhotoUpdate: (id: string, data: UploadPhotoDTO, params: RequestParams = {}) =>
+      this.request<UploadPhotoResponseDTO, any>({
+        path: `/api/v2/students/${id}/upload_photo/`,
+        method: 'PUT',
+        body: data,
+        secure: true,
+        type: ContentType.FormData,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Students Due Orders ViewSet
+     * @name ApiV4DashboardSchoolsDueOrdersStudentsList
+     * @request GET:/api/v4/dashboard/schools/{school_id}/due_orders/students/
+     * @secure
+     */
+    apiV4DashboardSchoolsDueOrdersStudentsList: (
       schoolId: string,
       query?: {
         /** Filter by concept type */
         concept_types?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Filter by Concept */
@@ -14132,7 +23529,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         /** Search by identifier */
         identifier?: string;
         /** Filter by student inscription status */
-        inscription_status?: ('Inscrito' | 'NOT_AVAILABLE' | 'No inscrito' | 'Pendiente' | 'Reinscrito')[];
+        inscription_status?: ('Inscrito' | 'No inscrito' | 'Pendiente' | 'Reinscrito')[];
         is_active?: boolean;
         /** Filter by level UUID(str), use "null" for students without level */
         levels?: string[];
@@ -14163,6 +23560,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         page?: number;
         /** Number of results to return per page. */
         page_size?: number;
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        scholarship_school_cycle?: string;
         /** Filter by scholarships */
         scholarships?: string[];
         school_cycle?: string;
@@ -14170,11 +23572,13 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         search?: string;
         /** Filter by section UUID(str), use "null" for students without section */
         sections?: string[];
+        /** Filter by state */
+        state?: ('active' | 'dropped_out' | 'graduated' | 'inactive' | 'lead' | 'new_student')[];
       },
       params: RequestParams = {}
     ) =>
-      this.request<PaginatedDashboardStudentListDueOrderSerializerV3List, any>({
-        path: `/api/v3/dashboard/schools/${schoolId}/due_orders/students/`,
+      this.request<PaginatedDashboardStudentListDueOrderSerializerV4List, any>({
+        path: `/api/v4/dashboard/schools/${schoolId}/due_orders/students/`,
         method: 'GET',
         query: query,
         secure: true,
@@ -14186,13 +23590,13 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * No description
      *
      * @tags api
-     * @name ApiV3DashboardSchoolsDueOrdersStudentsRetrieve
-     * @request GET:/api/v3/dashboard/schools/{school_id}/due_orders/students/{id}/
+     * @name ApiV4DashboardSchoolsDueOrdersStudentsRetrieve
+     * @request GET:/api/v4/dashboard/schools/{school_id}/due_orders/students/{id}/
      * @secure
      */
-    apiV3DashboardSchoolsDueOrdersStudentsRetrieve: (id: string, schoolId: string, params: RequestParams = {}) =>
+    apiV4DashboardSchoolsDueOrdersStudentsRetrieve: (id: string, schoolId: string, params: RequestParams = {}) =>
       this.request<DashboardStudentDetail, any>({
-        path: `/api/v3/dashboard/schools/${schoolId}/due_orders/students/${id}/`,
+        path: `/api/v4/dashboard/schools/${schoolId}/due_orders/students/${id}/`,
         method: 'GET',
         secure: true,
         format: 'json',
@@ -14203,13 +23607,13 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @description Endpoint que lista los queryparams (y valores) disponibles para el endpoint raiz
      *
      * @tags api
-     * @name ApiV3DashboardSchoolsDueOrdersStudentsFiltersRetrieve
-     * @request GET:/api/v3/dashboard/schools/{school_id}/due_orders/students/filters/
+     * @name ApiV4DashboardSchoolsDueOrdersStudentsFiltersRetrieve
+     * @request GET:/api/v4/dashboard/schools/{school_id}/due_orders/students/filters/
      * @secure
      */
-    apiV3DashboardSchoolsDueOrdersStudentsFiltersRetrieve: (schoolId: string, params: RequestParams = {}) =>
+    apiV4DashboardSchoolsDueOrdersStudentsFiltersRetrieve: (schoolId: string, params: RequestParams = {}) =>
       this.request<FilterViewStudents, any>({
-        path: `/api/v3/dashboard/schools/${schoolId}/due_orders/students/filters/`,
+        path: `/api/v4/dashboard/schools/${schoolId}/due_orders/students/filters/`,
         method: 'GET',
         secure: true,
         format: 'json',
@@ -14220,26 +23624,30 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * No description
      *
      * @tags api
-     * @name ApiV3DashboardSchoolsDueOrdersStudentsXlsCreate
-     * @request POST:/api/v3/dashboard/schools/{school_id}/due_orders/students/xls/
+     * @name ApiV4DashboardSchoolsDueOrdersStudentsXlsCreate
+     * @request POST:/api/v4/dashboard/schools/{school_id}/due_orders/students/xls/
      * @secure
      */
-    apiV3DashboardSchoolsDueOrdersStudentsXlsCreate: (
+    apiV4DashboardSchoolsDueOrdersStudentsXlsCreate: (
       schoolId: string,
       query?: {
         /** Filter by concept type */
         concept_types?: (
           | 'BOOKS_AND_MATERIALS'
           | 'CAFETERIA'
+          | 'DONATION'
+          | 'EVENTS'
           | 'EXAMS_AND_CERTIFICATES'
           | 'EXTRACURRICULAR'
           | 'INSCRIPTION'
+          | 'INSURANCE'
           | 'MONTHLY_FEE'
           | 'OTHER'
           | 'PRE_DEBT'
           | 'REINSCRIPTION'
           | 'SPORTS'
           | 'TRANSPORT'
+          | 'TRIPS'
           | 'UNIFORMS_AND_MERCH'
         )[];
         /** Filter by Concept */
@@ -14257,7 +23665,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         /** Search by identifier */
         identifier?: string;
         /** Filter by student inscription status */
-        inscription_status?: ('Inscrito' | 'NOT_AVAILABLE' | 'No inscrito' | 'Pendiente' | 'Reinscrito')[];
+        inscription_status?: ('Inscrito' | 'No inscrito' | 'Pendiente' | 'Reinscrito')[];
         is_active?: boolean;
         /** Filter by level UUID(str), use "null" for students without level */
         levels?: string[];
@@ -14284,6 +23692,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         )[];
         /** Filter by order UUID(str) */
         orders?: string[];
+        /**
+         * Filter by school cycle UUID(str)
+         * @format uuid
+         */
+        scholarship_school_cycle?: string;
         /** Filter by scholarships */
         scholarships?: string[];
         school_cycle?: string;
@@ -14291,15 +23704,251 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         search?: string;
         /** Filter by section UUID(str), use "null" for students without section */
         sections?: string[];
+        /** Filter by state */
+        state?: ('active' | 'dropped_out' | 'graduated' | 'inactive' | 'lead' | 'new_student')[];
       },
       params: RequestParams = {}
     ) =>
       this.request<ExcelReport, any>({
-        path: `/api/v3/dashboard/schools/${schoolId}/due_orders/students/xls/`,
+        path: `/api/v4/dashboard/schools/${schoolId}/due_orders/students/xls/`,
         method: 'POST',
         query: query,
         secure: true,
         format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV4DashboardTriggerSaveActionGuardiansCreate
+     * @request POST:/api/v4/dashboard/trigger-save-action/guardians/{guardian_id}/
+     * @secure
+     */
+    apiV4DashboardTriggerSaveActionGuardiansCreate: (guardianId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v4/dashboard/trigger-save-action/guardians/${guardianId}/`,
+        method: 'POST',
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags api
+     * @name ApiV4DashboardTriggerSaveActionStudentsCreate
+     * @request POST:/api/v4/dashboard/trigger-save-action/students/{student_id}/
+     * @secure
+     */
+    apiV4DashboardTriggerSaveActionStudentsCreate: (studentId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v4/dashboard/trigger-save-action/students/${studentId}/`,
+        method: 'POST',
+        secure: true,
+        ...params,
+      }),
+  };
+  bookKeeper = {
+    /**
+     * @description Update Concept
+     *
+     * @tags book-keeper
+     * @name BookKeeperConceptsPartialUpdate
+     * @request PATCH:/book-keeper/concepts/{id}/
+     * @secure
+     */
+    bookKeeperConceptsPartialUpdate: (
+      id: string,
+      data: PatchedBookKeeperUpdateConceptRequest,
+      params: RequestParams = {}
+    ) =>
+      this.request<BookKeeperUpdateConceptResponse, Record<string, any>>({
+        path: `/book-keeper/concepts/${id}/`,
+        method: 'PATCH',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Get history changes for a model filtered by school
+     *
+     * @tags book-keeper
+     * @name BookKeeperHistorySchoolsList
+     * @request GET:/book-keeper/history/schools/{school_id}/
+     * @secure
+     */
+    bookKeeperHistorySchoolsList: (
+      schoolId: string,
+      query: {
+        /** Exclude changes with no user associated (default: true) */
+        exclude_empty_users?: boolean;
+        /** Comma-separated list of field names to exclude from comparison. Ignored if include_fields is specified. */
+        exclude_fields?: string;
+        /** Exclude changes made by staff users (default: true) */
+        exclude_staff?: boolean;
+        /** Comma-separated history types to filter by. Valid values: created, changed, deleted */
+        history_types?: string;
+        /** Comma-separated list of field names to include in comparison. When specified, only these fields will be tracked. Takes priority over exclude_fields. */
+        include_fields?: string;
+        /** Model identifier in format app_label.ModelName (e.g., schools.School, payins.Concept) */
+        model_name: string;
+        /** Optional: ID of specific object to filter history (UUID or integer) */
+        object_id?: string;
+        /** Page number for pagination */
+        page?: number;
+        /** Number of items per page (default: 10, max: 100) */
+        page_size?: number;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<
+        PaginatedHistoryListResponseList,
+        {
+          detail?: string;
+        }
+      >({
+        path: `/book-keeper/history/schools/${schoolId}/`,
+        method: 'GET',
+        query: query,
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Create a new massive concept assignment
+     *
+     * @tags book-keeper
+     * @name BookKeeperMassiveConceptAssignmentsCreate
+     * @request POST:/book-keeper/massive_concept_assignments/
+     * @secure
+     */
+    bookKeeperMassiveConceptAssignmentsCreate: (data: Record<string, any>, params: RequestParams = {}) =>
+      this.request<
+        Record<string, any>,
+        {
+          detail?: string;
+        }
+      >({
+        path: `/book-keeper/massive_concept_assignments/`,
+        method: 'POST',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Get massive concept assignment by ID
+     *
+     * @tags book-keeper
+     * @name BookKeeperMassiveConceptAssignmentsRetrieve
+     * @request GET:/book-keeper/massive_concept_assignments/{id}/
+     * @secure
+     */
+    bookKeeperMassiveConceptAssignmentsRetrieve: (id: string, params: RequestParams = {}) =>
+      this.request<
+        Record<string, any>,
+        {
+          detail?: string;
+        }
+      >({
+        path: `/book-keeper/massive_concept_assignments/${id}/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Cancel a massive concept assignment
+     *
+     * @tags book-keeper
+     * @name BookKeeperMassiveConceptAssignmentsDestroy
+     * @request DELETE:/book-keeper/massive_concept_assignments/{id}/
+     * @secure
+     */
+    bookKeeperMassiveConceptAssignmentsDestroy: (id: string, params: RequestParams = {}) =>
+      this.request<
+        {
+          detail?: string;
+        },
+        {
+          detail?: string;
+        }
+      >({
+        path: `/book-keeper/massive_concept_assignments/${id}/`,
+        method: 'DELETE',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Get order by ID
+     *
+     * @tags book-keeper
+     * @name BookKeeperOrdersRetrieve
+     * @request GET:/book-keeper/orders/{id}/
+     * @secure
+     */
+    bookKeeperOrdersRetrieve: (id: string, params: RequestParams = {}) =>
+      this.request<
+        BookKeeperUpdateOrderResponse,
+        {
+          detail?: string;
+        }
+      >({
+        path: `/book-keeper/orders/${id}/`,
+        method: 'GET',
+        secure: true,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * @description Update order. All orders must belong to the same school.
+     *
+     * @tags book-keeper
+     * @name BookKeeperOrdersUpdate
+     * @request PUT:/book-keeper/orders/{id}/
+     * @secure
+     */
+    bookKeeperOrdersUpdate: (id: string, data: BookKeeperOrderUpdateRequest, params: RequestParams = {}) =>
+      this.request<
+        BookKeeperUpdateOrderResponse,
+        {
+          detail?: string;
+        }
+      >({
+        path: `/book-keeper/orders/${id}/`,
+        method: 'PUT',
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags book-keeper
+     * @name BookKeeperOrdersPartialUpdate
+     * @request PATCH:/book-keeper/orders/{id}/
+     * @secure
+     */
+    bookKeeperOrdersPartialUpdate: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/book-keeper/orders/${id}/`,
+        method: 'PATCH',
+        secure: true,
         ...params,
       }),
   };

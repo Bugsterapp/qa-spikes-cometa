@@ -1,9 +1,25 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import PropTypes from 'prop-types';
-import { createContext, useState, useEffect } from 'react';
-// @mui
-import { useMediaQuery } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { createContext, useEffect, useState } from 'react';
+
+// Custom hook to replace useMediaQuery with Tailwind breakpoints
+const useMediaQuery = (query: string) => {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    setMatches(media.matches);
+
+    const listener = (event: MediaQueryListEvent) => {
+      setMatches(event.matches);
+    };
+
+    media.addEventListener('change', listener);
+    return () => media.removeEventListener('change', listener);
+  }, [query]);
+
+  return matches;
+};
 
 // ----------------------------------------------------------------------
 
@@ -26,13 +42,11 @@ CollapseDrawerProvider.propTypes = {
 
 function CollapseDrawerProvider(props: any) {
   const { children } = props;
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
+  const isMobile = useMediaQuery('(max-width: 1023px)');
   const [collapse, setCollapse] = useState({
     click: false,
     hover: false,
   });
-
   useEffect(() => {
     if (isMobile) {
       setCollapse({
@@ -59,7 +73,7 @@ function CollapseDrawerProvider(props: any) {
   return (
     <CollapseDrawerContext.Provider
       value={{
-        isCollapse: collapse.click && !collapse.hover,
+        isCollapse: collapse.click || collapse.hover,
         collapseClick: collapse.click,
         collapseHover: collapse.hover,
         onToggleCollapse: handleToggleCollapse,

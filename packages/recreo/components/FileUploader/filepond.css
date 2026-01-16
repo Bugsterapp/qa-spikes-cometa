@@ -1,0 +1,75 @@
+@keyframes shake {
+
+    0%,
+    70%,
+    100% {
+        transform: translateX(0);
+    }
+
+    10%,
+    60% {
+        transform: translateX(-0.0625em);
+    }
+
+    20%,
+    50% {
+        transform: translateX(0.125em);
+    }
+
+    40% {
+        transform: translateX(-0.25em);
+    }
+}
+
+.filepond--credits {
+    @apply hidden;
+}
+
+.filepond--root {
+    @apply !mb-0 bg-transparent rounded-lg border border-neutral-300 border-dashed px-6;
+}
+
+.size-small .filepond--drop-label:not(.has-files),
+.size-small .filepond--root {
+    @apply !min-h-14;
+}
+
+.size-medium .filepond--drop-label:not(.has-files),
+.size-medium .filepond--root {
+    @apply !min-h-20;
+}
+
+.size-large .filepond--drop-label:not(.has-files),
+.size-large .filepond--root {
+    @apply !min-h-28;
+}
+
+.filepond--drop-label,
+.filepond--panel-root {
+    @apply bg-transparent;
+}
+
+.filepond--drop-label label {
+    @apply block text-center text-neutral-500 text-sm break-words !px-8;
+}
+
+.filepond--root:not(.with-preview) .filepond--file {
+    @apply bg-green-600;
+}
+
+.filepond--item[data-filepond-item-state="load-invalid"] .filepond--file {
+    @apply bg-red-600;
+}
+
+[data-filepond-item-state*='invalid'],
+[data-filepond-item-state*='error'] {
+
+    & .filepond--panel,
+    & .filepond--file-wrapper {
+        animation: shake 400ms linear both;
+    }
+}
+
+.filepond--wrapper {
+    margin-top: .3rem;
+}

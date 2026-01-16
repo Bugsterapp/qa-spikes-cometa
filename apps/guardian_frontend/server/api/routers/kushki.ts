@@ -5,10 +5,11 @@ import { ServiceClient } from '~/utils/api';
 import { CardTypeEnum, PreferenceTypeEnum } from '@cometa/trpc';
 import { TRPCError } from '@trpc/server';
 import { stockError } from '~/utils/errorsMessages';
+import type { TCommissionValues } from '~/components/forms/CreditCardForm';
 
 export const kushkiRouter = createTRPCRouter({
   checkoutCashIn: protectedProcedure
-    .input(z.object({ items: z.array(z.object({ student: z.string(), order: z.string() })) }))
+    .input(z.object({ items: z.array(z.object({ student: z.string().nullable(), order: z.string() })) }))
     .mutation(async ({ input, ctx }) => {
       try {
         const res = await ServiceClient.apiV1KushkiCheckoutPreferencesCreate(
@@ -34,7 +35,7 @@ export const kushkiRouter = createTRPCRouter({
       }
     }),
   checkoutTransferIn: protectedProcedure
-    .input(z.object({ items: z.array(z.object({ student: z.string(), order: z.string() })) }))
+    .input(z.object({ items: z.array(z.object({ student: z.string().nullable(), order: z.string() })) }))
     .mutation(async ({ input, ctx }) => {
       try {
         const res = await ServiceClient.apiV1KushkiCheckoutPreferencesCreate(
@@ -62,7 +63,7 @@ export const kushkiRouter = createTRPCRouter({
   checkoutCard: protectedProcedure
     .input(
       z.object({
-        items: z.array(z.object({ student: z.string(), order: z.string() })),
+        items: z.array(z.object({ student: z.string().nullable(), order: z.string() })),
         cardType: z.nativeEnum(CardTypeEnum),
         kushkiToken: z.string(),
       })
@@ -92,6 +93,37 @@ export const kushkiRouter = createTRPCRouter({
         if ((err as any)?.error?.items?.[0]?.non_field_errors?.some((e: any) => e === stockError)) {
           throw new Error('stock');
         }
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: JSON.stringify((err as any)?.error || {}),
+          cause: (err as any)?.error,
+        });
+      }
+    }),
+  getCommissionValues: protectedProcedure
+    .input(
+      z.object({
+        items: z.array(z.object({ student: z.string(), order: z.string() })),
+        preference_type: z.nativeEnum(PreferenceTypeEnum),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      try {
+        const res = await ServiceClient.apiV1ValidatePreferencesCreate(
+          {
+            items: input.items,
+            guardian: ctx.session.user.id,
+            preference_type: input.preference_type,
+          },
+          {
+            headers: {
+              token: ctx.session.token,
+            },
+          }
+        );
+        return res.data as TCommissionValues;
+      } catch (err) {
+        Sentry.captureException(err);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: JSON.stringify((err as any)?.error || {}),

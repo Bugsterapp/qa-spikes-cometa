@@ -39,7 +39,7 @@ const ChartTooltip = ({
                 className="text-[14px] text-[#212B36] font-semibold text-left"
                 data-testid="completePaymentsStudents-text"
               >
-                Alumnos con pagos completos
+                Estudiantes con pagos completos
               </span>
               <span className="text-[14px] text-[#212B36] font-semibold pb-5" data-testid="onTimePercentage-text">
                 {percentage}%
@@ -54,7 +54,7 @@ const ChartTooltip = ({
                 className="text-[14px] text-[#212B36] font-semibold text-left"
                 data-testid="incompletePaymentsStudents-text"
               >
-                Alumnos con pagos pendientes
+                Estudiantes con pagos pendientes
               </span>
               <span className="text-[14px] text-[#212B36] font-semibold pb-5" data-testid="delinquentsPercentage-text">
                 {delinquentsPercentage}%

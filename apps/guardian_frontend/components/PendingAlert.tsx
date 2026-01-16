@@ -1,7 +1,11 @@
-import Link from 'next/link';
+import { UTMLink as Link } from '~/components/UtmNavigation';
+import { TrackEvents } from '~/constants/events';
+import { useSendEvent } from '~/hooks/useSendEvent';
 import { cn } from '~/lib/cn';
 
 const PendingAlert = ({ hash, pendings = 0, className }: { hash: string; pendings: number; className?: string }) => {
+  const sendEvent = useSendEvent();
+
   if (!pendings) return null;
 
   return (
@@ -12,7 +16,11 @@ const PendingAlert = ({ hash, pendings = 0, className }: { hash: string; pending
       )}
     >
       Tienes {pendings} pago{pendings === 1 ? '' : 's'} en proceso
-      <Link href={`${hash}/pendings`} className="text-xs font-semibold">
+      <Link
+        href={`${hash}/pendings`}
+        onClick={() => sendEvent(TrackEvents.pending.viewPendingsClicked)}
+        className="text-xs font-semibold"
+      >
         VER DETALLE
       </Link>
     </div>

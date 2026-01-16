@@ -1,25 +1,39 @@
-import { useCallback, useEffect, useState } from 'react';
-import ApiClient from '../../../../services/ApiClient';
-import { useSession } from 'next-auth/react';
+import type { StudentConceptDetailSerializerV2, VirtualOrderSerializerV2 } from '@cometa/trpc/src/types';
 import * as Sentry from '@sentry/nextjs';
-import ConceptData from '/src/components/molecules/dashboard/ConceptData';
-import useAlert from '/src/hooks/useAlert';
-import { useRouter } from 'next/router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { QUERY_KEY_ASSIGNMENTS, QUERY_KEY_CONCEPTS, QUERY_KEY_DUE_ORDERS_STUDENT } from '/src/utils/reactQueryKeys';
-import SidebarHeader from '../../../molecules/dashboard/SidebarHeader';
-import Delete from 'public/assets/images/delete.svg';
-import { Tooltip } from '/src/components/atoms/Tooltip';
-import SidebarActions from '../../../atoms/SidebarActions';
-import useSendTrackEventWithUserName from '/src/hooks/useSendTrackEventWithUserName';
-import { useGetPermissions } from '/src/guards/AuthGuard';
-import Dialog from '/src/components/atoms/Dialog';
 import dayjs from 'dayjs';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/router';
+import Delete from 'public/assets/images/delete.svg';
+import { useEffect, useMemo, useState } from 'react';
+import ApiClient from '../../../../services/ApiClient';
+import SidebarActions from '../../../atoms/SidebarActions';
+import SidebarHeader from '../../../molecules/dashboard/SidebarHeader';
 import Button from '../Button';
-import { api } from '/src/utils/api';
-import { VirtualOrder } from '@cometa/trpc/src/types';
+import Dialog from '/src/components/atoms/Dialog';
+import { Tooltip } from '/src/components/atoms/Tooltip';
+import ConceptData from '/src/components/molecules/dashboard/ConceptData';
 import ConceptInfoSkeleton from '/src/components/molecules/dashboard/ConceptInfo/ConceptInfoSkeleton';
+import { useGetPermissions } from '/src/guards/AuthGuard';
+import useAlert from '/src/hooks/useAlert';
+import useSendTrackEventWithUserName from '/src/hooks/useSendTrackEventWithUserName';
+import { Events } from '/src/constants/events';
+import { api } from '/src/utils/api';
+import { QUERY_KEY_CONCEPTS, QUERY_KEY_DUE_ORDERS_STUDENT } from '/src/utils/reactQueryKeys';
 
+interface VirtualOrderWithDueDate extends VirtualOrderSerializerV2 {
+  dueDate: Date;
+}
+
+interface StudentConceptDetailSerializerV2WithDueDate extends StudentConceptDetailSerializerV2 {
+  orders: VirtualOrderWithDueDate[];
+}
+
+export interface ISelectedOrders
+  extends Pick<VirtualOrderWithDueDate, 'id' | 'dueDate' | 'has_fulfillment' | 'is_skipped'> {
+  checked: boolean;
+  optional: boolean;
+}
 interface IOrderModalForAssignmentsProps {
   onClose: () => void;
   student: any;
@@ -27,12 +41,23 @@ interface IOrderModalForAssignmentsProps {
   assignment: { conceptId: string; assigmentId: string } | null;
 }
 
+const addDueDate = (data: StudentConceptDetailSerializerV2): StudentConceptDetailSerializerV2WithDueDate => {
+  const newOrders = data.orders.map((order) => {
+    const dueDate = new Date(`${order.due}T00:00`);
+    return { ...order, dueDate };
+  });
+  return {
+    ...data,
+    orders: newOrders,
+  };
+};
+
 export default function ConceptAssignmentEdit(props: IOrderModalForAssignmentsProps) {
   const { onClose, student, assignment, studentId } = props;
   const { data: session } = useSession();
   const [openDialog, setOpenDialog] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  const [selectedOrders, setSelectedOrders] = useState<any[]>([]);
+  const [selectedOrders, setSelectedOrders] = useState<ISelectedOrders[]>([]);
   const { setAlertState } = useAlert();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -41,16 +66,16 @@ export default function ConceptAssignmentEdit(props: IOrderModalForAssignmentsPr
   const utils = api.useUtils();
 
   const deleteAssignment = async () =>
-    concept?.orders.every((order: VirtualOrder) => order.due === null)
-      ? await ApiClient.deleteConceptAssignment(session?.token, studentId, assignment?.assigmentId, true)
-      : await ApiClient.deleteConceptAssignment(session?.token, studentId, assignment?.assigmentId);
+    selectedOrders.some((order) => order.optional)
+      ? await ApiClient.deleteConceptAssignment(studentId, assignment?.assigmentId, true)
+      : await ApiClient.deleteConceptAssignment(studentId, assignment?.assigmentId);
 
   const updateAssignment = async () => {
-    let startDate;
-    let endDate;
-    let selectedOrdersId;
+    let startDate: string | undefined;
+    let endDate: string | undefined;
+    let selectedOrdersId: ISelectedOrders[] = [];
     // Check if is optional (does not have a due date)
-    const isOptional = selectedOrders.some((order) => !order.dueDate);
+    const isOptional = selectedOrders.some((order) => order.optional);
     if (!isOptional) {
       selectedOrdersId = selectedOrders
         .filter(({ checked }) => checked)
@@ -64,46 +89,35 @@ export default function ConceptAssignmentEdit(props: IOrderModalForAssignmentsPr
     }
 
     if (isOptional) {
-      selectedOrdersId = selectedOrders.filter(({ checked }) => checked).map(({ id }) => id);
+      selectedOrdersId = selectedOrders.filter(({ checked }) => checked);
     } else {
-      selectedOrdersId = selectedOrders.filter(({ checked }) => !checked).map(({ id }) => id);
+      selectedOrdersId = selectedOrders.filter(({ checked }) => !checked);
     }
 
     // Call the API client passing all necessary parameters
     return await ApiClient.patchConceptAssignment(
-      session?.token,
       studentId,
       assignment?.assigmentId,
       assignment?.conceptId,
-      selectedOrdersId,
+      selectedOrdersId.map(({ id }) => id),
       startDate,
       endDate,
       isOptional
     );
   };
 
-  const addDueDate = (data: any) => {
-    const newOrders = data.orders.map((order: any) => {
-      const dueDate = new Date(`${order.due}T00:00`);
-      return { ...order, dueDate };
-    });
-    data.orders = newOrders;
-    return data;
-  };
-
   const handlerSuccessMutation = async (message: string) => {
     await queryClient.invalidateQueries({ queryKey: [QUERY_KEY_CONCEPTS, studentId] });
-    await queryClient.invalidateQueries({ queryKey: [QUERY_KEY_ASSIGNMENTS], exact: true });
-    await utils.students.studentConceptRetrive.invalidate();
+    await utils.students.studentConceptRetrieve.invalidate();
+    await utils.students.studentsAssignmentsList.invalidate();
     await utils.students.dashboardSchoolDueOrdersStudents.invalidate();
     await utils.schools.schoolsConceptsStudentsAssignedList.invalidate();
     await queryClient.invalidateQueries({ queryKey: [QUERY_KEY_DUE_ORDERS_STUDENT], exact: true });
-    onClose();
     setAlertState({ open: true, severity: 'success', message });
     router.push('#table-for-assignments');
   };
 
-  const onError = (err: any) => {
+  const onError = (err: unknown) => {
     setAlertState({
       open: true,
       severity: 'error',
@@ -125,41 +139,31 @@ export default function ConceptAssignmentEdit(props: IOrderModalForAssignmentsPr
   };
 
   const {
-    data: concept,
-    isLoading,
+    data: originalConcept,
+    isPending: isLoading,
     refetch,
-  } = api.students.studentConceptRetrive.useQuery(
+  } = api.students.studentConceptRetrieve.useQuery(
     {
       studentId,
       conceptId: assignment?.conceptId || '',
     },
     {
-      select: useCallback(addDueDate, []),
       staleTime: 1000 * 60 * 5,
     }
   );
 
+  const concept = useMemo(() => (originalConcept ? addDueDate(originalConcept) : undefined), [originalConcept]);
+
   useEffect(() => {
     if (concept) {
-      const ordersIdNoDue = concept.orders.map(
-        ({
-          id,
-          dueDate,
-          has_fulfillment,
-          is_skipped,
-        }: {
-          id: string;
-          dueDate: Date;
-          has_fulfillment: boolean;
-          is_skipped: boolean;
-        }) => ({
-          id,
-          dueDate,
-          checked: !is_skipped,
-          has_fulfillment,
-          is_skipped,
-        })
-      );
+      const ordersIdNoDue = concept.orders.map(({ id, dueDate, has_fulfillment, is_skipped, optional }) => ({
+        id,
+        dueDate,
+        checked: !is_skipped,
+        has_fulfillment,
+        is_skipped,
+        optional,
+      }));
       setSelectedOrders(ordersIdNoDue);
     }
   }, [concept]);
@@ -168,7 +172,9 @@ export default function ConceptAssignmentEdit(props: IOrderModalForAssignmentsPr
     mutationFn: updateAssignment,
     async onSuccess() {
       await handlerSuccessMutation('¡Se guardaron los cambios de manera exitosa!');
-      sendTrackEventWithUserName('dashboard: Concept | Edited');
+      sendTrackEventWithUserName(Events.concept_edited);
+      setHasChanges(false);
+      onClose();
     },
     onError,
   });
@@ -176,10 +182,55 @@ export default function ConceptAssignmentEdit(props: IOrderModalForAssignmentsPr
   const mutationDelete = useMutation({
     mutationFn: deleteAssignment,
     async onSuccess() {
-      await handlerSuccessMutation(
-        `Se desasignó el Concepto ${concept?.name} para el estudiante ${student.first_name} ${student.last_name}.`
-      );
-      sendTrackEventWithUserName('dashboard: Concept | Unassigned');
+      setAlertState({
+        open: true,
+        severity: 'success',
+        message: `Se desasignó el Concepto ${concept?.name} para el estudiante ${student.first_name} ${student.last_name}.`,
+      });
+
+      sendTrackEventWithUserName(Events.concept_unassigned);
+
+      const currentActiveData = utils.students.studentsAssignments.getData({
+        studentId,
+        ended: false,
+        optional: false,
+      });
+
+      if (currentActiveData && assignment) {
+        const updatedActiveData = currentActiveData.filter((item) => item.id !== assignment.assigmentId);
+        utils.students.studentsAssignments.setData({ studentId, ended: false, optional: false }, updatedActiveData);
+      }
+
+      const currentInactiveData = utils.students.studentsAssignments.getData({
+        studentId,
+        ended: true,
+        optional: false,
+      });
+
+      if (currentInactiveData && assignment) {
+        const updatedInactiveData = currentInactiveData.filter((item) => item.id !== assignment.assigmentId);
+        utils.students.studentsAssignments.setData({ studentId, ended: true, optional: false }, updatedInactiveData);
+      }
+
+      const currentOptionalData = utils.students.studentsAssignments.getData({
+        studentId,
+        ended: undefined,
+        optional: true,
+      });
+
+      if (currentOptionalData && assignment) {
+        const updatedOptionalData = currentOptionalData.filter((item) => item.id !== assignment.assigmentId);
+        utils.students.studentsAssignments.setData(
+          { studentId, ended: undefined, optional: true },
+          updatedOptionalData
+        );
+      }
+
+      await utils.students.studentsAssignments.invalidate();
+
+      setOpenDialog(false);
+
+      onClose();
     },
     onError,
   });
@@ -200,12 +251,12 @@ export default function ConceptAssignmentEdit(props: IOrderModalForAssignmentsPr
       <div className="flex flex-col flex-auto px-8 mb-9 min-h-[calc(100vh-135px)]">
         <SidebarHeader
           title="Detalle de asignación de concepto"
-          disabled={mutationUpdate.isLoading || mutationDelete.isLoading}
+          disabled={mutationUpdate.isPending || mutationDelete.isPending}
           onClose={onClose}
           boxClassName="px-0"
         />
 
-        <div className="flex flex-row justify-between mt-5 mb-4">
+        <div className="flex flex-row justify-between pb-4 mt-5 mb-4">
           <div className="w-full">
             <label className="text-[#637381] text-sm mb-2">Concepto asignado:</label>
             <div className="flex flex-row items-center justify-between w-full">
@@ -215,8 +266,9 @@ export default function ConceptAssignmentEdit(props: IOrderModalForAssignmentsPr
                   className="flex flex-row items-center pr-2 text-center bg-transparent"
                   onClick={() => {
                     setOpenDialog(true);
-                    sendTrackEventWithUserName('dashboard: Concept | Click Unassign');
+                    sendTrackEventWithUserName(Events.concept_click_unassign);
                   }}
+                  type="button"
                 >
                   <div className="m-2">
                     <Delete />
@@ -240,60 +292,60 @@ export default function ConceptAssignmentEdit(props: IOrderModalForAssignmentsPr
             isEdit
           />
         )}
+        {hasChanges && (
+          <SidebarActions className="bottom-0 grid grid-cols-2 px-0">
+            <Button
+              id="dialog-variant-discard"
+              size="medium"
+              className="bg-white px-4 text-[#00AB55] text-base font-bold disabled:text-[#919EABCC] rounded-lg flex-1 hover:bg-[#00AB5514]/8"
+              onClick={() => {
+                refetch();
+                setHasChanges(false);
+              }}
+              disabled={mutationUpdate.isPending}
+              variant="outline"
+            >
+              Descartar
+            </Button>
+            <Tooltip message="Tiene que haber al menos una orden seleccionada." disableHover={haveSelectedOrders}>
+              <div className="flex items-center flex-1 h-full">
+                <Button
+                  id="dialog-variant-save"
+                  size="medium"
+                  className="w-full px-[60px] flex-1 whitespace-nowrap"
+                  onClick={onClickUpdateAssign}
+                  disabled={!assignment || mutationUpdate.isPending || !haveSelectedOrders}
+                >
+                  {mutationUpdate.isPending ? (
+                    <img src="/assets/oval.svg" alt="loading" className="h-5 mx-auto" />
+                  ) : (
+                    'Guardar cambios'
+                  )}
+                </Button>
+              </div>
+            </Tooltip>
+          </SidebarActions>
+        )}
       </div>
-      {hasChanges && (
-        <SidebarActions className="grid grid-cols-2">
-          <Button
-            id="dialog-variant-discard"
-            size="medium"
-            className="bg-white px-4 text-[#00AB55] text-base font-bold disabled:text-[#919EABCC] rounded-lg flex-1 hover:bg-[#00AB5514]/8"
-            onClick={() => {
-              refetch();
-              setHasChanges(false);
-            }}
-            disabled={mutationUpdate.isLoading}
-            variant="outline"
-          >
-            Descartar
-          </Button>
-          <Tooltip message="Tiene que haber al menos una orden seleccionada." disableHover={haveSelectedOrders}>
-            <div className="flex-1 h-full flex items-center">
-              <Button
-                id="dialog-variant-save"
-                size="medium"
-                className="w-full px-[60px] flex-1 whitespace-nowrap min-w-[250px]"
-                onClick={onClickUpdateAssign}
-                disabled={!assignment || mutationUpdate.isLoading || !haveSelectedOrders}
-              >
-                {mutationUpdate.isLoading ? (
-                  <img src="/assets/oval.svg" alt="loading" className="mx-auto h-5" />
-                ) : (
-                  'Guardar cambios'
-                )}
-              </Button>
-            </div>
-          </Tooltip>
-        </SidebarActions>
-      )}
       <Dialog.Root open={!!openDialog} position="right" classNames="right-16">
         <Dialog.Title>¿Estás seguro que deseas desasignar el concepto?</Dialog.Title>
         <Dialog.Description>Se desasignarán todas las órdenes asociadas a este concepto.</Dialog.Description>
         <div className="flex justify-center gap-x-10">
-          <Button id="dialog-in-drawer-cancel" variant="ghost" size="tooltip" onClick={() => setOpenDialog(false)}>
+          <Button
+            id="dialog-in-drawer-cancel"
+            variant="ghost"
+            size="tooltip"
+            onClick={() => setOpenDialog(false)}
+            disabled={mutationDelete.isPending}
+          >
             Atrás
           </Button>
-          <Button
-            variant="cancel"
-            size="tooltip"
-            onClick={() => {
-              onClickDeleteAssign();
-              setOpenDialog(false);
-              setTimeout(() => {
-                onClose();
-              }, 200);
-            }}
-          >
-            Si, desasignar
+          <Button variant="cancel" size="tooltip" onClick={onClickDeleteAssign} disabled={mutationDelete.isPending}>
+            {mutationDelete.isPending ? (
+              <img src="/assets/oval.svg" alt="loading" className="h-5 mx-auto" />
+            ) : (
+              'Si, desasignar'
+            )}
           </Button>
         </div>
       </Dialog.Root>

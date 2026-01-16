@@ -1,6 +1,6 @@
 {
   "extends": "tsconfig-custom/nextjs.json",
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "build/types/**/*.ts"],
   "exclude": ["node_modules", "build", "turbo"],
   "typeRoots": ["./types"],
   "compilerOptions": {
@@ -11,6 +11,11 @@
     "paths": {
       "~/*": ["./*"],
       "/*": ["./*"]
-    }
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   }
 }

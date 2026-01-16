@@ -1,18 +1,19 @@
+import { DashboardSchoolSection, DashboardStudent, InternalSchool, InternalSection } from '@cometa/trpc/src/types';
 import { useRef, useState } from 'react';
-import FormEditStudentDetail from '../FormEditStudentDetail';
+
 import EditButton from '/public/assets/icons/ic_edit_sidepanel.svg';
-import SidebarHeader from '/src/components/molecules/dashboard/SidebarHeader';
-import { LevelsProps, SectionsProps } from '/src/components/molecules/dashboard/StudentGeneralInformation/types';
-import { useGetPermissions } from '/src/guards/AuthGuard';
 import Dialog from '/src/components/atoms/Dialog';
+import SidebarHeader from '/src/components/molecules/dashboard/SidebarHeader';
+import { useGetPermissions } from '/src/guards/AuthGuard';
+
 import Button from '../Button';
-import { DashboardStudent, InternalSection } from '@cometa/trpc/src/types';
+import FormEditStudentDetail from '../FormEditStudentDetail';
 
 interface IStudentDetailEditProps {
   onClose: () => void;
   student?: DashboardStudent;
-  levels: LevelsProps[];
-  sections: SectionsProps[];
+  levels: InternalSchool[];
+  sections: DashboardSchoolSection[];
   studentSection?: InternalSection;
   mutation: any;
 }
@@ -41,7 +42,7 @@ const StudentDetailEdit = ({
           />
         )}
         <SidebarHeader
-          title="Información General"
+          title="Información del estudiante"
           onClose={() => {
             if (ableToEdit) {
               setOpenDialog(true);

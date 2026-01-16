@@ -1,74 +1,76 @@
-import { Box, Card, Divider, Grid } from '@mui/material';
-import { useRouter } from 'next/router';
-import Layout from '../../../components/layouts';
-import { useState } from 'react';
-import { useSession } from 'next-auth/react';
-import OrderTableForCharge from '/src/components/organisms/dashboard/OrderTableForCharge';
-import OrderTableForAssignments from '/src/components/organisms/dashboard/OrderTableForAssignments';
-import OrderTableForDueOrders from '/src/components/organisms/dashboard/OrderTableForDueOrders';
-import ApiClient from '/src/services/ApiClient';
-import GeneralInformation from '/src/components/molecules/dashboard/StudentGeneralInformation';
+import { Guardian } from '@cometa/trpc/src/types';
 import * as Sentry from '@sentry/nextjs';
-import useSendPageViewedEvent from '/src/hooks/useSendPageViewedEvent';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { AxiosError } from 'axios';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
+
+import File from '/public/assets/icons/download/file.svg';
+import Table from '/public/assets/icons/download/table.svg';
+import XML from '/public/assets/icons/download/xml.svg';
 import IcArrowLeft from '/public/assets/icons/ic_arrow_left.svg';
+import Info from '/public/assets/icons/ic_info.svg';
+import Warning from '/public/assets/icons/navigation/delinquency_warning.svg';
+import Plus from '/public/assets/icons/studentDetail/plus.svg';
+import GuardianDrawerSheet from '/src/components/AssignTutorDrawer';
 import {
-  useSetIsWorking,
-  useAddToQueue,
   DownloadButton,
   DownloadMenu,
-  useSetToIdle,
-  useSetToError,
   ETypeFile,
-} from '../../../components/BackgroundDownload/BackgroundDownload';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import File from '/public/assets/icons/download/file.svg';
-import XML from '/public/assets/icons/download/xml.svg';
-import Table from '/public/assets/icons/download/table.svg';
-import { sendTrackEvent } from '/src/utils/events';
-import { PATH_PORTAL } from '/src/routes/paths';
-import Plus from '/public/assets/icons/studentDetail/plus.svg';
-import TabsTablesScholarships from '../../../components/organisms/dashboard/TabsTablesScholarships';
-import GuardianDrawer, { FormValues, useSetDrawerState, useSetOpen } from '../../../components/AssignTutorDrawer';
-import type { AxiosError } from 'axios';
-import { AssignGuardianAPI } from '/src/services/Api';
-import useToggle from '/src/hooks/useToggle';
-import StudentDetailEdit from '/src/components/organisms/dashboard/StudentDataEdit';
-import CornerTooltip from '/src/components/organisms/dashboard/CornerTooltip';
-import Dialog from '/src/components/atoms/Dialog';
-import { StudentDetailProps } from '/src/components/molecules/dashboard/StudentGeneralInformation/types';
+  useAddToQueue,
+  useSetIsWorking,
+  useSetToError,
+  useSetToIdle,
+} from '/src/components/BackgroundDownload/BackgroundDownload';
+import Select from '/src/components/Select';
+import Status from '/src/components/Status';
 import { AnimatedCard } from '/src/components/atoms/AnimatedCard';
+import CheckBox from '/src/components/atoms/CheckBox';
+import Dialog from '/src/components/atoms/Dialog';
+import Sheet from '/src/components/atoms/Sheet';
+import { Tooltip } from '/src/components/atoms/Tooltip';
+import Layout from '/src/components/layouts';
+import Skeleton from '/src/components/molecules/dashboard/Skeleton';
+import GeneralInformation from '/src/components/molecules/dashboard/StudentGeneralInformation';
+import AssingStudentRFC from '/src/components/organisms/dashboard/AssingStudentRFC';
+import Button from '/src/components/organisms/dashboard/Button';
+import CornerTooltip from '/src/components/organisms/dashboard/CornerTooltip';
+import OrderTableForAssignments from '/src/components/organisms/dashboard/OrderTableForAssignments';
+import OrderTableForCharge from '/src/components/organisms/dashboard/OrderTableForCharge';
+import OrderTableForDueOrders from '/src/components/organisms/dashboard/OrderTableForDueOrders';
+import RFCDetail, { IUpdateData } from '/src/components/organisms/dashboard/RFCDetail';
+import StudentDetailEdit from '/src/components/organisms/dashboard/StudentDataEdit';
+import { StudentSectionsTable } from '/src/components/organisms/dashboard/StudentSectionsTable';
+import TabsTablesScholarships from '/src/components/organisms/dashboard/TabsTablesScholarships';
+import StudentStateCard from '/src/components/organisms/dashboard/student/StudentStateChip';
+import StudentScholarshipsTable from '/src/components/students/StudentScholarshipsTable';
+import { TabsWrapper as Tabs } from '/src/components/ui/Tabs';
 import { useGetPermissions, useSelectedSchool, useSelectedSchoolId } from '/src/guards/AuthGuard';
-import { TabsWrapper as Tabs } from '/src/components/atoms/Tabs';
+import { Action, useIntegrationsBlockedFields } from '/src/hooks/useIntegrationsBlockedFields';
 import useAlert from '/src/hooks/useAlert';
+import { useFlagWithVariableMatching } from '/src/components/flags/FlagsProvider';
 import useLevels from '/src/hooks/useLevels';
 import useSections from '/src/hooks/useSections';
-import Select from '/src/components/Select';
-import AssingStudentRFC from '/src/components/organisms/dashboard/AssingStudentRFC';
-import RFCDetail, { IUpdateData } from '/src/components/organisms/dashboard/RFCDetail';
-import { QUERY_KEY_ASSIGNMENTS, QUERY_KEY_DUE_ORDERS_STUDENT } from '/src/utils/reactQueryKeys';
-import Sheet from '/src/components/atoms/Sheet';
-import { cn } from '/src/utils/cn';
-import Button from '/src/components/organisms/dashboard/Button';
-import Warning from '/public/assets/icons/navigation/delinquency_warning.svg';
-import Info from '/public/assets/icons/ic_info.svg';
-import CheckBox from '/src/components/atoms/CheckBox';
-import { api } from '/src/utils/api';
-import { Tooltip } from '/src/components/atoms/Tooltip';
+import useSendPageViewedEvent from '/src/hooks/useSendPageViewedEvent';
 import useSendTrackEventWithUserName from '/src/hooks/useSendTrackEventWithUserName';
-import { Guardian } from '@cometa/trpc/src/types';
-import Status from '/src/components/Status';
-import Skeleton from '/src/components/molecules/dashboard/Skeleton';
-import { useFlags } from '/flags/client';
+import useToggle from '/src/hooks/useToggle';
+import { PATH_PORTAL } from '/src/routes/paths';
+import { StudentCreate, StudentUpdate } from '/src/server/api/routers/students';
+import ApiClient from '/src/services/ApiClient';
+import { useSetOpen } from '/src/stores/studentCreationStore';
+import { api } from '/src/utils/api';
+import { cn } from '/src/utils/cn';
+import { sendTrackEvent } from '/src/utils/events';
+import { QUERY_KEY_DUE_ORDERS_STUDENT } from '/src/utils/reactQueryKeys';
 
 StudentDetail.getLayout = function getLayout(page: JSX.Element) {
   return <Layout title="Detalle del estudiante">{page}</Layout>;
 };
-
 function StudentDetail() {
   const { setAlertState } = useAlert();
   const permissions = useGetPermissions();
   const setOpen = useSetOpen();
-  const setDrawerState = useSetDrawerState();
   const router = useRouter();
   const setIsError = useSetToError();
   const setToIdle = useSetToIdle();
@@ -76,9 +78,10 @@ function StudentDetail() {
   const studentId = router.query.studentId as string;
   const [tab, setTab] = useState('due');
   const selectedSchool = useSelectedSchool();
-  const [selectedConcept, setSelectedConcept] = useState<string | null>('');
+  const [selectedConcept, setSelectedConcept] = useState<string | null>('all');
+  const [selectedSchoolCycle, setSelectedSchoolCycle] = useState<string | null>('all');
   const { data: levelsData } = useLevels(session?.token, selectedSchool?.id);
-  const { data: sectionsData } = useSections(session?.token, selectedSchool?.id);
+  const { data: sectionsData } = useSections(session?.token, selectedSchool?.id, true);
   const [showDelete, setShowDelete] = useState(false);
   const [keepDueOrders, setKeepDueOrders] = useState(false);
   const [tutorAssignTooltip, setTutorAssignTooltip] = useState(false);
@@ -86,13 +89,46 @@ function StudentDetail() {
   const addToQueue = useAddToQueue();
   const queryClient = useQueryClient();
   const utils = api.useUtils();
-  const flags = useFlags({ traits: { email: session?.user.email, schoolName: selectedSchool?.name } }).flags;
+  const { isEnabled: scholarshipsFlag } = useFlagWithVariableMatching('hk_scholarships');
 
-  const { data: student, isLoading: isStudentLoading } = api.students.dashboardSchoolDueOrdersStudentDetail.useQuery(
-    { studentId, schoolId: selectedSchool?.id || '' },
-    { enabled: !!selectedSchool?.id && !!studentId }
+  const { isFieldBlocked, getTooltipMessage } = useIntegrationsBlockedFields();
+
+  const isStudentDeactivateBlocked = () => isFieldBlocked('student.deactivate', Action.Delete);
+  const getDeactivateTooltipMessage = () =>
+    getTooltipMessage(
+      'student.deactivate',
+      Action.Delete,
+      'Este estudiante no puede ser dado de baja porque ya se encuentra Inactivo.'
+    );
+
+  const { data: schoolCycles } = api.schools.schoolsCycles.useQuery(
+    {
+      school_id: selectedSchool?.id as string,
+    },
+    {
+      enabled: Boolean(selectedSchool?.id),
+      staleTime: 60 * 1000 * 60,
+      trpc: {
+        context: {
+          skipBatch: true,
+        },
+      },
+    }
+  );
+  const { data: student, isPending: isStudentLoading } = api.students.dashboardSchoolDueOrdersStudentDetail.useQuery(
+    { studentId, schoolId: selectedSchool?.id as string },
+    {
+      enabled: !!selectedSchool?.id && !!studentId,
+      trpc: {
+        context: {
+          skipBatch: true,
+        },
+      },
+    }
   );
 
+  const canTerminateStatuses = ['new_student', 'active', 'inactive'];
+  const canTerminate = student?.state && canTerminateStatuses.includes(student.state) && !isStudentDeactivateBlocked();
   const [unassignModalConfirm, setUnassignModalConfirm] = useState({ open: false, guardian_id: '' });
   const [unassignRFCModalConfirm, setUnassignRFCModalConfirm] = useState(false);
   const { toggle: isOpenEditStudentData, onClose: onCloseEditStudentData, onOpen: onOpenEditStudentData } = useToggle();
@@ -100,10 +136,15 @@ function StudentDetail() {
   const { toggle: isOpenDetailRFC, onClose: onCloseDetailRFCModal, onOpen: onOpenDetailRFC } = useToggle();
   const { toggle: openOrder, onOpen: onOpenOrder, onClose: onCloseOrder } = useToggle(false);
 
-  const { data: studentMoreInfoData, isLoading: studentLoading } = api.manualPayments.studentDetails.useQuery(
+  const { data: studentMoreInfoData, isPending: studentLoading } = api.manualPayments.studentDetails.useQuery(
     { studentId },
     {
       enabled: !!studentId && !!session,
+      trpc: {
+        context: {
+          skipBatch: true,
+        },
+      },
     }
   );
 
@@ -114,61 +155,41 @@ function StudentDetail() {
     {
       refetchOnWindowFocus: false,
       enabled: !!session && !!studentMoreInfoData?.billing_guardian && !!selectedSchoolId,
-    }
-  );
-
-  const assignmentsQuery = async () => {
-    const res = await ApiClient.getAssignmentsForStudent(session?.token, studentId);
-    return res?.data;
-  };
-
-  const { data: assignmentsData, isLoading: isAssignmentsLoading } = useQuery(
-    [QUERY_KEY_ASSIGNMENTS],
-    assignmentsQuery,
-    {
-      onError(err) {
-        Sentry.captureException(err);
+      trpc: {
+        context: {
+          skipBatch: true,
+        },
       },
     }
   );
 
-  const { data: inscriptionsData } = api.students.inscriptionsSummary.useQuery(
-    { schoolId: selectedSchool?.id || '', studentId },
+  const {
+    data: assignmentsData,
+    isPending: isAssignmentsLoading,
+    error: assignmentsError,
+  } = api.students.studentsAssignmentsList.useQuery(
+    { studentId },
     {
-      enabled: !!selectedSchool?.id && !!studentId,
+      enabled: !!studentId,
+      trpc: {
+        context: {
+          skipBatch: true,
+        },
+      },
     }
   );
-  const concepts = (assignmentsData as Assignments.RootObject[])?.map((assignment) => assignment.concept);
+
+  useEffect(() => {
+    if (assignmentsError) {
+      Sentry.captureException(assignmentsError);
+    }
+  }, [assignmentsError]);
+
+  const concepts = assignmentsData?.map((assignment) => assignment.concept);
   const sections = sectionsData || [];
   const levels = levelsData || [];
   const studentMoreInfo = studentMoreInfoData;
   const loading = isStudentLoading || isAssignmentsLoading;
-  const disabled = student?.is_active === false;
-
-  const getInscriptionStatus = (status: 'Reinscrito' | 'Inscrito' | 'No inscrito' | 'Pendiente') => {
-    switch (status) {
-      case 'Reinscrito':
-        return {
-          status: 'success',
-          tooltip: 'El alumno ha realizado el pago de su reinscripción al siguiente ciclo escolar',
-        } as const;
-      case 'Inscrito':
-        return {
-          status: 'info',
-          tooltip: 'El alumno ha realizado el pago de su inscripción al siguiente ciclo escolar',
-        } as const;
-      case 'Pendiente':
-        return {
-          status: 'warning',
-          tooltip: 'El alumno aún tiene pendiente el pago de su inscripción al siguiente ciclo escolar.',
-        } as const;
-      default:
-        return {
-          status: 'muted',
-          tooltip: 'El alumno no tiene asignado un concepto de inscripción para el siguiente ciclo escolar.',
-        } as const;
-    }
-  };
 
   useSendPageViewedEvent('Detalle de Estudiante', selectedSchool);
 
@@ -182,23 +203,27 @@ function StudentDetail() {
   };
 
   const handleChangeConcept = (value: string) => {
-    setSelectedConcept(value === 'all' ? '' : value);
+    setSelectedConcept(value);
   };
 
-  const getStudentReport = async () => ApiClient.generateStudentsReport(session?.token, student?.id || '');
+  const handleChangeSchoolCycle = (value: string) => {
+    setSelectedSchoolCycle(value);
+  };
 
-  const unassignPost = async (guardian_id: string) =>
-    ApiClient.unassignTutorsAndStudents(session?.token, student?.id || '', guardian_id);
+  const getStatementsAccountReport = async () =>
+    ApiClient.generateStudentStatementsReport(selectedSchool?.id, {
+      student: student?.id,
+      school_cycle: selectedSchoolCycle,
+    });
 
-  const unassignMutation = useMutation({
-    mutationFn: unassignPost,
+  const unassignMutation = api.students.unassignGuardian.useMutation({
     onSuccess() {
       utils.students.dashboardSchoolDueOrdersStudentDetail.invalidate();
     },
   });
 
   const mutation = useMutation({
-    mutationFn: getStudentReport,
+    mutationFn: getStatementsAccountReport,
     async onSuccess(data) {
       addToQueue(data.id);
     },
@@ -216,8 +241,9 @@ function StudentDetail() {
 
   const updateGuardianMutation = useMutation({
     mutationFn: (guardianBillingInf: IUpdateData) =>
-      ApiClient.patchGuardianDetail(session?.token, guardianBillingInf.id, {
+      ApiClient.patchGuardianDetail(guardianBillingInf.id, {
         billing_info: guardianBillingInf.billing_info,
+        school_id: selectedSchool?.id,
       }),
     onSuccess: () => {
       utils.students.dashboardSchoolDueOrdersStudentDetail.invalidate();
@@ -243,7 +269,7 @@ function StudentDetail() {
       Source: 'Detalle de Estudiante',
     });
 
-    return ApiClient.getInvoicesByStudent(session?.token || '', studentId, extension)
+    return ApiClient.getInvoicesByStudent(studentId, extension)
       .then((data: Record<string, string>) => {
         addToQueue(data.id, ETypeFile.ZIP);
       })
@@ -279,73 +305,40 @@ function StudentDetail() {
       children: (
         <>
           <Table className="w-5" />
-          <span>Descargar tabla</span>
+          <span>Descargar Estado de Cuentas</span>
         </>
       ),
       onClick: () => handleAdd(),
+      disabled: selectedSchoolCycle == 'all',
     },
   ];
 
-  const CreateTutorMutation = useMutation({
-    mutationFn: (parsedValues: {
-      phone: string;
-      first_name: string;
-      last_name: string;
-      email: string;
-      gender: string;
-    }) =>
-      AssignGuardianAPI.createAndAssignGuardian(
-        session?.token || '',
-        selectedSchool?.id || '',
-        studentId,
-        parsedValues
-      ),
-    onSuccess: (res) => {
-      if (res === 'GUARDIAN_CREATED') {
-        utils.students.dashboardSchoolDueOrdersStudentDetail.invalidate();
-        queryClient.invalidateQueries({ queryKey: ['student_detail'] });
+  const { data: studentExtended } = api.students.retrieveStudentAdditionalInfo.useQuery({
+    studentId: student?.id || '',
+  });
 
-        setDrawerState({
-          isOpen: false,
-          guardian: null,
-          selectedTab: null,
-          disabled: true,
-        });
-      } else {
-        setDrawerState({
-          guardian: {
-            id: res.id,
-            first_name: res.first_name,
-            last_name: res.last_name,
-            email: res.email,
-            phone: res.phone,
-          },
-          guardianFound: true,
-          disabled: res.dependents.find((d) => d.id === studentId) ? true : false,
-        });
-      }
-    },
-    onError: (err) => {
-      Sentry.captureException(err);
+  const updateStudentAdditional = api.students.updateStudentAdditionalInfo.useMutation({
+    onSuccess: () => {
+      utils.students.retrieveStudentAdditionalInfo.invalidate();
     },
   });
 
-  const sendGuardianData = (data: FormValues) => {
-    const parsedValues = {
-      phone: `+${data.countryCode}${data.phone}`,
-      first_name: data.firstName,
-      last_name: data.lastName,
-      email: data.email,
-      gender: data.gender,
-    };
-
-    CreateTutorMutation.mutate(parsedValues);
-  };
+  const createStudentAdditional = api.students.createStudentAdditionalInfo.useMutation({
+    onSuccess: () => {
+      utils.students.retrieveStudentAdditionalInfo.invalidate();
+    },
+  });
 
   const editStudentDetailMutation = useMutation({
-    mutationFn: (values: StudentDetailProps | { billing_guardian: string | null }) =>
-      ApiClient.patchStudentViewMoreInfo(session?.token, studentId, values),
-    onSuccess: () => {
+    mutationFn: (values: StudentCreate | StudentUpdate | { billing_guardian: null }) =>
+      ApiClient.patchStudentViewMoreInfo(studentId, values),
+    onSuccess: async (_, values) => {
+      if (studentExtended) {
+        await updateStudentAdditional.mutate({ studentId: studentId, data: values as StudentUpdate });
+      } else {
+        await createStudentAdditional.mutate({ data: { student_id: studentId, ...values } as StudentCreate });
+      }
+
       utils.students.dashboardSchoolDueOrdersStudentDetail.invalidate();
       utils.manualPayments.studentDetails.invalidate();
     },
@@ -373,7 +366,7 @@ function StudentDetail() {
   const hasRFC = !!studentMoreInfo?.billing_guardian_info;
 
   const handleUnassignTutor = async (guardian_id: string) => {
-    await unassignMutation.mutate(guardian_id);
+    await unassignMutation.mutateAsync({ guardianId: guardian_id, studentId: student?.id as string });
   };
   const isRFCAssigned = (guardian: Guardian) =>
     hasRFC &&
@@ -398,7 +391,7 @@ function StudentDetail() {
         open: true,
       });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY_DUE_ORDERS_STUDENT, selectedConcept] });
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY_ASSIGNMENTS] });
+      utils.students.studentsAssignmentsList.invalidate();
       queryClient.invalidateQueries({ queryKey: ['schoolFulfillments'] });
       utils.students.dashboardSchoolDueOrdersStudentDetail.invalidate();
     },
@@ -406,13 +399,37 @@ function StudentDetail() {
       setAlertState({
         severity: 'error',
         message:
-          'Ha ocurrido un error al dar de baja al alumno. Intenta nuevamente o contacta a nuestro equipo de soporte.',
+          'Ha ocurrido un error al dar de baja al estudiante. Intenta nuevamente o contacta a nuestro equipo de soporte.',
         open: true,
       });
     },
     onMutate: () => {
       setKeepDueOrders(false);
       setShowDelete(false);
+    },
+  });
+
+  const [showReactivate, setShowReactivate] = useState(false);
+
+  const reactivateMutation = api.students.reactivate.useMutation({
+    onSuccess: async () => {
+      setAlertState({
+        severity: 'success',
+        message: 'El estudiante ha sido reactivado exitosamente.',
+        open: true,
+        alertTime: 2000,
+      });
+      setShowReactivate(false);
+      await utils.students.invalidate();
+    },
+    onError: () => {
+      setAlertState({
+        severity: 'error',
+        message:
+          'Ha ocurrido un error al reactivar al estudiante. Intenta nuevamente o contacta a nuestro equipo de soporte.',
+        open: true,
+      });
+      setShowReactivate(false);
     },
   });
 
@@ -428,6 +445,7 @@ function StudentDetail() {
   ];
 
   const trackEvent = useSendTrackEventWithUserName();
+
   return (
     <Sentry.ErrorBoundary
       beforeCapture={(scope) =>
@@ -522,8 +540,56 @@ function StudentDetail() {
           </Button>
         </div>
       </Dialog.Root>
+      <Dialog.Root
+        open={showReactivate}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowReactivate(false);
+          }
+        }}
+        classNames="max-w-[433px]"
+      >
+        <Dialog.Title>¿Quieres reactivar a este estudiante?</Dialog.Title>
+        <Dialog.Description>
+          El estudiante volverá a mostrarse como Activo, Inactivo o Nuevo ingreso según sus conceptos e inscripciones
+          asignadas.
+        </Dialog.Description>
+        <div className="flex justify-between max-w-[calc(433px_-_(48px_*_2))] mx-auto gap-2 mt-8">
+          <Dialog.Close
+            onClick={() => {
+              trackEvent('dashboard: leave reactivate student', {
+                school_id: selectedSchool?.id,
+                student_id: studentId,
+              });
+            }}
+            asChild
+          >
+            <Button className="w-full" variant="ghost">
+              No, volver
+            </Button>
+          </Dialog.Close>
+          <Button
+            variant="primary"
+            className="w-full"
+            disabled={reactivateMutation.isPending}
+            onClick={() => {
+              trackEvent('dashboard: confirm reactivate student', {
+                school_id: selectedSchool?.id,
+                student_id: studentId,
+              });
+              reactivateMutation.mutate({ id: studentId });
+            }}
+          >
+            {reactivateMutation.isPending ? (
+              <img src="/assets/oval.svg" alt="loading" className="h-6 mx-auto" />
+            ) : (
+              'Sí, reactivar'
+            )}
+          </Button>
+        </div>
+      </Dialog.Root>
       <div>
-        <Box sx={{ mb: 8, display: 'flex', alignItems: 'center' }}>
+        <div className="mb-16 flex items-center">
           <div className="flex">
             <div
               className="hover:cursor-pointer hover:bg-gray-100 w-[50px] h-[50px] rounded-[50%] flex items-center justify-center shadow-md mr-[18px]"
@@ -535,87 +601,67 @@ function StudentDetail() {
               Detalles del estudiante
             </label>
             <div className="flex items-center pl-4">
-              {permissions?.can_view_student_status &&
-                (student?.is_active ? (
-                  <Tooltip message="Este alumno tiene conceptos del ciclo actual">
-                    <Status variant="success">Activo</Status>
-                  </Tooltip>
-                ) : (
-                  <Tooltip message="Este alumno fue dado de baja o no tiene conceptos del ciclo actual">
-                    <Status variant="muted">Inactivo</Status>
-                  </Tooltip>
-                ))}
+              {permissions?.can_view_student_status && student?.state ? (
+                <StudentStateCard state={student?.state} />
+              ) : student?.is_active ? (
+                <Tooltip message="Este estudiante tiene conceptos del ciclo actual">
+                  <Status variant="success">Activo</Status>
+                </Tooltip>
+              ) : (
+                <Tooltip message="Este estudiante fue dado de baja o no tiene conceptos del ciclo actual">
+                  <Status variant="muted">Inactivo</Status>
+                </Tooltip>
+              )}
             </div>
           </div>
-        </Box>
+        </div>
 
         <div className="pb-8">
           <div className="flex items-center justify-between mb-3">
-            <h5 className="text-xl font-bold text-secondary">Información General</h5>
+            <h5 className="text-xl font-bold text-foreground">Información General</h5>
 
-            {permissions && !!permissions.can_edit_student && (
-              <Tooltip
-                disableHover={!disabled}
-                message="Este estudiante no puede ser dado de baja porque ya se encuentra Inactivo."
-              >
+            {permissions &&
+              !!permissions.can_edit_student &&
+              (student?.state === 'dropped_out' ? (
                 <Button
-                  variant="outline"
-                  intent="danger"
+                  variant="primary"
                   size="small"
-                  disabled={disabled}
-                  data-testid="unsuscribe-button"
+                  className="bg-white border rounded-lg shadow-none border-green text-green hover:bg-green hover:text-white"
+                  data-testid="reactivate-button"
                   onClick={() => {
-                    trackEvent('dashboard: open unsuscribe student', {
+                    trackEvent('dashboard: open reactivate student', {
                       school_id: selectedSchool?.id,
                       student_id: studentId,
                     });
-                    setShowDelete(true);
+                    setShowReactivate(true);
                   }}
                 >
-                  Dar de baja
+                  Reactivar estudiante
                 </Button>
-              </Tooltip>
-            )}
+              ) : (
+                <Tooltip disableHover={canTerminate} message={getDeactivateTooltipMessage()}>
+                  <Button
+                    variant="outline"
+                    intent="danger"
+                    size="small"
+                    disabled={!canTerminate}
+                    data-testid="unsuscribe-button"
+                    onClick={() => {
+                      trackEvent('dashboard: open unsuscribe student', {
+                        school_id: selectedSchool?.id,
+                        student_id: studentId,
+                      });
+                      setShowDelete(true);
+                    }}
+                  >
+                    Dar de baja
+                  </Button>
+                </Tooltip>
+              ))}
           </div>
           <GeneralInformation student={student} isLoading={loading} action={onOpenEditStudentData} />
-          {flags?.inscriptions && (
-            <>
-              {Array.isArray(inscriptionsData) && inscriptionsData?.length > 0 && (
-                <div className="bg-white rounded-lg shadow-card mb-8">
-                  <div id="header" className="flex items-center justify-between bg-[#F4F6F8] h-[56px] rounded-t-lg">
-                    <div className="grid grid-cols-[194px_188px_800px] gap-8 px-8 py-4">
-                      <h5 className="font-semibold text-[#637381]">Ciclo escolar</h5>
-                      <h5 className="font-semibold text-[#637381]">Estado de inscripción</h5>
-                      <h5 className="font-semibold text-[#637381]">Sección</h5>
-                    </div>
-                  </div>
-                  <div className="flex items-start flex-col px-8 py-4">
-                    {Array.isArray(inscriptionsData) &&
-                      inscriptionsData?.map((item, index) => (
-                        <div key={index} className="grid grid-cols-[194px_188px_800px] gap-8 py-5">
-                          <span className="text-[#212B36]">{item.school_cycle}</span>
-                          <span>
-                            {' '}
-                            <Tooltip message={getInscriptionStatus(item.status).tooltip}>
-                              <Status variant={getInscriptionStatus(item.status).status}>{item.status}</Status>
-                            </Tooltip>
-                          </span>
-                          <span
-                            className={cn('text-[#212B36]', {
-                              'italic text-[#637381]': item.section === null,
-                            })}
-                          >
-                            {item.section || 'Sin sección'}
-                          </span>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
-          <h5 className="mb-8 text-xl font-bold text-secondary">Tutores asignados</h5>
+          <StudentSectionsTable id={studentId} schoolId={selectedSchool?.id} />
+          <h5 className="mb-8 text-xl font-bold text-foreground">Tutores asignados</h5>
           <div className="w-full mb-8 space-y-4">
             {!loading &&
               student?.guardians?.map((guardian) => (
@@ -653,6 +699,12 @@ function StudentDetail() {
                         >
                           {guardian.first_name} {guardian.last_name}
                         </h1>
+
+                        <p className="flex items-center gap-2 w-full max-w-[250px] justify-start">
+                          <span className="break-words max-w-[250px] text-left whitespace-nowrap text-ellipsis overflow-hidden">
+                            {guardian?.relationship}
+                          </span>
+                        </p>
 
                         <p className="flex items-center gap-2 w-full max-w-[250px] justify-start">
                           <span>
@@ -747,18 +799,13 @@ function StudentDetail() {
               >
                 <Plus className="w-4 mr-3" /> Asignar nuevo tutor
               </button>
-              <GuardianDrawer sendGuardianData={sendGuardianData} />
+              <GuardianDrawerSheet studentId={studentId} />
             </>
           )}
         </div>
         <div className="py-12">
           <div className="flex items-center justify-between mb-8">
-            <h5 className="text-xl font-bold text-secondary">Facturación</h5>
-            {hasRFC && permissions?.can_edit_guardian_billing_information && (
-              <button className="bg-[#00AB55] py-2 px-4 rounded-lg text-white text-sm font-bold" onClick={onOpenRFC}>
-                Cambiar RFC asignado
-              </button>
-            )}
+            <h5 className="text-xl font-bold text-foreground">Facturación</h5>
           </div>
           {studentLoading && (
             <div className="border-[#83A9FF] bg-[#3366FF] bg-opacity-8 hover:bg-[#3366FF] hover:bg-opacity-12 justify-between grid grid-cols-[1fr_auto] border w-full min-h-[58px] rounded-2xl group-hover:border-[#F8F8F8] group-hover:shadow-[0px_16px_32px_-4px_rgba(145,158,171,0.16)] group/card px-6 py-5">
@@ -851,17 +898,18 @@ function StudentDetail() {
             </>
           )}
         </div>
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Card>
-              <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <Tabs tabs={tabsData} tab={tab} handleChangeTab={handleChangeTab} defaultValue="due">
-                  <DownloadMenu items={DownloadMenuItems}>
-                    <DownloadButton theme="blue" />
-                  </DownloadMenu>
-                </Tabs>
-
-                <div className="flex items-center justify-between px-6 py-5">
+        <div className="grid grid-cols-12 gap-6">
+          <div className="col-span-12">
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+              <div>
+                <div className="pt-4">
+                  <Tabs tabs={tabsData} tab={tab} handleChangeTab={handleChangeTab} defaultValue="due">
+                    <DownloadMenu items={DownloadMenuItems}>
+                      <DownloadButton theme="blue" />
+                    </DownloadMenu>
+                  </Tabs>
+                </div>
+                <div className="flex items-center px-6 py-5">
                   <Select
                     containerClassName="w-full max-w-[25%]"
                     className="w-full"
@@ -871,11 +919,31 @@ function StudentDetail() {
                     value={selectedConcept ?? 'all'}
                   >
                     <Select.Content>
-                      <Select.Item value="all">
+                      <Select.Item value="all" key="concepts-all">
                         <em>Todos</em>
                       </Select.Item>
                       {concepts?.map((option) => (
                         <Select.Item key={option.id} value={option.id}>
+                          {option.name}
+                        </Select.Item>
+                      ))}
+                    </Select.Content>
+                  </Select>
+
+                  <Select
+                    containerClassName="w-full max-w-[25%] ml-4"
+                    className="w-full"
+                    placeholder="Ciclo"
+                    disabled={loading}
+                    onValueChange={handleChangeSchoolCycle}
+                    value={selectedSchoolCycle ?? 'all'}
+                  >
+                    <Select.Content>
+                      <Select.Item value="all" key="school-cycles-all">
+                        <em>Todos</em>
+                      </Select.Item>
+                      {schoolCycles?.map((option) => (
+                        <Select.Item key={option.id} value={option.id as string}>
                           {option.name}
                         </Select.Item>
                       ))}
@@ -887,6 +955,7 @@ function StudentDetail() {
                   <OrderTableForDueOrders
                     studentId={studentId}
                     concept={selectedConcept === 'all' ? '' : selectedConcept ?? undefined}
+                    schoolCycle={selectedSchoolCycle === 'all' ? '' : selectedSchoolCycle ?? undefined}
                   />
                 )}
                 {tab === 'complete' && (
@@ -895,27 +964,32 @@ function StudentDetail() {
                     hideSum
                     studentId={studentId}
                     conceptId={selectedConcept === 'all' ? '' : selectedConcept ?? undefined}
+                    schoolCycleId={selectedSchoolCycle === 'all' ? '' : selectedSchoolCycle ?? undefined}
                   />
                 )}
-              </Box>
-            </Card>
-          </Grid>
-        </Grid>
-        <Divider sx={{ mt: 5, mb: 5 }} />
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Card>
+              </div>
+            </div>
+          </div>
+        </div>
+        <hr className="my-10 border-t border-gray-300" />
+        <div className="grid grid-cols-12 gap-6">
+          <div className="col-span-12">
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
               <OrderTableForAssignments studentId={studentId} student={student} />
-            </Card>
-          </Grid>
-        </Grid>
-        <Grid container spacing={3} mt={5}>
-          <Grid item xs={12}>
-            <Card>
-              <TabsTablesScholarships studentId={studentId} />
-            </Card>
-          </Grid>
-        </Grid>
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-12 gap-6 mt-10">
+          <div className="col-span-12">
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+              {scholarshipsFlag ? (
+                <StudentScholarshipsTable student={studentMoreInfoData} schoolCycles={schoolCycles ?? []} />
+              ) : (
+                <TabsTablesScholarships student={studentMoreInfoData} />
+              )}
+            </div>
+          </div>
+        </div>
       </div>
       <Sheet
         open={isOpenRFC}
@@ -954,10 +1028,10 @@ function StudentDetail() {
           <RFCDetail
             onClose={onCloseDetailRFC}
             guardianDetail={guardianDetail}
-            mutation={updateGuardianMutation}
-            /**
-             * TODO: Refactor any when using TRPC
-             */
+            onSubmit={(values) =>
+              updateGuardianMutation.mutate({ billing_info: { ...values }, id: guardianDetail?.id ?? '' })
+            }
+            isLoading={updateGuardianMutation.isPending}
             errorsMutation={
               updateGuardianMutation.isError ? (updateGuardianMutation.error.response?.data as any) : null
             }

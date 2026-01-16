@@ -2,14 +2,12 @@ import PropTypes from 'prop-types';
 import { forwardRef } from 'react';
 // next
 import NextLink from 'next/link';
-// @mui
-import { Box } from '@mui/material';
 
 // ----------------------------------------------------------------------
 
-const Logo = forwardRef(({ disabledLink = false, sx }, ref) => {
+const Logo = forwardRef(({ disabledLink = false }, ref) => {
   const logo = (
-    <Box ref={ref} sx={{ width: 147, height: 47, cursor: 'pointer', ...sx }}>
+    <div ref={ref} className="w-[147px] h-[47px] cursor-pointer">
       <svg width="154" height="35" viewBox="0 0 154 35" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path
           d="M8.90186 25.2743C8.90186 20.1703 12.6092 16.3654 17.7494 16.3654C21.2329 16.3654 24.2413 18.3322 25.3216 21.1868L22.1845 22.6197C21.8281 21.7395 21.2142 20.988 20.4227 20.4641C19.6312 19.9402 18.6985 19.6676 17.7494 19.6839C14.8123 19.6839 12.6442 22.0333 12.6442 25.293C12.6442 28.5527 14.7998 30.9309 17.7494 30.9309C18.7035 30.9434 19.6387 30.6658 20.4315 30.1332C21.2242 29.6018 21.8356 28.8415 22.1845 27.9525L25.3216 29.4442C24.2763 32.1988 21.2617 34.2606 17.7494 34.2606C12.6429 34.2719 8.90186 30.4083 8.90186 25.2743Z"
@@ -65,7 +63,7 @@ const Logo = forwardRef(({ disabledLink = false, sx }, ref) => {
           </linearGradient>
         </defs>
       </svg>
-    </Box>
+    </div>
   );
 
   if (disabledLink) {
@@ -79,7 +77,6 @@ Logo.displayName = 'Logo';
 
 Logo.propTypes = {
   disabledLink: PropTypes.bool,
-  sx: PropTypes.object,
 };
 
 export default Logo;

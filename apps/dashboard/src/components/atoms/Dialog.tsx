@@ -1,5 +1,5 @@
 import * as RDialog from '@radix-ui/react-dialog';
-import { forwardRef, ReactNode } from 'react';
+import { forwardRef, type ReactNode } from 'react';
 import { cn } from '/src/utils/cn';
 
 interface DialogProps extends RDialog.DialogProps {
@@ -14,11 +14,20 @@ const Close = RDialog.Close;
 
 const Dialog = forwardRef<HTMLDivElement, DialogProps>(
   (
-    { children, open, overlay = true, position = 'center', hideShadow, centerWhenSidepanelIsOpen = false, ...props },
+    {
+      children,
+      open,
+      overlay = true,
+      position = 'center',
+      hideShadow,
+      centerWhenSidepanelIsOpen = false,
+      classNames,
+      ...props
+    },
     ref
   ) => {
     const BoxClassNames = cn(
-      'fixed max-w-[480px] px-6 py-7 text-center z-[9999] max-h-fit -translate-y-1/2 bg-white shadow-xl top-1/2 rounded-lg animate-fade-in duration-200 ease-linear',
+      'fixed max-w-[480px] px-6 py-7 text-center z-[51] max-h-fit -translate-y-1/2 bg-white shadow-xl top-1/2 rounded-lg animate-fade-in duration-200 ease-linear',
       {
         'shadow-none': hideShadow,
         'left-0 right-0 mx-auto': position === 'center',
@@ -38,11 +47,11 @@ const Dialog = forwardRef<HTMLDivElement, DialogProps>(
       >
         <RDialog.Portal>
           <RDialog.Overlay
-            className={cn('fixed inset-0 z-[9998] bg-black bg-opacity-25 animate-fade-in', {
+            className={cn('fixed inset-0 z-50 bg-black bg-opacity-25 animate-fade-in', {
               'bg-opacity-0 bg-transparent opacity-0 hidden': !overlay,
             })}
           />
-          <RDialog.Content ref={ref} className={cn(BoxClassNames, props.classNames)}>
+          <RDialog.Content ref={ref} className={cn(BoxClassNames, classNames)}>
             {children}
           </RDialog.Content>
         </RDialog.Portal>
@@ -52,11 +61,12 @@ const Dialog = forwardRef<HTMLDivElement, DialogProps>(
 );
 
 const Title = ({ children, className }: { children: ReactNode; className?: string }) => (
-  <div className={cn('mb-4 text-base font-semibold leading-6', className)}>{children}</div>
+  <div className={cn('mb-1 text-base font-semibold leading-6', className)}>{children}</div>
 );
 const Description = ({ children, className }: { children: ReactNode; className?: string }) => (
   <div className={cn('font-normal text-sm text-[#637381] mb-6', className)}>{children}</div>
 );
+
 export default {
   Root: Dialog,
   Title,

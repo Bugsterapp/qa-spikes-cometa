@@ -1,15 +1,15 @@
+import type { StudentConceptDetailSerializerV2 } from '@cometa/trpc/src/types';
+import type { Dispatch, SetStateAction } from 'react';
 import ConceptInfo from '../ConceptInfo';
-import { Divider, Stack } from '@mui/material';
+import ConceptInfoSkeleton from '../ConceptInfo/ConceptInfoSkeleton';
 import ConceptScholarshipsAccordion from '../ConceptScholarshipsAccordion';
 import ConceptSelectOrdersAccordion from '../ConceptSelectOrdersAccordion';
-import ConceptInfoSkeleton from '../ConceptInfo/ConceptInfoSkeleton';
-import { ConceptAssignment } from '/types/paid-orders';
-import { Dispatch, SetStateAction } from 'react';
+import type { ISelectedOrders } from '/src/components/organisms/dashboard/ConceptAssignmentEdit';
 
 interface ConceptDataProps {
-  concept: ConceptAssignment | undefined;
-  selectedOrders: any[];
-  setSelectedOrders: Dispatch<SetStateAction<any[]>>;
+  concept: StudentConceptDetailSerializerV2 | undefined;
+  selectedOrders: ISelectedOrders[];
+  setSelectedOrders: Dispatch<SetStateAction<ISelectedOrders[]>>;
   changeOrders?: () => void;
   isLoading?: boolean;
   isEdit?: boolean;
@@ -26,9 +26,9 @@ const ConceptData = ({
   const scholarships = concept?.scholarships;
   if (isLoading || !concept) return <ConceptInfoSkeleton />;
   return (
-    <div>
-      <ConceptInfo conceptData={concept} isOptional={concept.orders.every((order) => order.dueDate === null)} />
-      <Stack divider={<Divider />} spacing={4.5} className="mt-6">
+    <div className="pb-8">
+      <ConceptInfo conceptData={concept} isOptional={concept.orders.some((order) => order.optional)} />
+      <div className="flex flex-col gap-9 mt-6 [&>*:not(:last-child)]:border-b [&>*:not(:last-child)]:border-gray-300 [&>*:not(:last-child)]:pb-9">
         {scholarships && !!scholarships.length && (
           <div>
             <ConceptScholarshipsAccordion scholarships={scholarships} price={concept.price} />
@@ -43,11 +43,11 @@ const ConceptData = ({
               changeOrders={changeOrders}
               isEdit={isEdit}
               onEditState
-              isOptional={concept.orders.every((order) => order.dueDate === null)}
+              isOptional={concept.orders.some((order) => order.optional)}
             />
           </div>
         )}
-      </Stack>
+      </div>
     </div>
   );
 };

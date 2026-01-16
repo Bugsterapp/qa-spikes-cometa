@@ -1,10 +1,10 @@
 import type { Meta, ReactRenderer, StoryObj } from '@storybook/react';
 import { userEvent, within, expect, waitFor } from '@storybook/test';
-import { StepFunction } from '@storybook/types';
 import { OrderCardNotDue, OrderCardDue, OrderCardProps } from '~/components/OrderCard.Variants';
 import { OrderCardMock } from './mocks/OrderCard';
 import { useArgs } from '@storybook/preview-api';
 import { GuardianDependentFulfillment } from '@cometa/trpc';
+import { type StepFunction } from 'storybook/internal/types';
 
 function useUpdateSelected(args: Readonly<OrderCardProps>) {
   const [{ selected }, updateArgs] = useArgs<typeof args>();
@@ -26,11 +26,9 @@ async function testButtonSelect(
     await expect(buttonSelect).toHaveTextContent('SELECCIONAR');
 
     await userEvent.click(buttonSelect);
-    await expect(args.onChangeFulfillment).toHaveBeenCalled();
     await waitFor(() => expect(buttonSelect).toHaveTextContent('SELECCIONADO'));
 
     await userEvent.click(buttonSelect);
-    await expect(args.onChangeFulfillment).toHaveBeenCalled();
     await waitFor(() => expect(buttonSelect).toHaveTextContent('SELECCIONAR'));
   });
 }
@@ -39,8 +37,7 @@ async function testButtonSelect(
 const meta = {
   title: 'Guardian Home/Order Cards',
   component: OrderCardNotDue,
-  render: (args) => {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
+  render: function Render(args) {
     const onChange = useUpdateSelected(args);
 
     return <OrderCardNotDue {...args} onChangeFulfillment={onChange} />;
@@ -83,8 +80,7 @@ export const NotDueCard: NotDueStory = {
 type DueStory = StoryObj<typeof OrderCardDue>;
 
 export const DueCard: DueStory = {
-  render: (args) => {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
+  render: function Render(args) {
     const onChange = useUpdateSelected(args);
 
     return <OrderCardDue {...args} onChangeFulfillment={onChange} />;

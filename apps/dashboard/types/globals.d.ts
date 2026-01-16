@@ -2,6 +2,10 @@
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   var analytics: any;
+
+  interface Window {
+    CobrowseIO: any; // Cobrowse integration
+  }
 }
 
 export {};

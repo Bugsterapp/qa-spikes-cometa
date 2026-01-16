@@ -1,23 +1,32 @@
-import SidebarHeader from '/src/components/molecules/dashboard/SidebarHeader';
-import { formatPrice } from '/src/utils/general';
-import LinkDetail from '/src/components/atoms/LinkDetail';
-import { AxiosError } from 'axios';
-import { AmountTitle, Container, ContainerPaymentDetail, HeaderLabel, Title, Value } from '../FulfillmentDetail';
-import Sheet from '/src/components/atoms/Sheet';
-import { trimId } from '/src/utils/trim-id';
-import { GuardianDependentOrder } from '@cometa/trpc/src/types';
-import Plus from '/public/assets/icons/studentDetail/plus.svg';
-import { useRef, useState } from 'react';
+import { Button } from '@cometa/recreo';
+import { GuardianDependentOrder, OptionalOrder } from '@cometa/trpc/src/types';
 import { useMutation } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
+import { useRef, useState } from 'react';
+
+import Plus from '/public/assets/icons/studentDetail/plus.svg';
+import Trash from '/public/assets/icons/trash.svg';
+import Dialog from '/src/components/atoms/Dialog';
+import LinkDetail from '/src/components/atoms/LinkDetail';
+import Sheet from '/src/components/atoms/Sheet';
+import SidebarHeader from '/src/components/molecules/dashboard/SidebarHeader';
+import {
+  Container,
+  ContainerPaymentDetail,
+  HeaderLabel,
+  Title,
+  Value,
+} from '/src/components/payments/FulfillmentDetail';
+import { TypeSpecialDiscount } from '/src/constants/specialDiscountTypes';
+import { useSelectedSchool } from '/src/guards/AuthGuard';
 import useAlert from '/src/hooks/useAlert';
 import ApiClient from '/src/services/ApiClient';
-import { useSession } from 'next-auth/react';
-import { useSelectedSchool } from '/src/guards/AuthGuard';
-import Dialog from '/src/components/atoms/Dialog';
-import { DialogFormSpecialDiscount } from '../DialogFormSpecialDiscount';
-import { TypeSpecialDiscount } from '/src/constants/specialDiscountTypes';
-import IcTrash from '/public/assets/icons/ic_trash.svg';
 import { api } from '/src/utils/api';
+import { formatPrice } from '/src/utils/general';
+import { trimId } from '/src/utils/trim-id';
+
+import { DialogFormSpecialDiscount } from '../DialogFormSpecialDiscount';
+import ContainerPaymentRow from '../ManualPayPartial/ContainerPaymentRow';
 
 type Discount = {
   discountName?: string;
@@ -27,24 +36,16 @@ type Discount = {
 
 interface OptionalOrderDetailProps {
   onClose: () => void;
-  orderOptional: GuardianDependentOrder | undefined;
+  orderOptional: GuardianDependentOrder | OptionalOrder | undefined;
   open: boolean;
-  invalidate: () => void;
+  invalidate: () => Promise<void>;
   isLoading: boolean;
 }
 
-export default function OptionalOrderDetail({
-  onClose,
-  orderOptional,
-  open,
-  invalidate,
-  isLoading,
-}: OptionalOrderDetailProps) {
+export default function OptionalOrderDetail({ onClose, orderOptional, open, invalidate }: OptionalOrderDetailProps) {
   const formRef = useRef<HTMLFormElement>(null);
-
-  const { data: session } = useSession();
   const selectedSchool = useSelectedSchool();
-
+  const [loadingDeleteDiscount, setLoadingDeleteDiscount] = useState(false);
   const { setAlertState } = useAlert();
 
   const [openSpecialDiscount, setOpenSpecialDiscount] = useState(false);
@@ -52,12 +53,18 @@ export default function OptionalOrderDetail({
   const [deleteDiscount, setDeleteDiscount] = useState(defaultDeleteDiscount);
   const utils = api.useUtils();
 
+  const hasStudent = (order: GuardianDependentOrder | OptionalOrder | undefined): order is GuardianDependentOrder =>
+    order !== undefined && 'student' in order;
+
   const mutationDeleteDiscount = api.schools.schoolsSpecialDiscountsDestroy.useMutation({
-    onSuccess() {
-      utils.manualPayments.fulfillments.invalidate();
-      invalidate();
+    async onSuccess() {
+      await utils.manualPayments.fulfillments.invalidate();
+      await utils.payments.retrieveFulfillment.invalidate();
+      await invalidate();
+      setLoadingDeleteDiscount(false);
     },
     onError(err: AxiosError | Error | any) {
+      setLoadingDeleteDiscount(false);
       setAlertState({
         open: true,
         severity: 'error',
@@ -75,22 +82,30 @@ export default function OptionalOrderDetail({
 
   const key = trimId(orderOptional?.id || '');
 
-  const addInterestForg = async (discount: Discount) =>
-    await ApiClient.createSpecialDiscount(
-      session?.token,
+  const createSpecialDiscount = async (discount: Discount) => {
+    if (!hasStudent(orderOptional)) {
+      throw new Error('Cannot create special discount for orders without student');
+    }
+    return await ApiClient.createSpecialDiscount(
       selectedSchool?.id || '',
       discount.discountName || 'Recargo perdonado',
       discount.discountValue,
-      orderOptional?.student.id,
+      orderOptional.student.id,
       orderOptional?.order_id,
       discount.discountType
     );
+  };
 
-  const mutationAddInterestForg = useMutation({
-    mutationFn: addInterestForg,
+  const createSpecialDiscountMutation = useMutation({
+    mutationFn: createSpecialDiscount,
     onSuccess: async () => {
+      if (hasStudent(orderOptional)) {
+        await utils.students.orderDetail.invalidate({
+          orderId: orderOptional?.order_id,
+          studentId: orderOptional.student.id,
+        });
+      }
       invalidate();
-
       setOpenSpecialDiscount(false);
     },
     onError(error: AxiosError | Error | any) {
@@ -109,7 +124,7 @@ export default function OptionalOrderDetail({
     if (data.discount === Number(orderOptional?.final_amount)) {
       setOpenSpecialDiscount(false);
     } else {
-      mutationAddInterestForg.mutate({ discountName: data.name, discountValue: data.discount.toString() });
+      createSpecialDiscountMutation.mutate({ discountName: data.name, discountValue: data.discount.toString() });
     }
   };
 
@@ -132,12 +147,12 @@ export default function OptionalOrderDetail({
               <div id="order-data">
                 <HeaderLabel>DATOS DE LA ORDEN</HeaderLabel>
                 <div className="flex flex-col mt-8 gap-y-4">
-                  {orderOptional?.student && (
+                  {hasStudent(orderOptional) && (
                     <Container>
                       <Title text="Estudiante:" />
                       <div className="col-span-3 w-fit">
                         <LinkDetail
-                          href={`/student/detail/${orderOptional.student.id}`}
+                          href={`/students/${orderOptional.student.id}`}
                           text={`${orderOptional.student.first_name} ${orderOptional.student.last_name}`}
                           message="Ver detalle de estudiante"
                         />
@@ -152,65 +167,48 @@ export default function OptionalOrderDetail({
               </div>
             </div>
             <div>
-              <div className="pt-[30px]">
-                <div className="flex flex-row items-center mb-5 ml-8 text-sm font-bold divide-x divide-gray-500/24 text-green">
-                  <button
-                    className="flex flex-row items-center p-1 pr-2 transition-colors bg-transparent hover:text-green-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={() => {
-                      setOpenSpecialDiscount(true);
-                    }}
-                  >
-                    <Plus className="w-3 mr-[11px]" /> Agregar descuento
-                  </button>
+              {hasStudent(orderOptional) && (
+                <div className="pt-[30px]">
+                  <div className="flex flex-row items-center mb-5 ml-8 text-sm font-bold divide-x divide-gray-500/24 text-green">
+                    <button
+                      className="flex flex-row items-center p-1 pr-2 transition-colors bg-transparent hover:text-green-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => {
+                        setOpenSpecialDiscount(true);
+                      }}
+                    >
+                      <Plus className="w-3 mr-[11px]" /> Agregar descuento
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
               <ContainerPaymentDetail id="payment_amount_detail">
-                <Container className="grid-cols-2">
-                  <AmountTitle text="Monto original:" />
-                  <label className="text-sm font-normal justify-self-end">
-                    {orderOptional?.price ? formatPrice(orderOptional?.price, orderOptional?.currency) : '-'}
-                  </label>
-                </Container>
-                {orderOptional?.discount_breakdown?.details?.early_bird?.total && (
-                  <Container className="grid-cols-2">
-                    <AmountTitle text="Descuento pronto pago:" />
-                    <label className="text-sm font-normal justify-self-end">
-                      -{formatPrice(orderOptional?.discount_breakdown.details.early_bird.total, 'MXN')}
-                    </label>
-                  </Container>
-                )}
-                {orderOptional?.discount_breakdown?.details?.scholarships?.details?.map((item) =>
-                  item.active ? (
-                    <Container key={`discount-breakdown-detail-${item.id}`} className="grid-cols-2">
-                      <AmountTitle text={item?.name || ''} />
-                      <label className="text-sm font-normal justify-self-end">
-                        -{formatPrice(item?.discount || 0, 'MXN')}
-                      </label>
-                    </Container>
-                  ) : null
-                )}
+                <ContainerPaymentRow
+                  label="Monto original:"
+                  value={orderOptional?.price ? formatPrice(orderOptional?.price, orderOptional?.currency) : '-'}
+                />
+
                 {orderOptional?.discount_breakdown?.details?.special?.details?.map((item) => (
-                  <Container key={item.id} className="grid-cols-2">
-                    <div className="flex">
-                      <AmountTitle text={item.name || ''} loading={isLoading} />
-                      {item.type !== TypeSpecialDiscount.INTEREST_FORG && (
-                        <button
-                          className="ml-1 bg-transparent"
-                          disabled={isLoading}
+                  <ContainerPaymentRow
+                    key={`discount-breakdown-detail-special-${item.id}`}
+                    label={item.name}
+                    value={`-${formatPrice(item.discount, 'MXN')}`}
+                    action={
+                      item.type !== TypeSpecialDiscount.INTEREST_FORG && (
+                        <Button
+                          className="px-1 py-1 bg-transparent rounded-full shadow-none"
                           onClick={() => {
                             const { id, discount } = item;
-                            setDeleteDiscount({ id: id || '', discount: parseFloat(discount || '0') });
+                            setDeleteDiscount({ id, discount: parseFloat(discount) });
                           }}
+                          disabled={loadingDeleteDiscount}
                         >
-                          <IcTrash className="text-error" />
-                        </button>
-                      )}
-                    </div>
-                    <label className="text-sm font-normal justify-self-end">
-                      -{formatPrice(item?.discount || 0, 'MXN')}
-                    </label>
-                  </Container>
+                          <Trash />
+                        </Button>
+                      )
+                    }
+                  />
                 ))}
+
                 <Container className="grid-cols-2 pt-5 border-t border-t-gray-600">
                   <label className="text-base font-semibold">{totalLabel}</label>
                   <label className="text-base font-semibold justify-self-end">
@@ -221,24 +219,26 @@ export default function OptionalOrderDetail({
             </div>
           </div>
         </div>
-        <Dialog.Root
-          open={openSpecialDiscount}
-          position="right"
-          onOpenChange={(state) => {
-            if (!state) {
-              setOpenSpecialDiscount(false);
-            }
-          }}
-        >
-          <Dialog.Title>Agregar descuento</Dialog.Title>
-          <DialogFormSpecialDiscount
-            ref={formRef}
-            finalAmount={orderOptional?.final_amount || ''}
-            onSubmitDiscount={onSubmitSpecialDiscount}
-            setOpenSpecialDiscount={setOpenSpecialDiscount}
-            optional
-          />
-        </Dialog.Root>
+        {hasStudent(orderOptional) && (
+          <Dialog.Root
+            open={openSpecialDiscount}
+            position="right"
+            onOpenChange={(state) => {
+              if (!state) {
+                setOpenSpecialDiscount(false);
+              }
+            }}
+          >
+            <Dialog.Title>Agregar descuento</Dialog.Title>
+            <DialogFormSpecialDiscount
+              ref={formRef}
+              finalAmount={orderOptional?.final_amount || ''}
+              onSubmitDiscount={onSubmitSpecialDiscount}
+              setOpenSpecialDiscount={setOpenSpecialDiscount}
+              optional
+            />
+          </Dialog.Root>
+        )}
         <Dialog.Root
           open={!!deleteDiscount.id}
           position="right"
@@ -252,9 +252,11 @@ export default function OptionalOrderDetail({
             <Dialog.Close className="px-8 py-2 text-sm font-bold text-gray-600 bg-transparent hover:opacity-90 whitespace-nowrap">
               Cancelar
             </Dialog.Close>
-            <button
-              className="text-white  font-bold	py-2 px-8 rounded-lg	text-sm	hover:opacity-90  whitespace-nowrap bg-error shadow-[0_8px_16px_#FF48423D]"
+            <Button
+              disabled={loadingDeleteDiscount}
+              className="text-white font-bold	py-2 px-8 rounded-lg text-sm	hover:opacity-90  whitespace-nowrap shadow-[0_8px_16px_#FF48423D] bg-red-500 hover:bg-red-700"
               onClick={() => {
+                setLoadingDeleteDiscount(true);
                 mutationDeleteDiscount.mutate(
                   {
                     id: deleteDiscount.id,
@@ -272,7 +274,7 @@ export default function OptionalOrderDetail({
               }}
             >
               Eliminar
-            </button>
+            </Button>
           </div>
         </Dialog.Root>
       </Sheet.Content>

@@ -1,5 +1,4 @@
 // TODO: REFACTOR THIS TO USE ONBOARDING-LIKE FORM
-import { RadioGroup, FormControlLabel, Radio, TextField, TextFieldProps } from '@mui/material';
 import { FormikProps } from 'formik';
 import React, { useEffect, useRef, useState } from 'react';
 import FormField, { HelperTextWithIcon } from '~/components/CustomFormField';
@@ -10,52 +9,71 @@ import { cn } from '~/lib/cn';
 import { personTypeDefault, personTypeMoral } from '~/utils/static_data/personTypesTaxRegimen';
 import taxRegimeValues from '~/utils/static_data/taxRegimeValues';
 import IcInfo from '/public/icons/information-white.svg';
-import { Button } from '~/components/atoms/Button';
+import { Button } from '~/components/ui/Button';
 import { HelpTooltipIcon } from '~/components/atoms/HelpTooltipIcon';
-import { styled } from '@mui/material/styles';
-
-// change disabled style TextField MUI to equal FormFields
-const CustomTextField = styled(TextField)({
-  '& .Mui-disabled': {
-    color: '#A6A6A6',
-    backgroundColor: '#EBEBEB',
-    '& .MuiOutlinedInput-notchedOutline': {
-      border: 'none',
-    },
-    '& .MuiLabel-root': {
-      color: '#A6A6A6',
-    },
-  },
-});
+import { useSendEvent } from '~/hooks/useSendEvent';
+import { TrackEvents } from '~/constants/events';
 
 export type TextFieldHelperProps = {
   withHelpIcon?: boolean;
   messageHelpIcon?: React.ReactNode;
-} & TextFieldProps;
+  error?: boolean;
+  helperText?: React.ReactNode;
+  label?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  value?: string;
+  onChange?: React.ChangeEventHandler<HTMLInputElement>;
+  name?: string;
+  className?: string;
+};
 
 export const TextFieldHelper = ({
   withHelpIcon,
   messageHelpIcon,
   error,
   helperText,
-  ...params
+  label,
+  placeholder,
+  disabled,
+  value,
+  onChange,
+  name,
+  className,
 }: TextFieldHelperProps) => (
-  <CustomTextField
-    {...params}
-    error={error}
-    helperText={
-      helperText && (
-        <HelperTextWithIcon isError={!!error} className="flex flex-row items-center mt-px ml-0">
-          {helperText}
-          {withHelpIcon && (
-            <HelpTooltipIcon>
-              <span className="text-xs">{messageHelpIcon}</span>
-            </HelpTooltipIcon>
-          )}
-        </HelperTextWithIcon>
-      )
-    }
-  />
+  <div className="w-full">
+    {label && (
+      <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
+        {label}
+      </label>
+    )}
+    <input
+      id={name}
+      name={name}
+      type="text"
+      placeholder={placeholder}
+      value={value}
+      onChange={onChange}
+      disabled={disabled}
+      className={cn(
+        'w-full px-4 py-2 border rounded-lg transition-colors',
+        'focus:outline-none focus:ring-2 focus:ring-blue-500',
+        error ? 'border-red-500' : 'border-gray-300',
+        disabled && 'bg-[#EBEBEB] text-[#A6A6A6] cursor-not-allowed border-none',
+        className
+      )}
+    />
+    {helperText && (
+      <HelperTextWithIcon isError={!!error} className="flex flex-row items-center mt-px ml-0">
+        {helperText}
+        {withHelpIcon && (
+          <HelpTooltipIcon>
+            <span className="text-xs">{messageHelpIcon}</span>
+          </HelpTooltipIcon>
+        )}
+      </HelperTextWithIcon>
+    )}
+  </div>
 );
 
 const FormFieldsBilling = ({ formik, disabledAll = false }: { formik: FormikProps<any>; disabledAll?: boolean }) => {
@@ -65,6 +83,7 @@ const FormFieldsBilling = ({ formik, disabledAll = false }: { formik: FormikProp
   const urlSAT = 'https://www.sat.gob.mx/aplicacion/53027/genera-tu-constancia-de-situacion-fiscal';
   const [openAlert, setOpenAlert] = useState(false);
   const firstInput = useRef<HTMLInputElement>(null);
+  const sendEvent = useSendEvent();
 
   useEffect(() => {
     if (formik.errors && firstInput.current) firstInput.current.focus();
@@ -105,31 +124,53 @@ const FormFieldsBilling = ({ formik, disabledAll = false }: { formik: FormikProp
           <label className="font-semibold" id="demo-radio-buttons-group-label">
             Facturar como
           </label>
-          {/* TODO: refactor replace MUI*/}
-          <RadioGroup
-            row
-            aria-labelledby="demo-radio-buttons-group-label"
-            value={formik.values.personType}
-            onChange={(e) => {
-              formik.setFieldValue('personType', e.target.value);
-              formik.setFieldValue('taxRegime', null);
-              formik.setErrors({});
-            }}
-            name="radio-buttons-group"
-          >
-            <FormControlLabel
-              value={personTypeDefault}
-              control={<Radio disabled={disabledAll} />}
-              label="Persona física"
-            />
-            <FormControlLabel value={personTypeMoral} control={<Radio disabled={disabledAll} />} label="Empresa" />
-          </RadioGroup>
+          <div className="flex flex-row gap-4 mt-2" role="radiogroup" aria-labelledby="demo-radio-buttons-group-label">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="radio-buttons-group"
+                value={personTypeDefault}
+                checked={formik.values.personType === personTypeDefault}
+                disabled={disabledAll}
+                onChange={(e) => {
+                  sendEvent(TrackEvents.billing.form.personType, {
+                    personType: e.target.value === 'N' ? 'natural person' : 'business',
+                  });
+                  formik.setFieldValue('personType', e.target.value);
+                  formik.setFieldValue('taxRegime', null);
+                  formik.setErrors({});
+                }}
+                className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500 disabled:opacity-50"
+              />
+              <span className={disabledAll ? 'text-gray-400' : ''}>Persona física</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="radio-buttons-group"
+                value={personTypeMoral}
+                checked={formik.values.personType === personTypeMoral}
+                disabled={disabledAll}
+                onChange={(e) => {
+                  sendEvent(TrackEvents.billing.form.personType, {
+                    personType: e.target.value === 'N' ? 'natural person' : 'business',
+                  });
+                  formik.setFieldValue('personType', e.target.value);
+                  formik.setFieldValue('taxRegime', null);
+                  formik.setErrors({});
+                }}
+                className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500 disabled:opacity-50"
+              />
+              <span className={disabledAll ? 'text-gray-400' : ''}>Empresa</span>
+            </label>
+          </div>
         </div>
         <div className="mb-[17px]">
           {/* TODO: refactor mb when replace AutoComplete MUI*/}
           <div className="mb-3">
             <FormField label="RFC*" error={formik.errors.rfc as string}>
               <CustomInput
+                onClick={() => sendEvent(TrackEvents.billing.form.taxId)}
                 ref={firstInput}
                 placeholder="RFC*"
                 value={formik.values.rfc}
@@ -178,6 +219,7 @@ const FormFieldsBilling = ({ formik, disabledAll = false }: { formik: FormikProp
               }
             >
               <CustomInput
+                onClick={() => sendEvent(TrackEvents.billing.form.billingName)}
                 placeholder="Nombre/s y apellido/s"
                 value={formik.values.billingName}
                 onChange={handleChangeToUpperCase}
@@ -192,25 +234,25 @@ const FormFieldsBilling = ({ formik, disabledAll = false }: { formik: FormikProp
               />
             </FormField>
           </div>
-          <AutocompleteDivider
-            id="mui-component-select-taxRegime"
-            name="taxRegime"
-            options={taxRegimeValuesByPersonType}
-            value={formik.values.taxRegime}
-            clearIcon={null}
-            getOptionLabel={(option: (typeof taxRegimeValuesByPersonType)[0]) =>
-              option ? `${option.value} - ${option.name}` : ''
-            }
-            noOptionsText="Sin coincidencias"
-            renderInput={(params: TextFieldProps) => (
-              <TextFieldHelper
-                {...params}
-                label="Régimen fiscal*"
-                error={'taxRegime' in formik.errors || 'taxing_system' in formik.errors}
-                helperText={(formik.errors.taxRegime as string) || (formik.errors.taxing_system as string)}
-                withHelpIcon={!!formik.errors?.taxing_system}
-                messageHelpIcon={
-                  <>
+          <div className="mb-3">
+            <AutocompleteDivider
+              options={taxRegimeValuesByPersonType as any}
+              value={formik.values.taxRegime}
+              getOptionLabel={(option: (typeof taxRegimeValuesByPersonType)[0]) =>
+                option ? `${option.value} - ${option.name}` : ''
+              }
+              onChange={(_: any, option: (typeof taxRegimeValuesByPersonType)[0]) => {
+                formik.setFieldValue('taxRegime', option);
+              }}
+              onClick={() => sendEvent(TrackEvents.billing.form.taxRegime)}
+              placeholder="Régimen fiscal*"
+              disabled={disabledAll}
+            />
+            {((formik.errors.taxRegime as string) || (formik.errors.taxing_system as string)) && (
+              <HelperTextWithIcon isError>
+                {(formik.errors.taxRegime as string) || (formik.errors.taxing_system as string)}
+                {formik.errors?.taxing_system && (
+                  <HelpTooltipIcon>
                     <p className="text-xs">
                       El régimen fiscal debe coincidir con el que tengas registrado en tu constancia de situación
                       fiscal.
@@ -218,15 +260,12 @@ const FormFieldsBilling = ({ formik, disabledAll = false }: { formik: FormikProp
                     <a href={urlSAT} target="_blank" rel="noreferrer" className="underline">
                       Obtener constancia de situación fiscal
                     </a>
-                  </>
-                }
-              />
+                  </HelpTooltipIcon>
+                )}
+              </HelperTextWithIcon>
             )}
-            onChange={(_: React.ChangeEvent<HTMLInputElement>, option: (typeof taxRegimeValuesByPersonType)[0]) => {
-              formik.setFieldValue('taxRegime', option);
-            }}
-            disabled={disabledAll}
-          />
+            {!formik.errors.taxRegime && !formik.errors.taxing_system && <span className="block h-5" />}
+          </div>
         </div>
         <h6 className="mb-5 font-medium text-gray-300">Dirección de tu domicilio fiscal:</h6>
         <div className="mb-3">
@@ -250,6 +289,7 @@ const FormFieldsBilling = ({ formik, disabledAll = false }: { formik: FormikProp
             }
           >
             <CustomInput
+              onClick={() => sendEvent(TrackEvents.billing.form.zipCode)}
               placeholder="Código Postal*"
               value={formik.values.postalCode}
               onChange={formik.handleChange}

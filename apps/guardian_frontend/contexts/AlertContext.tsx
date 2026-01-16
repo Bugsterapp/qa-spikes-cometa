@@ -1,4 +1,4 @@
-import { ReactNode, createContext, useState } from 'react';
+import { type ReactNode, createContext, useState } from 'react';
 import { changeSpecificErrors } from '~/utils/errorsMessages';
 
 const initialState = {
@@ -27,10 +27,9 @@ export const AlertProvider = ({ children }: { children: ReactNode }) => {
   const [text, setText] = useState('');
   const [type, setType] = useState('');
   const [open, setOpen] = useState(false);
-  const [handleClose, setHandleClose] = useState<any>();
+  const [handleClose, setHandleClose] = useState<AlertContext['handleClose']>(() => void 0);
   const setAlert = (text: string, type = 'error', open = true, handleClose: () => void = () => void 0) => {
-    if (type === 'error') text = changeSpecificErrors(text);
-    setText(text);
+    type === 'error' ? setText(changeSpecificErrors(text)) : setText(text);
     setType(type);
     setOpen(open);
     setHandleClose(handleClose);

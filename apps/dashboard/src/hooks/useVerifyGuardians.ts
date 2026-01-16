@@ -12,7 +12,7 @@ export const useVerifyGuardians = (guardian?: RetrieveGuardian) => {
   const { studentIds } = useStudentStore();
 
   const dependents = useMemo(
-    () => guardian?.dependents?.filter(({ id }) => studentIds.has(id)) ?? [],
+    () => guardian?.dependents?.filter(({ id }) => studentIds.includes(id)) ?? [],
     [studentIds, guardian]
   );
 

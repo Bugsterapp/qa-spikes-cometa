@@ -3,22 +3,25 @@ import Head from 'next/head';
 import Navbar from '~/components/Navbar';
 import { GetServerSideProps } from 'next';
 import { Session } from 'next-auth';
-import useSendPageViewedEvent from '~/hooks/useSendPageViewedEvent';
 import { api } from '~/utils/api';
 import EmptyPageHistory from '~/public/images/empty-page-history.svg';
-import Link from 'next/link';
+import { UTMLink as Link } from '~/components/UtmNavigation';
 import { cn } from '~/lib/cn';
-import { useSelectedSchoolId } from '~/components/molecules/common/AuthGlobal';
+import { useSelectedSchoolId } from '~/stores/globalStore';
 import Box from '~/components/atoms/common/Box';
 import dayjs from '~/lib/dayjs';
 import { useEffect } from 'react';
 import { CustomStudentPayinSerializerV2, GuardianListPayinSerializerV2 } from '@cometa/trpc';
 import ExpandMore from '/public/icons/ic_expand_more.svg';
 import Tag from '~/components/Tag';
-import { useRouter } from 'next/router';
+import { useUTMRouter as useRouter } from '~/components/UtmNavigation';
 import ResponsivePagination from 'react-responsive-pagination';
 import * as OrderCard from '~/components/OrderCard';
 import { getDependentColor } from '~/utils/colors';
+import { useSendEvent, useSendPageEvent } from '~/hooks/useSendEvent';
+import { PageViewedCategory, TrackEvents } from '~/constants/events';
+import redirectByGuardianFraudStatus from '~/utils/redirectByGuardianFraudStatus';
+import { PAGE_SIZE } from '~/utils/constants';
 
 interface HistoryProps {
   session: Session;
@@ -27,19 +30,21 @@ interface HistoryProps {
 const PaidOrderRowByStudent = ({ student }: { student: CustomStudentPayinSerializerV2 }) => {
   const { data: session } = useSession();
   const dependents = session?.user?.dependents ?? [];
-  const dependentColor = getDependentColor(dependents, student.student_id);
+  const dependentColor = getDependentColor(dependents, student.student_id ?? '');
 
   return (
     <div className="flex flex-col gap-y-3 text-sm font-normal text-[#3E3E3E]">
-      <div>
-        <span className="mr-1.5">Estudiante:</span>
-        <Tag
-          bgcolor={dependentColor.background}
-          color={dependentColor.text}
-          text={student.first_name.toUpperCase()}
-          className="flex-shrink-0 mt-1"
-        />
-      </div>
+      {student.student_id && student.first_name && (
+        <div>
+          <span className="mr-1.5">Estudiante:</span>
+          <Tag
+            bgcolor={dependentColor.background}
+            color={dependentColor.text}
+            text={student.first_name.toUpperCase()}
+            className="flex-shrink-0 mt-1"
+          />
+        </div>
+      )}
       <ul className="flex flex-col pl-5 ml-2 leading-6 list-disc">
         {student.orders.map((order) => (
           <li className="min-w-0 break-words" data-testid={`orderName-${order}`} key={order}>
@@ -54,12 +59,14 @@ const PaidOrderRowByStudent = ({ student }: { student: CustomStudentPayinSeriali
 const PaidOrderRowUnique = ({ student }: { student: CustomStudentPayinSerializerV2 }) => {
   const { data: session } = useSession();
   const dependents = session?.user?.dependents ?? [];
-  const dependentColor = getDependentColor(dependents, student.student_id);
+  const dependentColor = getDependentColor(dependents, student.student_id ?? '');
 
   return (
     <div className="flex items-start justify-between p-4 gap-y-3 text-sm font-normal text-[#3E3E3E] border-b border-[#E3E0FF] gap-2">
       <span className="min-w-0 break-words">{student.orders[0]}</span>
-      <Tag bgcolor={dependentColor.background} color={dependentColor.text} text={student.first_name.toUpperCase()} />
+      {student.student_id && student.first_name && (
+        <Tag bgcolor={dependentColor.background} color={dependentColor.text} text={student.first_name.toUpperCase()} />
+      )}
     </div>
   );
 };
@@ -71,6 +78,7 @@ const Card = ({ payin }: { payin: GuardianListPayinSerializerV2 }) => {
   const paidDate = dayjs(payin.paid_date).tz('America/Mexico_City');
   const timePaid = paidDate.format('H:mm');
   const countTotalOrders = payin.students.reduce((acc, student) => acc + student.orders.length, 0);
+  const sendEvent = useSendEvent();
   return (
     <OrderCard.Root status="info">
       <OrderCard.Content data-testid={`payinFulfillmentId-${payin.correlative_id}-card`} id={`card-${payin.id}`}>
@@ -116,6 +124,7 @@ const Card = ({ payin }: { payin: GuardianListPayinSerializerV2 }) => {
               pathname: `/guardians/${guardianHash}/payin/${payin.id}`,
               query: { schoolId: selectedSchoolId, page: _router.query.page },
             }}
+            onClick={() => sendEvent(TrackEvents.history.clickViewDetails)}
             data-testid="seeDetails-btn"
           >
             Ver detalles
@@ -137,6 +146,12 @@ const CardSkeleton = () => (
 function History({ session }: Readonly<HistoryProps>) {
   const selectedSchoolId = useSelectedSchoolId();
   const _router = useRouter();
+  const sendPageEvent = useSendPageEvent();
+
+  useEffect(() => {
+    sendPageEvent(TrackEvents.history.pageViewed, PageViewedCategory);
+  }, []);
+
   const query = _router.query;
   const setPage = (newPage: number) => {
     _router.push(
@@ -153,10 +168,9 @@ function History({ session }: Readonly<HistoryProps>) {
 
   const page = Number(query.page) || 1;
 
-  const pageSize = 20;
   const { data, isLoading } = api.payin.history.useQuery({
     schoolId: selectedSchoolId ?? session?.user.schools[0]?.id ?? '',
-    pageSize,
+    pageSize: PAGE_SIZE,
     page,
   });
 
@@ -173,15 +187,15 @@ function History({ session }: Readonly<HistoryProps>) {
     }
   }, [data]);
 
-  const totalPages = Math.ceil(data?.count ? data.count / pageSize : 0);
+  const totalPages = Math.ceil(data?.count ? data.count / PAGE_SIZE : 0);
   const payins = data?.results;
-  useSendPageViewedEvent('Historial de pagos');
+
   return (
     <>
       {(!!payins?.length || isLoading) && (
         <section className="w-full">
           <div className="mb-4 gap-y-2">
-            <h3 className="text-[#14208C] text-xl font-bold mb-1">Historial de pago</h3>
+            <h3 className="text-[#22222A] text-xl font-bold mb-1">Historial de pago</h3>
             <span className="text-[#57537A] text-sm">Aquí encontrarás los detalles de tus pagos.</span>
           </div>
           <div className="flex flex-col gap-y-3.5">
@@ -257,7 +271,9 @@ History.getLayout = function getLayout(page: React.ReactNode) {
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const session = await getSession(context);
-
+  const { guardianHash } = context.query;
+  const redirect = redirectByGuardianFraudStatus(session, guardianHash as string, context.query);
+  if (redirect) return redirect;
   return {
     props: {
       session,

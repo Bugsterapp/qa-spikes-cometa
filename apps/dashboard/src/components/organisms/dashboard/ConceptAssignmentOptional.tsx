@@ -4,16 +4,16 @@ import { useSession } from 'next-auth/react';
 import * as Sentry from '@sentry/nextjs';
 import useAlert from '/src/hooks/useAlert';
 import { useRouter } from 'next/router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { QUERY_KEY_ASSIGNMENTS, QUERY_KEY_CONCEPTS, QUERY_KEY_DUE_ORDERS_STUDENT } from '/src/utils/reactQueryKeys';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { QUERY_KEY_CONCEPTS } from '/src/utils/reactQueryKeys';
 import { ConceptAssignment } from '/types/paid-orders';
 import SidebarHeader from '../../molecules/dashboard/SidebarHeader';
 import SidebarActions from '../../atoms/SidebarActions';
 import useSendTrackEventWithUserName from '/src/hooks/useSendTrackEventWithUserName';
+import { Events } from '/src/constants/events';
 import { useGetPermissions } from '/src/guards/AuthGuard';
 import dayjs from 'dayjs';
 import ConceptInfo from '../../molecules/dashboard/ConceptInfo';
-import { Divider, Stack } from '@mui/material';
 import ConceptScholarshipsAccordion from '../../molecules/dashboard/ConceptScholarshipsAccordion';
 import ConceptSelectOrdersAccordion from '../../molecules/dashboard/ConceptSelectOrdersAccordion';
 import ConceptInfoSkeleton from '../../molecules/dashboard/ConceptInfo/ConceptInfoSkeleton';
@@ -21,16 +21,23 @@ import Delete from 'public/assets/images/delete.svg';
 import Dialog from '/src/components/atoms/Dialog';
 import Button from './Button';
 import { AxiosError } from 'axios';
+import { api } from '/src/utils/api';
 
 interface IOrderModalForAssignmentsProps {
   onClose: () => void;
   student: any;
   studentId: string;
   assignment: { conceptId: string; assigmentId: string } | null;
+  onSuccessDesassign?: () => void;
 }
 
-export default function ConceptAssignmentOptional(props: IOrderModalForAssignmentsProps) {
-  const { onClose, student, assignment, studentId } = props;
+export default function ConceptAssignmentOptional({
+  onClose,
+  student,
+  assignment,
+  studentId,
+  onSuccessDesassign,
+}: IOrderModalForAssignmentsProps) {
   const { data: session } = useSession();
   const [hasChanges, setHasChanges] = useState(false);
   const [selectedOrders, setSelectedOrders] = useState<any[]>([]);
@@ -40,18 +47,18 @@ export default function ConceptAssignmentOptional(props: IOrderModalForAssignmen
   const permissions = useGetPermissions();
   const sendTrackEventWithUserName = useSendTrackEventWithUserName();
   const [openDialog, setOpenDialog] = useState(false);
+  const utils = api.useUtils();
 
   const deleteAssignment = async () =>
     concept?.orders.every((order) => order.due === null)
-      ? await ApiClient.deleteConceptAssignment(session?.token, studentId, assignment?.assigmentId, true)
-      : await ApiClient.deleteConceptAssignment(session?.token, studentId, assignment?.assigmentId);
+      ? await ApiClient.deleteConceptAssignment(studentId, assignment?.assigmentId, true)
+      : await ApiClient.deleteConceptAssignment(studentId, assignment?.assigmentId);
 
   const updateAssignment = async () => {
     let startDate;
     let endDate;
     let selectedOrdersId;
-    // Check if is optional (does not have a due date)
-    const isOptional = selectedOrders.some((order) => !order.dueDate);
+    const isOptional = concept?.orders?.some((order) => order.optional) || false;
     if (!isOptional) {
       selectedOrdersId = selectedOrders
         .filter(({ checked }) => checked)
@@ -70,7 +77,6 @@ export default function ConceptAssignmentOptional(props: IOrderModalForAssignmen
 
     // Call the API client passing all necessary parameters
     return await ApiClient.patchConceptAssignment(
-      session?.token,
       studentId,
       assignment?.assigmentId,
       assignment?.conceptId,
@@ -81,15 +87,10 @@ export default function ConceptAssignmentOptional(props: IOrderModalForAssignmen
     );
   };
 
-  const conceptQuery = async () => {
-    const res = await ApiClient.getConceptAssignmentDetail(session?.token, studentId, assignment?.conceptId);
-    return res?.data;
-  };
-
   const handlerSuccessMutation = async (message: string) => {
     await queryClient.invalidateQueries({ queryKey: [QUERY_KEY_CONCEPTS, studentId] });
-    await queryClient.invalidateQueries({ queryKey: [QUERY_KEY_ASSIGNMENTS], exact: true });
-    await queryClient.invalidateQueries({ queryKey: [QUERY_KEY_DUE_ORDERS_STUDENT], exact: true });
+    await utils.students.studentsAssignmentsList.invalidate();
+    await utils.students.studentConceptRetrieve.invalidate();
     onClose();
     setAlertState({ open: true, severity: 'success', message });
     router.push('#table-for-assignments');
@@ -121,10 +122,10 @@ export default function ConceptAssignmentOptional(props: IOrderModalForAssignmen
 
   const {
     data: concept,
-    isLoading,
+    isPending: isLoading,
     isFetching,
     refetch,
-  } = useQuery<ConceptAssignment>([QUERY_KEY_CONCEPTS, assignment?.conceptId], conceptQuery);
+  } = api.students.studentConceptRetrieve.useQuery({ conceptId: assignment?.conceptId || '', studentId: studentId });
 
   useMemo(() => {
     if (!concept?.orders) {
@@ -147,18 +148,67 @@ export default function ConceptAssignmentOptional(props: IOrderModalForAssignmen
     mutationFn: updateAssignment,
     async onSuccess() {
       await handlerSuccessMutation('¡Se guardaron los cambios de manera exitosa!');
-      sendTrackEventWithUserName('dashboard: Concept | Edited');
+      sendTrackEventWithUserName(Events.concept_edited);
     },
     onError,
   });
 
+  const deassignMessage = student
+    ? `Se desasignó el Concepto ${concept?.name} para el estudiante ${student.first_name} ${student.last_name}.`
+    : `Se desasignó el Concepto ${concept?.name} para el prospecto.`;
+
   const mutationDelete = useMutation({
     mutationFn: deleteAssignment,
     async onSuccess() {
-      await handlerSuccessMutation(
-        `Se desasignó el Concepto ${concept?.name} para el estudiante ${student.first_name} ${student.last_name}.`
-      );
-      sendTrackEventWithUserName('dashboard: Concept | Unassigned');
+      setAlertState({
+        open: true,
+        severity: 'success',
+        message: deassignMessage,
+      });
+
+      sendTrackEventWithUserName(Events.concept_unassigned);
+
+      const currentActiveData = utils.students.studentsAssignments.getData({
+        studentId,
+        ended: false,
+        optional: false,
+      });
+
+      if (currentActiveData && assignment) {
+        const updatedActiveData = currentActiveData.filter((item) => item.id !== assignment.assigmentId);
+        utils.students.studentsAssignments.setData({ studentId, ended: false, optional: false }, updatedActiveData);
+      }
+
+      const currentInactiveData = utils.students.studentsAssignments.getData({
+        studentId,
+        ended: true,
+        optional: false,
+      });
+
+      if (currentInactiveData && assignment) {
+        const updatedInactiveData = currentInactiveData.filter((item) => item.id !== assignment.assigmentId);
+        utils.students.studentsAssignments.setData({ studentId, ended: true, optional: false }, updatedInactiveData);
+      }
+
+      const currentOptionalData = utils.students.studentsAssignments.getData({
+        studentId,
+        ended: undefined,
+        optional: true,
+      });
+
+      if (currentOptionalData && assignment) {
+        const updatedOptionalData = currentOptionalData.filter((item) => item.id !== assignment.assigmentId);
+        utils.students.studentsAssignments.setData(
+          { studentId, ended: undefined, optional: true },
+          updatedOptionalData
+        );
+      }
+
+      await utils.students.studentsAssignments.invalidate();
+
+      setOpenDialog(false);
+      onClose();
+      onSuccessDesassign && onSuccessDesassign();
     },
     onError,
   });
@@ -176,7 +226,7 @@ export default function ConceptAssignmentOptional(props: IOrderModalForAssignmen
       <div className="flex flex-col flex-auto px-8 mb-9 min-h-[calc(100vh-135px)]">
         <SidebarHeader
           title="Detalle de asignación de concepto"
-          disabled={mutationUpdate.isLoading || mutationDelete.isLoading}
+          disabled={mutationUpdate.isPending || mutationDelete.isPending}
           onClose={onClose}
           boxClassName="px-0"
         />
@@ -190,7 +240,7 @@ export default function ConceptAssignmentOptional(props: IOrderModalForAssignmen
                   className="flex flex-row items-center pr-2 text-center bg-transparent"
                   onClick={() => {
                     setOpenDialog(true);
-                    sendTrackEventWithUserName('dashboard: Concept | Click Unassign');
+                    sendTrackEventWithUserName(Events.concept_click_unassign);
                   }}
                 >
                   <div className="m-2">
@@ -206,12 +256,16 @@ export default function ConceptAssignmentOptional(props: IOrderModalForAssignmen
         {assignment && concept && !isLoading && (
           <div>
             <ConceptInfo conceptData={concept as ConceptAssignment} isOptional />
-            <Stack divider={<Divider />} spacing={4.5} className="mt-9">
+            <div className="mt-9 space-y-[18px]">
               {concept?.scholarships && !!concept?.scholarships.length && (
                 <div>
                   <ConceptScholarshipsAccordion scholarships={concept?.scholarships} price={concept.price} />
                 </div>
               )}
+              {concept?.scholarships &&
+                !!concept?.scholarships.length &&
+                concept?.orders.length &&
+                selectedOrders?.length && <hr className="border-t border-gray-300" />}
               {concept?.orders.length && selectedOrders?.length && (
                 <div id="concept-select-orders">
                   <ConceptSelectOrdersAccordion
@@ -226,54 +280,54 @@ export default function ConceptAssignmentOptional(props: IOrderModalForAssignmen
                   />
                 </div>
               )}
-            </Stack>
+            </div>
           </div>
         )}
-      </div>
-      {hasChanges && (
-        <SidebarActions className="grid grid-cols-2">
-          <button
-            className="bg-white px-4 py-3 text-[#00AB55] text-base font-bold disabled:text-[#919EABCC] rounded-lg flex-1 hover:bg-[#00AB5514]/8"
-            onClick={() => {
-              refetch();
-              setHasChanges(false);
-            }}
-            disabled={mutationUpdate.isLoading}
-          >
-            Descartar
-          </button>
-          <div className="flex-1">
+        {hasChanges && (
+          <SidebarActions className="grid grid-cols-2 bottom-0">
             <button
-              className="text-white text-base font-bold px-12 py-3 rounded-lg bg-[#00AB55] hover:bg-green-500 disabled:bg-[#919EAB3D] disabled:text-[#919EABCC] whitespace-nowrap w-full"
-              onClick={onClickUpdateAssign}
-              disabled={!assignment || mutationUpdate.isLoading}
+              className="bg-white px-4 py-3 text-[#00AB55] text-base font-bold disabled:text-[#919EABCC] rounded-lg flex-1 hover:bg-[#00AB5514]/8"
+              onClick={() => {
+                refetch();
+                setHasChanges(false);
+              }}
+              disabled={mutationUpdate.isPending}
             >
-              {mutationUpdate.isLoading ? 'Guardando...' : 'Guardar cambios'}
+              Descartar
             </button>
-          </div>
-        </SidebarActions>
-      )}
+            <div className="flex-1">
+              <button
+                className="text-white text-base font-bold px-12 py-3 rounded-lg bg-[#00AB55] hover:bg-green-500 disabled:bg-[#919EAB3D] disabled:text-[#919EABCC] whitespace-nowrap w-full"
+                onClick={onClickUpdateAssign}
+                disabled={!assignment || mutationUpdate.isPending}
+              >
+                {mutationUpdate.isPending ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+            </div>
+          </SidebarActions>
+        )}
+      </div>
       <Dialog.Root open={!!openDialog} position="right" classNames="right-16">
         <Dialog.Title>¿Estás seguro que deseas desasignar el concepto?</Dialog.Title>
         <Dialog.Description>
           Se desasignarán todas las órdenes asociadas y los tutores ya no podrán realizar pagos de este concepto.
         </Dialog.Description>
         <div className="flex justify-center gap-x-10">
-          <Button id="dialog-in-drawer-cancel" variant="ghost" size="tooltip" onClick={() => setOpenDialog(false)}>
+          <Button
+            id="dialog-in-drawer-cancel"
+            variant="ghost"
+            size="tooltip"
+            onClick={() => setOpenDialog(false)}
+            disabled={mutationDelete.isPending}
+          >
             Atrás
           </Button>
-          <Button
-            variant="cancel"
-            size="tooltip"
-            onClick={() => {
-              onClickDeleteAssign();
-              setOpenDialog(false);
-              setTimeout(() => {
-                onClose();
-              }, 200);
-            }}
-          >
-            Si, desasignar
+          <Button variant="cancel" size="tooltip" onClick={onClickDeleteAssign} disabled={mutationDelete.isPending}>
+            {mutationDelete.isPending ? (
+              <img src="/assets/oval.svg" alt="loading" className="h-5 mx-auto" />
+            ) : (
+              'Si, desasignar'
+            )}
           </Button>
         </div>
       </Dialog.Root>

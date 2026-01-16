@@ -1,6 +1,7 @@
 import { VariantProps, cva } from 'class-variance-authority';
-import { cn } from '/src/utils/cn';
 import * as React from 'react';
+
+import { cn } from '/src/utils/cn';
 
 const StatusVariants = cva('col-span-2 px-2 w-fit text-xs font-bold rounded-md py-1', {
   variants: {
@@ -9,6 +10,7 @@ const StatusVariants = cva('col-span-2 px-2 w-fit text-xs font-bold rounded-md p
       info: 'text-info bg-info/12',
       muted: 'text-[#919EAB] bg-[#919EAB]/16',
       warning: 'text-[rgba(183,_129,_3,_1)] bg-[rgba(255,_193,_7,_0.16)]',
+      error: 'text-[#D32F2F] bg-[#F44336]/16',
     },
   },
   defaultVariants: {

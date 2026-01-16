@@ -1,7 +1,7 @@
 import * as React from 'react';
 import useTelephone, { CountryCode, allowedCountries, countries } from '~/hooks/useTelephone';
 import ExpandMore from '/public/icons/ic_expand_more.svg';
-import Link from 'next/link';
+import { UTMLink as Link } from '~/components/UtmNavigation';
 import { Checkbox } from '~/components/Checkbox';
 import { Controller, SubmitHandler, UseFormClearErrors, useForm } from 'react-hook-form';
 import { WHAT_ONBOARDING_HELP } from '~/utils/linksWhatsapp';
@@ -19,12 +19,12 @@ import {
 
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from './atoms/Button';
+import { Button } from './ui/Button';
 
 import { AnimatePresence, Variants, motion, useSpring, useTransform } from 'framer-motion';
 import Dialog from './molecules/common/Dialog';
 import { cn } from '~/lib/cn';
-import LoadingButton from './molecules/LoadingButton';
+import LoadingButton from './ui/LoadingButton';
 import { RadioGroup, RadioGroupItem } from './RadioGroup';
 import { personTypeDefault, personTypeMoral } from '~/utils/static_data/personTypesTaxRegimen';
 import { HelpTooltipIcon } from './atoms/HelpTooltipIcon';
@@ -41,7 +41,6 @@ import Pencil from '~/public/icons/pencil.svg';
 
 // FIXME: We need to update react in order to get rid of this MUI component
 import { TextFieldHelper } from './molecules/guardians/formFields/FormFieldsBilling';
-import type { TextFieldProps } from '@mui/material';
 import {
   useEditStudent,
   useIsPolling,
@@ -53,14 +52,15 @@ import {
 } from '~/pages/guardians/[guardianHash]/onboarding';
 import { GenderEnum, GuardianStudent, RetrieveGuardian, School, TaxingTypeEnum } from '@cometa/trpc/src/types';
 import LoadingSpinner from '~/public/icons/loading-spinner.svg';
-import { useSendTrackEvent } from '@cometa/utils';
 import { api } from '~/utils/api';
-import { useSelectedSchool } from './molecules/common/AuthGlobal';
 import { DevTool } from '@hookform/devtools';
 import Tour from './atoms/common/Tour';
 import { Styles, TooltipRenderProps } from 'react-joyride';
 import dayjs from '~/lib/dayjs';
 import dynamic from 'next/dynamic';
+import { useSendEvent } from '~/hooks/useSendEvent';
+import { TrackEvents } from '~/constants/events';
+import { useSelectedSchool } from '~/stores/globalStore';
 const FlagEmoji = dynamic(
   import('~/hooks/useTelephone').then((mod) => mod.FlagEmoji),
   { ssr: false }
@@ -439,7 +439,7 @@ const OnboardingGuardianInfo = ({
       >
         <DrawerAlertContent>
           <div className="mb-10 mx-[49.5px] mt-6 flex flex-col items-center text-white space-y-6">
-            <IcInfo />
+            <IcInfo className="w-12 h-12" />
             <p className="text-lg font-semibold text-center">Lo sentimos, ya existe un tutor con estos datos.</p>
           </div>
           {isProvider ? <AlertActionsInProvider /> : <AlertActions clearErrors={clearErrors} />}
@@ -538,7 +538,7 @@ const OnboardingStudentInfo = ({
   const school = useSelectedSchool();
   const { isRecentAdded } = useIsRecentAdded();
   const [student, setStudent] = useSelectedStudent();
-  const sendTrackEvent = useSendTrackEvent();
+  const sendEvent = useSendEvent();
   const [openFormStudent, setOpenFormStudent] = useOpenFormStudent();
   const [isPolling, setIsPolling] = useIsPolling();
   const [studentPolling] = usePolling();
@@ -562,7 +562,7 @@ const OnboardingStudentInfo = ({
     section:
       (openFormStudent && !student) || defaultOpen
         ? z.string().min(1, 'La sección es requerida')
-        : z.string().optional(),
+        : z.string().optional().nullable(),
     identifier: showCurp ? identifierIsRequiredValidation : z.string().optional(),
   });
 
@@ -597,12 +597,13 @@ const OnboardingStudentInfo = ({
   const onSubmit: SubmitHandler<StudentInfoValues> = async (values) => {
     const result = await propsOnSubmit(values);
 
+    onboardingPredicate(() => sendEvent(TrackEvents.students.editConfirm));
+
     if (result && result.status !== 200) {
       Object.keys(result.data).forEach((key) =>
         setError(`root.${key}`, { type: 'validate', message: result.data[key] })
       );
     } else {
-      sendTrackEvent('portal: Onboarding Student Edit Complete');
       setStudent(null);
       setOpenFormStudent(false);
       resetForm();
@@ -646,6 +647,10 @@ const OnboardingStudentInfo = ({
       });
     } else resetForm();
   }, [student]);
+
+  const onboardingPredicate = (callback: () => void) => {
+    if (!isOnboarding) return callback();
+  };
 
   return (
     <div className="flex flex-col min-h-[calc(100vh_-_6rem)]">
@@ -710,6 +715,7 @@ const OnboardingStudentInfo = ({
                         <button
                           className="px-2 py-2 text-blue-100 bg-transparent rounded-full hover:bg-slate-100"
                           onClick={() => {
+                            onboardingPredicate(() => sendEvent(TrackEvents.students.editClicked));
                             setStudent(student.id);
                             setOpenFormStudent(true);
                           }}
@@ -809,6 +815,7 @@ const OnboardingStudentInfo = ({
                 <h3 className="text-2xl font-bold">Detalles del estudiante</h3>
               </div>
             )}
+            <DevTool control={control} />
             <form onSubmit={handleSubmit(onSubmit)}>
               <Fieldset>
                 <Fieldset.Legend className="font-semibold text-gray-300">Datos personales</Fieldset.Legend>
@@ -817,6 +824,7 @@ const OnboardingStudentInfo = ({
                     placeholder=""
                     className="p-5 rounded-[14px]"
                     data-testid="firstName-input"
+                    onClick={() => onboardingPredicate(() => sendEvent(TrackEvents.students.editNameClicked))}
                     {...register('first_name')}
                   />
                 </CustomFormField>
@@ -824,6 +832,7 @@ const OnboardingStudentInfo = ({
                   <CustomInput
                     placeholder=""
                     className="p-5 rounded-[14px]"
+                    onClick={() => onboardingPredicate(() => sendEvent(TrackEvents.students.editLastnameClicked))}
                     data-testid="lastName-input"
                     {...register('last_name')}
                   />
@@ -831,7 +840,18 @@ const OnboardingStudentInfo = ({
               </Fieldset>
               <Fieldset>
                 <Fieldset.Legend>Fecha de nacimiento</Fieldset.Legend>
-                <div className="flex justify-between gap-[5px]">
+                <div
+                  className="flex justify-between gap-[5px]"
+                  onClick={() =>
+                    onboardingPredicate(() =>
+                      sendEvent(TrackEvents.students.editBirthdayClicked, {
+                        day: watch('birthdate.day'),
+                        month: watch('birthdate.month'),
+                        year: watch('birthdate.year'),
+                      })
+                    )
+                  }
+                >
                   <CustomFormField
                     label="Día"
                     error={errors.birthdate?.day?.message}
@@ -891,6 +911,7 @@ const OnboardingStudentInfo = ({
                       placeholder=""
                       className="p-5 rounded-[14px]"
                       data-testid="curp-input"
+                      onClick={() => onboardingPredicate(() => sendEvent(TrackEvents.students.editCURPClicked))}
                       {...register('identifier')}
                     />
                   </CustomFormField>
@@ -905,7 +926,10 @@ const OnboardingStudentInfo = ({
                     <Select
                       key={field.value}
                       defaultValue={field.value ?? undefined}
-                      onValueChange={field.onChange}
+                      onValueChange={(value) => {
+                        onboardingPredicate(() => sendEvent(TrackEvents.students.editGenderClicked, { gender: value }));
+                        field.onChange(value);
+                      }}
                       data-testid="gender-select"
                     >
                       <SelectTrigger
@@ -1047,7 +1071,7 @@ const OnboardingStudentInfo = ({
                   )}
 
                   <div className="w-full h-16 mt-1 px-4 py-3.5 bg-indigo-50 rounded-2xl border-2 border-blue-500 justify-start items-center gap-2.5 inline-flex">
-                    <div className="grow shrink basis-0 text-slate-600 text-base font-normal font-['Poppins'] leading-snug tracking-wide">
+                    <div className="grow shrink basis-0 text-slate-600 text-base font-normal font-lota leading-snug tracking-wide">
                       *Podrás agregar más estudiantes en el siguiente paso si lo deseas.
                     </div>
                   </div>
@@ -1339,14 +1363,14 @@ const OnboardingBillingInfo = ({
                   sx={{ '& .MuiFormControl-root': { marginBottom: 0 } }}
                   id="mui-component-select-taxRegime"
                   name="taxRegime"
-                  options={taxRegimeValuesByPersonType}
+                  options={taxRegimeValuesByPersonType as any}
                   value={field.value}
                   clearIcon={null}
                   getOptionLabel={(option: (typeof taxRegimeValuesByPersonType)[0]) =>
                     option ? `${option.value} - ${option.name}` : ''
                   }
                   noOptionsText="Sin coincidencias"
-                  renderInput={(params: TextFieldProps) => (
+                  renderInput={(params: any) => (
                     <TextFieldHelper
                       {...params}
                       label="Régimen fiscal*"
@@ -1496,9 +1520,9 @@ const OnboardingSummary = ({
             <circle cx="33.499" cy="32.558" r="32.558" fill="#07CE80" />
             <path
               fill="#fff"
-              fill-rule="evenodd"
+              fillRule="evenodd"
               d="M46.098 23.36a2.645 2.645 0 0 1 .214 3.736L31.064 44.202l-9.05-8.186a2.645 2.645 0 1 1 3.549-3.923l5.098 4.61 11.702-13.128a2.645 2.645 0 0 1 3.735-.214Z"
-              clip-rule="evenodd"
+              clipRule="evenodd"
             />
           </svg>
           <h3 className="pt-3 text-xl font-semibold text-center text-gray-300">

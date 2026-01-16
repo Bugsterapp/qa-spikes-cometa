@@ -8,73 +8,84 @@ import localizedFormat from 'dayjs/plugin/localizedFormat';
 import { format, parseISO } from 'date-fns';
 import { utcToZonedTime } from 'date-fns-tz';
 import { es } from 'date-fns/locale';
+import { StatusFdeEnum, Type11EEnum } from '@cometa/trpc/src/types';
 
 dayjs.extend(localizedFormat).locale(mx);
 interface PayMethods {
-  id: string;
+  id: Type11EEnum;
   label: string;
   color: string;
 }
 
 export const payMethods: PayMethods[] = [
   {
-    id: 'credit',
+    id: Type11EEnum.Credit,
     label: 'Crédito',
     color: 'success',
   },
   {
-    id: 'ticket',
+    id: Type11EEnum.Ticket,
     label: 'En efectivo',
     color: 'warning',
   },
   {
-    id: 'bank_transfer',
+    id: Type11EEnum.BankTransfer,
     label: 'Transferencia bancaria',
     color: 'success',
   },
   {
-    id: 'credit_card',
+    id: Type11EEnum.CreditCard,
     label: 'Tarjeta de crédito',
     color: 'primary',
   },
   {
-    id: 'debit_card',
+    id: Type11EEnum.DebitCard,
     label: 'Tarjeta de débito',
     color: 'secondary',
   },
   {
-    id: 'prepaid_card',
+    id: Type11EEnum.PrepaidCard,
     label: 'Tarjeta prepaga',
     color: 'info',
   },
   {
-    id: 'nominal_check',
+    id: Type11EEnum.NominalCheck,
     label: 'Cheque nominativo',
     color: 'info',
   },
   {
-    id: 'deposit_check',
+    id: Type11EEnum.DepositCheck,
     label: 'Depósito en cheque',
     color: 'info',
   },
   {
-    id: 'deposit_cash',
+    id: Type11EEnum.DepositCash,
     label: 'Depósito en efectivo',
     color: 'info',
   },
   {
-    id: 'multipay',
+    id: Type11EEnum.Multipay,
     label: 'Multipago',
     color: 'info',
   },
   {
-    id: 'direct_debit',
+    id: Type11EEnum.DirectDebit,
     label: 'Pago Domiciliado',
     color: 'info',
   },
   {
-    id: 'cash_payroll',
+    id: Type11EEnum.CashPayroll,
     label: 'Nomina en Efectivo',
+    color: 'info',
+  },
+  {
+    id: Type11EEnum.Compensation,
+    label: 'Compensación',
+    color: 'info',
+  },
+  {
+    id: Type11EEnum.Giving,
+    label: 'Dación en pago',
     color: 'info',
   },
 ].sort((a, b) => {
@@ -95,13 +106,15 @@ export const currencyLocale: CurrencyLocale = {
   MXN: 'es-MX',
 };
 
+export const formatPercentage = (amount: number) => `${Math.round(amount)}%`;
+
 export const formatPrice = (amount: number | string, currency = 'MXN') => {
   const formatter = Intl.NumberFormat(currencyLocale[currency], {
     style: 'currency',
     currency,
   });
-  if (typeof amount === 'string') amount = parseFloat(amount);
-  return formatter.format(amount);
+  const parsedAmount = typeof amount === 'string' ? Number.parseFloat(amount) : amount;
+  return formatter.format(parsedAmount);
 };
 
 export const paymentTypeLabel = (paymentType: string | null) => {
@@ -152,7 +165,7 @@ export const statusArray: Status[] = [
   {
     id: 'DECLINED_STATUS',
     label: 'Transferencia declinada',
-    color: 'danger',
+    color: '#FF4842',
   },
   {
     id: 'CANCELED_STATUS',
@@ -241,10 +254,10 @@ export const formatDate = (textDate: string, formatStr: string) => {
 };
 
 export const formatDateShort = (textDate: string | null, expand?: boolean, twoDigitYear?: boolean) => {
-  if (!textDate) return '-';
+  if (!textDate || textDate === 'None') return '-';
   const timeZone = 'America/Mexico_City';
 
-  let zonedDate;
+  let zonedDate: Date;
   if (textDate.includes('Z')) {
     zonedDate = utcToZonedTime(textDate, timeZone);
   } else {
@@ -264,10 +277,10 @@ export const formatDateShort = (textDate: string | null, expand?: boolean, twoDi
  * @returns The formatted localized date string.
  */
 export const formatDateWithUTCShort = (textDate: string, expand: boolean, twoDigitYear: boolean): string => {
-  if (!textDate) return '-';
+  if (!textDate || textDate === 'None') return '-';
   const timeZone = 'America/Mexico_City';
 
-  let zonedDate;
+  let zonedDate: Date;
   if (textDate.includes('Z')) {
     zonedDate = utcToZonedTime(textDate, timeZone);
   } else {
@@ -278,10 +291,10 @@ export const formatDateWithUTCShort = (textDate: string, expand: boolean, twoDig
 };
 
 export const formatDateHourWithUTCShort = (textDate: string): string => {
-  if (!textDate) return '-';
+  if (!textDate || textDate === 'None') return '-';
   const timeZone = 'America/Mexico_City';
 
-  let zonedDate;
+  let zonedDate: Date;
   if (textDate.includes('Z')) {
     zonedDate = utcToZonedTime(textDate, timeZone);
   } else {
@@ -292,13 +305,13 @@ export const formatDateHourWithUTCShort = (textDate: string): string => {
 };
 
 export const formatDateShortWithHour = (textDate: string) => {
-  if (!textDate) return '-';
+  if (!textDate || textDate === 'None') return '-';
   const formatedDate = dayjs(textDate).format('DD MMM YYYY - HH:mm');
   return formatedDate;
 };
 
 export const formatDateNumeric = (textDate: string) => {
-  if (!textDate) return '-';
+  if (!textDate || textDate === 'None') return '-';
   const timeZone = 'America/Mexico_City';
 
   const zonedDate = utcToZonedTime(textDate, timeZone);
@@ -307,8 +320,8 @@ export const formatDateNumeric = (textDate: string) => {
   return formatedDate;
 };
 
-export const formatTime = (textTime: string) => {
-  if (!textTime) return '-';
+export const formatTime = (textTime: string | null) => {
+  if (!textTime || textTime === 'None') return '-';
   const formatedDate = dayjs(textTime).format('HH:mm');
   return formatedDate;
 };
@@ -326,29 +339,31 @@ export const renderStatusLabel = (statusParam: string, isPartial?: boolean): JSX
         {`${label}${isPartial ? '' : statusParam}`}
       </Label>
     );
-  } else {
-    const status = statusArray.find((status) => status.id === statusParam);
-    if (!status) return <></>;
-    const { label, color, backgroundColor } = status;
-    return (
-      <Label variant="ghost" color={color} backgroundColor={backgroundColor || ''} sx={{ width: 'fit-content', px: 1 }}>
-        {label}
-      </Label>
-    );
   }
+  const status = statusArray.find((status) => status.id === statusParam);
+  if (!status) return <></>;
+  const { label, color, backgroundColor } = status;
+  return (
+    <Label variant="ghost" color={color} backgroundColor={backgroundColor || ''} sx={{ width: 'fit-content', px: 1 }}>
+      {label}
+    </Label>
+  );
 };
 
-export const renderPayoutStatus = (status: string) => (
+export const renderPayoutStatus = (status?: StatusFdeEnum) => (
   <div
     className={cx('px-2 py-0.5 text-center rounded-md text-xs font-bold', {
-      'bg-successBg text-successText': status === 'APPROVED_STATUS',
-      'bg-info/16 text-info': status === 'SCHEDULED_STATUS',
-      'bg-warning/16 text-processingText': status === 'PROCESSING_STATUS',
+      'bg-successBg text-successText': status === StatusFdeEnum.APPROVED_STATUS,
+      'bg-info/16 text-info': status === StatusFdeEnum.SCHEDULED_STATUS,
+      'bg-warning-500/16 text-processingText': status === StatusFdeEnum.PROCESSING_STATUS,
+      'bg-[#FF484214]/16 text-[#FF4842]': status === StatusFdeEnum.DECLINED_STATUS,
     })}
   >
-    {status === 'APPROVED_STATUS' && 'Recibido'}
-    {status === 'SCHEDULED_STATUS' && 'Programado'}
-    {status === 'PROCESSING_STATUS' && 'En proceso'}
+    {status === StatusFdeEnum.APPROVED_STATUS && 'Recibido'}
+    {status === StatusFdeEnum.SCHEDULED_STATUS && 'Programado'}
+    {status === StatusFdeEnum.PROCESSING_STATUS && 'En proceso'}
+    {status === StatusFdeEnum.DECLINED_STATUS && 'Declinado'}
+    {status === undefined && 'Sin estado'}
   </div>
 );
 
@@ -367,26 +382,6 @@ interface PaymentChanels {
 export const paymentChanels: PaymentChanels[] = [
   { id: 0, label: 'Portal de pagos Cometa' },
   { id: 1, label: 'Directo a Colegio' },
-];
-
-interface Categories {
-  id: string;
-  label: string;
-}
-
-export const categories: Categories[] = [
-  { id: 'MONTHLY_FEE', label: 'Colegiatura / Mensualidad' },
-  { id: 'INSCRIPTION', label: 'Inscripción' },
-  { id: 'TRANSPORT', label: 'Transporte' },
-  { id: 'PRE_DEBT', label: 'Deuda previa' },
-  { id: 'OTHER', label: 'Otro' },
-  { id: 'REINSCRIPTION', label: 'Reinscripción' },
-  { id: 'EXTRACURRICULAR', label: 'Extracurriculares (no deportes)' },
-  { id: 'SPORTS', label: 'Deportes' },
-  { id: 'CAFETERIA', label: 'Cafetería' },
-  { id: 'BOOKS_AND_MATERIALS', label: 'Libros y Materiales' },
-  { id: 'EXAMS_AND_CERTIFICATES', label: 'Exámenes y Certificados' },
-  { id: 'UNIFORMS_AND_MERCH', label: 'Uniformes y otras mercancías' },
 ];
 
 export const PageSize = 50;

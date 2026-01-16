@@ -14,6 +14,7 @@ export const useSendTrackEvent = () => {
           ...properties,
         };
 
+    // @ts-ignore: window.analytics is defined in the segment snippet
     window?.analytics?.track(eventName, payload);
   };
   return sendTrackEventWithUserName;

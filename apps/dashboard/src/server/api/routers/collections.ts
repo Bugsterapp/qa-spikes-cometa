@@ -7,17 +7,15 @@ export const collectionsRouter = createTRPCRouter({
     .input(
       z.object({
         schoolId: z.string(),
-        concepts: z.array(z.string()),
-        school_cycle: z.string(),
+        concepts: z.string(),
       })
     )
     .query(async ({ input, ctx }) => {
       try {
-        const response = await ServiceClient.apiV1DashboardSchoolsCollectionsGraphicList(
+        const response = await ServiceClient.apiV1DashboardSchoolsCollectionsGraphicCreate(
           input.schoolId,
           {
-            concepts: input.concepts,
-            school_cycle: input.school_cycle,
+            concepts: input.concepts.split(','),
           },
           {
             headers: {
@@ -35,7 +33,7 @@ export const collectionsRouter = createTRPCRouter({
     .input(
       z.object({
         schoolId: z.string(),
-        concepts: z.array(z.string()),
+        concepts: z.string(),
         month: z.number(),
         year: z.number(),
         school_cycle: z.string(),

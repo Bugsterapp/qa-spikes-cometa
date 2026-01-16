@@ -40,3 +40,4 @@ tsconfig.tsbuildinfo
 
 .turbo
 *storybook.log
+.env.local

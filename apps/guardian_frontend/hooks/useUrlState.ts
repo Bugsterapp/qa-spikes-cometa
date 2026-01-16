@@ -1,4 +1,4 @@
-import { useRouter } from 'next/router';
+import { useUTMRouter as useRouter } from '~/components/UtmNavigation';
 import { ParsedUrlQuery } from 'querystring';
 
 export const useUrlState = () => {

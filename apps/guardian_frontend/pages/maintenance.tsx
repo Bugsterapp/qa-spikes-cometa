@@ -1,6 +1,7 @@
 import { GetServerSideProps } from 'next';
 import Cometa from '/public/cometa-logo.svg';
 import Head from 'next/head';
+import { appendUtmParameters } from '~/lib/destinationWithUTM';
 
 export default function Maintenance() {
   return (
@@ -28,12 +29,12 @@ export default function Maintenance() {
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async () => {
+export const getServerSideProps: GetServerSideProps = async (context) => {
   if (process.env.MODE !== 'maintenance') {
     return {
       redirect: {
         permanent: false,
-        destination: '/',
+        destination: appendUtmParameters('/', context.query),
       },
     };
   }

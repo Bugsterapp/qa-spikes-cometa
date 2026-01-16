@@ -9,7 +9,7 @@ export const isRequired = (val: string | number | null) => !!val || 'Este campo 
 
 export const isValidFullNumber = (val: string) => {
   if (!val) return true;
-  return /^\+(?:[0-9]●?){6,14}[0-9]$/i.test(val) || 'Número inválido. Usar el formato: +5215512345678';
+  return /^\+(?:[0-9]●?){6,11}[0-9]$/i.test(val) || 'Número inválido. Usar el formato: +521551234567';
 };
 
 export const isValidBirthdate = (val: string) => {

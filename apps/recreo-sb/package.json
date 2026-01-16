@@ -1,0 +1,35 @@
+{
+  "name": "recreo-sb",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "storybook dev -p 6006",
+    "build": "storybook build",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "chromatic": "npx chromatic"
+  },
+  "dependencies": {
+    "@cometa/recreo": "*",
+    "next": "^14.2.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@chromatic-com/storybook": "^3.2.2",
+    "@storybook/addon-essentials": "^8.4.5",
+    "@storybook/addon-interactions": "^8.4.5",
+    "@storybook/addon-onboarding": "^8.4.5",
+    "@storybook/blocks": "^8.4.5",
+    "@storybook/nextjs": "^8.4.5",
+    "@storybook/react": "^8.4.5",
+    "@storybook/test": "^8.4.5",
+    "@types/node": "^20",
+    "eslint-config-next": "14.2.18",
+    "eslint-plugin-storybook": "^0.11.1",
+    "postcss": "^8",
+    "storybook": "^8.4.5",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.2.2"
+  }
+}

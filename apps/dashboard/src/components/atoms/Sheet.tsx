@@ -1,5 +1,5 @@
 import * as Dialog from '@radix-ui/react-dialog';
-import React from 'react';
+import React, { HTMLAttributes } from 'react';
 import { cn } from '/src/utils/cn';
 import Info from '/public/assets/icons/ic_info.svg';
 import Close from '/public/assets/icons/ic_close.svg';
@@ -128,8 +128,9 @@ const SheetContent = ({
   disableAutoFocus = false,
   sheetWithoutBackground,
   onStartedScroll,
+  large,
   ...props
-}: DialogContentPrimitiveProps & { onStartedScroll?: (isScrolling: boolean) => void }) => {
+}: DialogContentPrimitiveProps & { onStartedScroll?: (isScrolling: boolean) => void; large?: boolean }) => {
   const { contentComponents, tooltip, setTooltip } = useSheetState();
 
   const contentRef = React.useRef<HTMLDivElement>(null);
@@ -184,7 +185,7 @@ const SheetContent = ({
         >
           <Dialog.Overlay
             className={cn('data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out w-full h-full', {
-              'bg-black/10': !sheetWithoutBackground,
+              'bg-[#202A35]/80': !sheetWithoutBackground,
             })}
           />
         </div>
@@ -198,11 +199,26 @@ const SheetContent = ({
           ref={contentRef}
           key={props.id}
           onInteractOutside={(e) => {
-            // We want to prevent outside clicking for sheets in the background.\
-            if (index !== 0 || tooltip !== null) e.preventDefault();
+            // We want to prevent outside clicking for sheets in the background.
+            if (index !== 0 || tooltip !== null) {
+              e.preventDefault();
+              return;
+            }
+
+            // Check if the click is on an alert element to prevent closing the sheet
+            const target = e.target as HTMLElement;
+            const isAlertClick = target.closest('[id^="alert-"]') !== null;
+
+            if (isAlertClick) {
+              e.preventDefault();
+            }
           }}
           className={cn(
-            'data-[state=open]:animate-slide-in-right scrollbar mr-1 transition-all data-[state=closed]:animate-slide-out-right fixed top-0 bottom-0 right-0 z-[var(--z)] max-w-[572px] w-screen h-full bg-white overflow-auto -translate-x-[var(--offset)] scrollbar-stable',
+            'data-[state=open]:animate-slide-in-right scrollbar mr-1 transition-all data-[state=closed]:animate-slide-out-right fixed top-0 bottom-0 right-0 z-[var(--z)] max-w-[572px] w-screen h-full bg-white overflow-auto -translate-x-[var(--offset)] scrollbar-unset',
+            'flex flex-col',
+            {
+              'max-w-[901px]': large,
+            },
             className
           )}
           style={
@@ -244,6 +260,17 @@ const SheetContent = ({
     </>
   );
 };
+
+export const ContainerActions = ({ children, className }: HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn(
+      'p-6 border-t-[#919EAB3D] border border-x-0 border-b-0 grid grid-cols-2 gap-x-5 sticky mt-auto bottom-0 z-10 bg-white',
+      className
+    )}
+  >
+    {children}
+  </div>
+);
 
 Sheet.Content = SheetContent;
 Sheet.Trigger = Dialog.Trigger;

@@ -44,3 +44,5 @@ _static
 /playwright/.cache/
 
 /apps/dashboard/.env.development
+# Sentry Config File
+.env.sentry-build-plugin

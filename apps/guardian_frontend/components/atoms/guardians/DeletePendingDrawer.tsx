@@ -1,6 +1,6 @@
 import * as Drawer from '~/components/atoms/guardians/Drawer';
 import IcInfo from '/public/icons/information-white.svg';
-import { Button } from '../Button';
+import { Button } from '../../ui/Button';
 import { useDeletePending } from '~/hooks/useDeletePending';
 
 interface DeletePendingTransferOptionsProps {

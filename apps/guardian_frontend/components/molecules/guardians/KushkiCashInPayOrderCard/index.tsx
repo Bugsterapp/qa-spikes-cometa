@@ -1,10 +1,12 @@
-import { formatPrice } from '~/utils/orders';
+import { formatPrice, typeOfOrdersInStore } from '~/utils/orders';
 import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import Accordion from '~/components/atoms/guardians/Accordion';
-import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import Barcode from 'react-barcode';
 import AccordionKushkiWhereToPay from '~/components/atoms/guardians/AccordionKushkiWhereToPay';
+import { useSendEvent } from '~/hooks/useSendEvent';
+import { TrackEvents } from '~/constants/events';
+import { useSelectionStore } from '~/stores/selectionStorePersisted';
 
 interface CashInPayOrderCardProps {
   currency: string;
@@ -26,6 +28,9 @@ const CashInPayOrderCard = ({
   const { data: session } = useSession();
   const guardianFirstName = session?.user?.first_name;
   const guardianLastName = session?.user?.last_name;
+  const sendEvent = useSendEvent();
+  const { selectedItems } = useSelectionStore();
+  const { optional, mandatory } = typeOfOrdersInStore(selectedItems);
 
   return (
     <div className="bg-white rounded-2xl min-w-[321px]">
@@ -67,21 +72,30 @@ const CashInPayOrderCard = ({
               <Barcode width={1.5} height={50} value={pinBarCode} displayValue={false} margin={0} />
             </div>
           </div>
-          <div className="flex mt-6">
+          <div
+            className="flex mt-6"
+            onClick={() => sendEvent(TrackEvents.checkout.cash.downloadPayOrder, { optional, mandatory })}
+          >
             <a
               target="_blank"
               href={pdfURL}
               rel="noopener noreferrer"
-              className="bg-[#4A5CFF] rounded-lg text-white py-2 px-3"
+              className="bg-[#4A5CFF] rounded-lg text-white py-2 px-3 inline-flex items-center no-underline hover:bg-[#3d4dd9] transition-colors"
             >
-              <FileDownloadOutlinedIcon />
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+              </svg>
               <span className="ml-1 text-sm font-semibold">DESCARGAR ORDEN DE PAGO</span>
             </a>
           </div>
         </div>
         <div className="p-6 space-y-6">
           <AccordionKushkiWhereToPay priceTotal={priceTotal} currency={currency} showAgreements />
-          <Accordion tittle={<h2 className="text-lg text-[#091A7A]">¿Cómo pagar?</h2>}>
+          <Accordion
+            onClick={() => sendEvent(TrackEvents.checkout.cash.howToPayClicked)}
+            title={<h2 className="text-lg text-[#091A7A]">¿Cómo pagar?</h2>}
+            className="bg-white"
+          >
             <p className="mb-1 text-sm text-gray">
               Acércate a alguna de las sucursales disponibles. En la caja muestra el código de barras, el número de pin,
               convenio. Guarda estos datos en tu celular usando el botón de “Descargar orden de pago”.

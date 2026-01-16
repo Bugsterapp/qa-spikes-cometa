@@ -1,9 +1,18 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   presets: [require('../../tailwind.config.js')],
-  content: ['./pages/**/*.{js,ts,jsx,tsx}', './components/**/*.{js,ts,jsx,tsx}'],
+  content: [
+    './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './pages/**/*.{js,ts,jsx,tsx}',
+    './components/**/*.{js,ts,jsx,tsx}',
+    './src/**/*.{js,ts,jsx,tsx,mdx}',
+    '../../node_modules/@cometa/recreo/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-lota)', 'sans-serif'],
+      },
       colors: {
         secondary: '#212B36',
         warning: '#FFB612',
@@ -41,6 +50,7 @@ module.exports = {
         'checkbox-tick': "url('/icons/checkbox-tick.svg')",
         'gradient-mobile': "url('/images/gradient-home-mobile.svg')",
         'gradient-desktop': "url('/images/gradient-home-desktop.svg')",
+        'gradient-35': 'linear-gradient(35deg, var(--tw-gradient-stops))',
       },
       keyframes: {
         'accordion-slide-down': {

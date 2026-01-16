@@ -1,45 +1,35 @@
-import { Container, Box, Typography, IconButton, Divider, Button, CircularProgress } from '@mui/material';
+import { getSession } from 'next-auth/react';
 import Head from 'next/head';
-import { useRouter } from 'next/router';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import PoweredByKushki from '~/components/atoms/guardians/PoweredByKushki';
+import { useUTMRouter as useRouter } from '~/components/UtmNavigation';
+import Chevron from '~/public/icons/ic_arrow_right.svg';
 import { ErrorBoundary } from '@sentry/nextjs';
-import Lock from '~/public/icons/lock.svg';
-import Image from 'next/image';
-import { useFormik } from 'formik';
-import { RATED_CSAT_PAYMENT } from '~/utils/storesKeys';
-import Drawer, { DrawerCode } from '~/components/organisms/guardians/Drawer';
-import Cookies from 'lib/Cookies';
-import axios from 'axios';
-import { sendPageViewedEvent, sendTrackEvent } from '~/utils/events';
-import SubtotalCard from '~/components/organisms/guardians/SubtotalCard';
-import DrawerOptions, { validationRules } from '~/constants/kushki/credit-card/DrawerOptions';
-import { getCardBrand } from '~/lib/getCardBrand';
 import BoxError from '~/components/atoms/common/BoxError';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  cardValues,
-  creditCardIcon,
-  ErrorFieldMap,
-  getCommissionValues,
-  kushkiFormIcons,
-  useKushki,
-} from '~/utils/kushkiCreditCard';
-import NFormTextField from '~/components/TexField';
-import { LockOutlined } from '@mui/icons-material';
-import { Events } from '~/constants/events';
+import { useEffect, useRef } from 'react';
+import { getCommissionValues, useKushki } from '~/utils/kushkiCreditCard'; // Add useKushki
+import { TrackEvents } from '~/constants/events';
 import type { GetServerSideProps } from 'next';
-import * as Sentry from '@sentry/nextjs';
 import { catchPaymentPage } from '~/utils/processCatch';
-import { useSelectionStore } from '@cometa/hooks';
-import { useSelectedSchool } from '~/components/molecules/common/AuthGlobal';
+import type { ProjectEnum } from '@cometa/hooks';
+import { useSelectedSchool } from '~/stores/globalStore';
 import { api } from '~/utils/api';
-import { CardTypeEnum, PreferenceTypeEnum } from '@cometa/trpc';
-import { BinInfoResponse } from '@kushki/js/lib/types/bin_info_response';
-import useDebounce from '~/hooks/useDebounce';
-import { ErrorResponse } from '@kushki/js/lib/types/error_response';
-import { StockErrorAlert } from '~/components/StockErrorAlert';
+import { FraudStatusEnum, PreferenceTypeEnum, CreateRefundDashboardRequestDTOPaymentMethodEnum } from '@cometa/trpc';
 import { isStockError } from '~/utils/stocks';
+import { useSession } from 'next-auth/react';
+import { usePathname } from 'next/navigation';
+import { useCartItems, useSelectionStore } from '~/stores/selectionStorePersisted';
+import { useSendEvent, useSendPageEvent } from '~/hooks/useSendEvent';
+import { appendUtmParameters } from '~/lib/destinationWithUTM';
+import { KushkiCreditCardForm, KushkiCreditCardFormProps } from '~/components/forms/KushkiCreditCardForm';
+import { FormProvider } from 'react-hook-form';
+import Cookies from 'lib/Cookies';
+import { RATED_CSAT_PAYMENT } from '~/utils/storesKeys';
+import type { ErrorResponse } from '@kushki/js/lib/types/error_response';
+import { TokenResponse } from '@kushki/js/lib/types/remote/token_response';
+import { Validate3DsResponse } from '@kushki/js/lib/types/validate_3ds_response';
+import { typeOfOrdersInStore } from '~/utils/orders';
+import { useCreditCardForm } from '~/components/forms/CreditCardForm';
+import { useCheckoutPayment } from '~/hooks/usePayment';
+import { useFlag } from '~/components/flags/FlagsProvider';
 
 type CardCommission = {
   type: 'percentage';
@@ -57,411 +47,346 @@ type PageProps = {
   };
 };
 
-const MIN_NUM_BIN = 6;
+type FailedPayment = {
+  code: string;
+  message: string;
+};
+
+type PaymentContent = {
+  payin_id?: string;
+  code?: string;
+  message?: string;
+};
 
 function KushkiCreditCard({ commissionValues }: Readonly<PageProps>) {
-  const kushkiInstance = useKushki();
   const selectedSchool = useSelectedSchool();
-  const _router = useRouter();
-  const { guardianHash } = _router.query;
-  const { selectedItems, clear } = useSelectionStore();
+  const router = useRouter();
+  const { guardianHash } = router.query;
+  const { selectedItems, totalToPay } = useSelectionStore();
+  const cartItems = useCartItems<ProjectEnum.PORTAL>();
   const itemsQuantity = selectedItems?.length;
-  const schoolCardsAllowed = useMemo(() => selectedSchool?.preferences.credit.methods || [], [selectedSchool]);
-  const [cardInfoByKushki, setCardInfoByKushki] = useState<BinInfoResponse | null>(null);
-  const [stockError, setStockError] = useState(false);
+  const schoolCardsAllowed = selectedSchool?.preferences.credit.methods;
+  const { data: session } = useSession();
+  const sendPageEvent = useSendPageEvent();
+  const path = usePathname();
+  const kushkiInstance = useKushki();
+  const sendEvent = useSendEvent();
+  const { optional, mandatory } = typeOfOrdersInStore(selectedItems);
 
-  const catchErrorCardInfo = (error: ErrorResponse, showError = false) => {
-    if (showError) {
-      showDrawer(error);
-      formik.setSubmitting(false);
-    }
-    if (error.message !== 'Bin no válido.') {
-      sendTrackEvent('portal: Payment Failed', {
-        code: error.code,
-        message: error.message,
-        method: 'requestBinInfo',
-        type: 'Credit',
-      });
-      Sentry.setContext('requestBinInfo catch Error', {
-        message: error.message,
-        code: error.code,
-      });
-      Sentry.captureEvent({ message: `requestBinInfo catch ${JSON.stringify(error)}` });
-    }
-  };
+  const show3DS = session?.user.fraud_status === FraudStatusEnum.HighRisk;
 
-  const getCardInfo = (bin: string) => {
-    if (!bin || bin.length < MIN_NUM_BIN) return setCardInfoByKushki(null);
-    kushkiInstance?.requestBinInfo({ bin }, (response) => {
-      if (!('code' in response)) {
-        setCardInfoByKushki(response);
-      } else {
-        setCardInfoByKushki(null);
-        catchErrorCardInfo(response);
-      }
-    });
-  };
+  const updateGuardianMutation = api.guardian.update.useMutation();
+  const methods = useCreditCardForm();
+
+  const [newCheckoutFlag] = useFlag('new-checkout-method');
+  const useNewCheckoutMethod = newCheckoutFlag?.variationKey === 'on';
 
   useEffect(() => {
-    sendPageViewedEvent('Metodo de pago - Tarjeta - Kushki');
-  }, []);
+    sendPageEvent(TrackEvents.checkout.card.pageViewed);
+  }, [sendPageEvent]);
 
   useEffect(() => {
-    if (!itemsQuantity) _router.push(`/guardians/${guardianHash}`);
-  }, [itemsQuantity]);
+    if (!itemsQuantity) router.push(`/guardians/${guardianHash}`);
+  }, [itemsQuantity, router, guardianHash]);
 
-  const formik = useFormik({
-    initialStatus: {
-      status: null,
-    },
-    initialValues: cardValues,
-    validate: (values) => {
-      const errors: Record<string, unknown> = {};
-      Object.keys(values).forEach((key) => {
-        const cardBrand = getCardBrand(values?.cardNumber ?? '');
-        if (key === 'cvv') {
-          if (
-            values['cvv'] &&
-            !validationRules.cvv.rule(String(values.cvv), cardBrand?.card?.type === 'american-express' ? 4 : 3).isValid
-          ) {
-            errors['cvv'] = validationRules['cvv'].message;
-          }
-        } else if (
-          values[key as keyof typeof values] &&
-          !validationRules[key as keyof typeof values].rule(String(values[key as keyof typeof values])).isValid
-        ) {
-          errors[key] = validationRules[key as keyof typeof values].message;
-        }
-      });
-      return errors;
-    },
-    onSubmit: ({ cardName, cardNumber, expiryDate, cvv }) => {
-      const [expiryMonth, expiryYear] = expiryDate.split('/');
-      Cookies.set('FULLFILMENT_VALUES', commissionValues[cardBrandCode]);
-      localStorage.removeItem(RATED_CSAT_PAYMENT);
-      if (!cardInfoByKushki) {
-        kushkiInstance?.requestBinInfo({ bin: cardNumber }, (response) => {
-          if (!('code' in response)) {
-            setCardInfoByKushki(response);
-            requestKushkiToken({ cardName, cardNumber: cardNumber.replaceAll(' ', ''), expiryMonth, expiryYear, cvv });
-          } else {
-            setCardInfoByKushki(null);
-            catchErrorCardInfo(response, true);
-          }
-        });
-      } else requestKushkiToken({ cardName, cardNumber: cardNumber.replaceAll(' ', ''), expiryMonth, expiryYear, cvv });
-    },
-  });
-
-  const searchNumCard = useDebounce(formik?.values?.cardNumber, 900);
-
-  useEffect(() => {
-    getCardInfo(searchNumCard);
-  }, [searchNumCard]);
-
-  const cardData = getCardBrand(formik?.values?.cardNumber ?? '');
-
-  const getCardBrandCode = () => {
-    const { AMEX, CREDIT, DEBIT } = CardTypeEnum;
-    if (cardData?.card?.type === 'american-express') {
-      return AMEX;
-    } else if (cardInfoByKushki?.cardType === 'debit') {
-      return DEBIT;
-    } else {
-      return CREDIT;
-    }
-  };
-
-  const cardBrandCode = getCardBrandCode();
-
-  const handleCardAllowance = useCallback(() => {
-    if (cardData?.card?.type && !schoolCardsAllowed.includes(cardData?.card?.type)) {
-      formik.errors.cardNumber = `Por el momento no aceptamos ${cardData?.card?.niceType}. Por favor intenta con otra tarjeta.`;
-    }
-  }, [cardData, formik.errors, schoolCardsAllowed]);
-
-  const handleCardMask = () => {
-    handleCardAllowance();
-    if (cardData?.card?.type === 'american-express') {
-      return '____ ______ _____';
-    }
-    return '____ ____ ____ ____';
-  };
-
-  const isLoading = !cardData?.card?.type;
-
-  const hasCommissions = !!Object.keys(commissionValues).find(
-    (key) => commissionValues[key as keyof typeof commissionValues].commission
-  );
   const { mutate: mutateCheckoutCard } = api.kushki.checkoutCard.useMutation({
     onSuccess() {
-      sendTrackEvent(Events.payment_success, { method: 'kushki', type: 'Card' });
-      _router.push({ pathname: `/guardians/${guardianHash}/success`, query: { status: 'paid' } });
+      router.push({ pathname: `/guardians/${guardianHash}/success`, query: { status: 'paid' } });
     },
     onError(error) {
-      showDrawer(error);
-      formik.setSubmitting(false);
+      let message: string | Record<string, unknown> = '';
+
+      try {
+        message = JSON.parse(error.message);
+      } catch (e) {
+        message = error.message;
+      }
+      if (typeof message == 'object' && 'code' in message) {
+        router.push({ query: { ...router.query, error: String(message.code) } }, undefined, { shallow: true });
+      } else {
+        router.push({ query: { ...router.query, error: 'external' } }, undefined, { shallow: true });
+      }
     },
   });
 
-  const requestKushkiToken = async ({
-    cardName,
-    cardNumber,
-    expiryMonth,
-    expiryYear,
-    cvv,
-  }: {
-    cardName: string;
-    cardNumber: string;
-    expiryMonth: string;
-    expiryYear: string;
-    cvv: string;
-  }) => {
-    if (!formik.isValid) return;
+  const { checkoutMutation, pollPaymentStatus, getTimeToComplete, setPaymentInitiationTime } = useCheckoutPayment({
+    onError(error) {
+      let message: string | Record<string, unknown> = '';
 
-    kushkiInstance?.requestToken(
-      {
-        amount: commissionValues[cardBrandCode].total,
-        currency: 'MXN',
-        card: {
-          name: cardName,
-          number: cardNumber,
-          expiryMonth,
-          expiryYear,
-          cvc: cvv.toString(),
-        },
-      },
-      (response) => {
-        if (!('code' in response) && Boolean(itemsQuantity)) {
-          const storedCheckoutOrders = selectedItems.map((fulfillment) => ({
-            order: fulfillment.order_id,
-            student: fulfillment.student.id,
-          }));
-          mutateCheckoutCard({
-            items: storedCheckoutOrders,
-            cardType: cardBrandCode,
-            kushkiToken: response.token,
-          });
-        } else {
-          formik.setStatus({ status: 'external' });
-          formik.setSubmitting(false);
-        }
+      try {
+        message = JSON.parse(error.message);
+      } catch (e) {
+        message = error.message;
       }
-    );
-  };
-
-  const showDrawer = (error: unknown) => {
-    if (axios.isAxiosError(error)) {
-      const { code, field, message } = error.response?.data ?? {};
-      sendTrackEvent('portal: Payment Failed', { code: code, message: message, method: 'KUSHKI', type: 'Credit' });
-      if (field !== '-') {
-        formik.setErrors({
-          [ErrorFieldMap[field as keyof typeof ErrorFieldMap]]: message,
-        });
-      } else if (Object.keys(DrawerOptions).find((key) => key === code)) {
-        formik.setStatus({ status: code });
+      if (typeof message == 'object' && 'code' in message) {
+        router.push({ query: { ...router.query, error: String(message.code) } }, undefined, { shallow: true });
       } else {
-        formik.setStatus({ status: 'K-default' });
+        router.push({ query: { ...router.query, error: 'external' } }, undefined, { shallow: true });
       }
-    } else {
-      formik.setStatus({ status: 'external' });
+    },
+    onTimeout() {
+      router.push({ query: { ...router.query, error: 'payment_failed_timeout' } }, undefined, { shallow: true });
+    },
+  });
+
+  const handlePaymentStatusChange = useRef<() => void>(() => undefined);
+
+  handlePaymentStatusChange.current = () => {
+    if (pollPaymentStatus.data?.status === 'approved') {
+      const timeToComplete = getTimeToComplete();
+      const payinId =
+        (pollPaymentStatus.data?.content as PaymentContent)?.payin_id || checkoutMutation.data?.payment_id;
+
+      sendEvent(TrackEvents.checkout.payment.success, {
+        payin_id: payinId,
+        amount: totalToPay,
+        payment_method: CreateRefundDashboardRequestDTOPaymentMethodEnum.CreditCard,
+        time_to_complete_seconds: timeToComplete,
+        items_count: itemsQuantity,
+        optional,
+        mandatory,
+      });
+
+      router.push({ pathname: `/guardians/${guardianHash}/success`, query: { status: 'paid' } });
+    } else if (pollPaymentStatus.data?.status === 'rejected') {
+      const error = pollPaymentStatus.data?.content as FailedPayment;
+      const timeToComplete = getTimeToComplete();
+
+      sendEvent(TrackEvents.checkout.payment.failed, {
+        failure_reason: error.message || 'Payment rejected',
+        error_code: error.code !== '-' ? error.code : 'payment_failed',
+        amount: totalToPay,
+        payment_method: CreateRefundDashboardRequestDTOPaymentMethodEnum.CreditCard,
+        time_to_complete_seconds: timeToComplete,
+        optional,
+        mandatory,
+      });
+
+      router.push(
+        { query: { ...router.query, error: error.code !== '-' ? error.code : 'payment_failed' } },
+        undefined,
+        { shallow: true }
+      );
     }
   };
 
-  const tryAgain = () => {
-    sendTrackEvent(Events.payment_failed_retry, { method: 'Kushki', type: 'Card' });
-    formik.setStatus({ status: null });
+  // Monitor payment status and redirect when payment is successful
+  useEffect(() => {
+    handlePaymentStatusChange.current();
+  }, [pollPaymentStatus.data]);
+
+  const aceptTerms = async () => {
+    if (session?.user.id) {
+      await updateGuardianMutation.mutateAsync({
+        id: session?.user.id,
+        data: {
+          terms_acceptance: {
+            amount: totalToPay,
+            signed_site: path,
+          },
+        },
+        query: { force: true },
+      });
+    }
   };
 
-  const changePaymentMethod = () => {
-    sendTrackEvent(Events.payment_failed_change_method, { method: 'Kushki', type: 'Card' });
-    _router.push(`/guardians/${guardianHash}/payments`);
+  const handleSubmit: KushkiCreditCardFormProps['onSubmit'] = async ({ cardInfo, cardBrandCode, cardBrand }) => {
+    if (!kushkiInstance) return;
+
+    try {
+      sendEvent(TrackEvents.checkout.card.pay, { optional, mandatory });
+      Cookies.set('FULLFILMENT_VALUES', commissionValues[cardBrandCode]);
+      localStorage.removeItem(RATED_CSAT_PAYMENT);
+
+      const [expiryMonth, expiryYear] = cardInfo.expiryDate ? cardInfo.expiryDate.split('/') : ['', ''];
+
+      await aceptTerms();
+
+      kushkiInstance.requestToken(
+        {
+          amount: commissionValues[cardBrandCode].total,
+          currency: 'MXN',
+          card: {
+            name: cardInfo.name ?? '',
+            number: cardInfo.number ? cardInfo.number.replaceAll(' ', '') : '',
+            expiryMonth,
+            expiryYear,
+            cvc: cardInfo.cvv ?? '',
+          },
+        },
+        (response: TokenResponse | ErrorResponse) => {
+          if ('code' in response) {
+            router.push({ query: { ...router.query, error: response.code } }, undefined, { shallow: true });
+            return;
+          }
+
+          if (!itemsQuantity) return;
+
+          const { token, secureId, security } = response;
+
+          if (show3DS && security && secureId) {
+            kushkiInstance.requestValidate3DS(
+              {
+                secureId: secureId,
+                security: {
+                  authRequired: !!security.authRequired,
+                  acsURL: security.acsURL,
+                  authenticationTransactionId: security.authenticationTransactionId,
+                  paReq: security.paReq,
+                },
+              },
+              (response3DS: Validate3DsResponse | ErrorResponse) => {
+                if ('code' in response3DS) {
+                  router.push({ query: { ...router.query, error: response3DS.code } }, undefined, { shallow: true });
+                  return;
+                }
+
+                if (response3DS.isValid) {
+                  setPaymentInitiationTime();
+
+                  if (useNewCheckoutMethod) {
+                    sendEvent(TrackEvents.checkout.payment.initiated, {
+                      guardian_id: session?.user.id,
+                      payment_method: CreateRefundDashboardRequestDTOPaymentMethodEnum.CreditCard,
+                      amount: totalToPay,
+                      session_id: session?.user.id,
+                      items_count: itemsQuantity,
+                      optional,
+                      mandatory,
+                    });
+                    checkoutMutation.mutate({
+                      items: cartItems,
+                      cardType: cardBrandCode,
+                      token: token,
+                      preferenceType: PreferenceTypeEnum.CARD,
+                      guardian: session?.user.id || '',
+                      cardBrand: cardBrand,
+                    });
+                  } else {
+                    sendEvent(TrackEvents.checkout.payment.initiatedLegacy, {
+                      guardian_id: session?.user.id,
+                      payment_method: CreateRefundDashboardRequestDTOPaymentMethodEnum.CreditCard,
+                      amount: totalToPay,
+                      session_id: session?.user.id,
+                      items_count: itemsQuantity,
+                      optional,
+                      mandatory,
+                    });
+                    mutateCheckoutCard({
+                      items: cartItems,
+                      cardType: cardBrandCode,
+                      kushkiToken: token,
+                    });
+                  }
+                } else {
+                  router.push({ query: { ...router.query, error: 'K3DS_INVALID' } }, undefined, { shallow: true });
+                }
+              }
+            );
+          } else {
+            setPaymentInitiationTime();
+
+            if (useNewCheckoutMethod) {
+              sendEvent(TrackEvents.checkout.payment.initiated, {
+                guardian_id: session?.user.id,
+                payment_method: CreateRefundDashboardRequestDTOPaymentMethodEnum.CreditCard,
+                amount: totalToPay,
+                session_id: session?.user.id,
+                items_count: itemsQuantity,
+                optional,
+                mandatory,
+              });
+              checkoutMutation.mutate({
+                items: cartItems,
+                cardType: cardBrandCode,
+                token: token,
+                preferenceType: PreferenceTypeEnum.CARD,
+                guardian: session?.user.id || '',
+                cardBrand: cardBrand,
+              });
+            } else {
+              sendEvent(TrackEvents.checkout.payment.initiatedLegacy, {
+                guardian_id: session?.user.id,
+                payment_method: CreateRefundDashboardRequestDTOPaymentMethodEnum.CreditCard,
+                amount: totalToPay,
+                session_id: session?.user.id,
+                items_count: itemsQuantity,
+                optional,
+                mandatory,
+              });
+              mutateCheckoutCard({
+                items: cartItems,
+                cardType: cardBrandCode,
+                kushkiToken: token,
+              });
+            }
+          }
+        }
+      );
+    } catch (error) {
+      router.push({ query: { ...router.query, error: 'external' } }, undefined);
+    }
   };
 
+  return (
+    <div className="flex flex-col h-screen">
+      <div className="flex items-center my-4 ml-2">
+        <button
+          className="flex items-center justify-center w-10 h-10 p-3 mr-4 bg-white rounded-full hover:bg-black/5"
+          onClick={() => router.push(`/guardians/${guardianHash}/payments`)}
+        >
+          <Chevron className="rotate-180 text-[#4A5CFF] w-2" />
+        </button>
+        <div className="flex items-center justify-center m-2">
+          <h2 className="text-[#091A7A] font-bold text-xl">Tarjeta Crédito o Débito</h2>
+        </div>
+      </div>
+      <hr className="border-gray-200 mb-4" />
+
+      <ErrorBoundary fallback={BoxError}>
+        <FormProvider {...methods}>
+          <KushkiCreditCardForm
+            onSubmit={handleSubmit}
+            commissionValues={commissionValues}
+            show3DS={show3DS}
+            allowedCards={schoolCardsAllowed}
+            onError={(error) => {
+              if ('code' in error) {
+                router.push({ query: { ...router.query, error: error.code } }, undefined, { shallow: true });
+              }
+            }}
+          />
+        </FormProvider>
+      </ErrorBoundary>
+    </div>
+  );
+}
+
+KushkiCreditCard.getLayout = function getLayout(page: React.ReactElement) {
   return (
     <>
       <Head>
         <title>Tarjeta Crédito o Débito</title>
       </Head>
-      {formik.status.status && (
-        <Drawer
-          code={DrawerOptions[formik.status.status as keyof typeof DrawerOptions].code as DrawerCode}
-          title={DrawerOptions[formik.status.status as keyof typeof DrawerOptions].title}
-          information="¿Qué puedo hacer?"
-          optionMessage={DrawerOptions[formik.status.status as keyof typeof DrawerOptions].optionMessage}
-          icon={DrawerOptions[formik.status.status as keyof typeof DrawerOptions].icon}
-        >
-          <Box display="flex" gap="0.625rem" flexDirection="column" width="100%">
-            <Button
-              variant="contained"
-              fullWidth
-              sx={{ py: '0.75rem', height: 44, borderRadius: 16 }}
-              onClick={tryAgain}
-            >
-              Volver a intentar
-            </Button>
-            <Button
-              variant="outlined"
-              fullWidth
-              sx={{ py: '0.75rem', height: 44, borderRadius: 16 }}
-              onClick={changePaymentMethod}
-            >
-              Cambiar método de pago
-            </Button>
-          </Box>
-        </Drawer>
-      )}
-
-      <Container maxWidth="sm" disableGutters>
-        <div className="flex ml-2">
-          <IconButton
-            onClick={() => _router.back()}
-            disabled={formik.isSubmitting}
-            sx={{
-              backgroundColor: 'white.main',
-              mr: 2,
-              mt: 2,
-              mb: 2,
-            }}
-          >
-            <ChevronLeftIcon color="primary" />
-          </IconButton>
-          <div className="flex items-center justify-center m-2">
-            <Typography variant="heading2" color="#091A7A">
-              Tarjeta Crédito o Débito
-            </Typography>
-          </div>
-        </div>
-        <Divider sx={{ mb: 4 }} />
-        <Box
-          component="form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            formik.handleSubmit(e);
-          }}
-          display="grid"
-          gridTemplateColumns="1fr 1fr"
-          gap="1.5rem 2.3rem"
-          justifyContent="center"
-          px="1.6rem"
-        >
-          {!hasCommissions && (
-            <p className="font-medium text-xs text-[#57537A] text-align-center col-span-full text-center">
-              Por favor completa los datos que se le solicitan a continuación para poder realizar el pago.
-            </p>
-          )}
-
-          <ErrorBoundary fallback={BoxError}>
-            <NFormTextField
-              name="cardNumber"
-              type="text"
-              label="Número de la tarjeta"
-              className="col-span-full"
-              error={formik.errors.cardNumber}
-              LeftIcon={kushkiFormIcons.cardIcon}
-              RightIcon={creditCardIcon[cardData?.card?.type as keyof typeof creditCardIcon]}
-              maskConfig={{ mask: handleCardMask(), replacement: /\d/ }}
-              onChange={({ target: { value } }) => {
-                formik.setFieldValue('cardNumber', value);
-              }}
-              value={formik.values.cardNumber}
-            />
-          </ErrorBoundary>
-
-          <NFormTextField
-            className="col-span-full"
-            label="Nombre en la tarjeta"
-            name="cardName"
-            onChange={formik.handleChange}
-            value={formik.values.cardName}
-            error={formik.errors.cardName}
-            helperText={formik.touched.cardName ? formik.errors.cardName : undefined}
-            LeftIcon={kushkiFormIcons.people}
-          />
-
-          <NFormTextField
-            name="expiryDate"
-            label="Fecha Exp"
-            type="text"
-            className="grid-col-[1/2]"
-            onChange={formik.handleChange}
-            value={formik.values.expiryDate}
-            error={formik.errors.expiryDate}
-            LeftIcon={kushkiFormIcons.calendar}
-            maskConfig={{ mask: '__/__', replacement: /\d/ }}
-          />
-
-          <NFormTextField
-            name="cvv"
-            label="CVV"
-            type="password"
-            onChange={formik.handleChange}
-            value={formik.values.cvv}
-            error={formik.errors.cvv}
-            LeftIcon={kushkiFormIcons.lock}
-            className="grid-col-[2/3]"
-          />
-
-          {hasCommissions && (
-            <SubtotalCard
-              className="col-span-full"
-              subtotalValue={commissionValues[cardBrandCode].subtotal}
-              commissionValue={isLoading ? 0 : commissionValues[cardBrandCode].commission}
-              totalValue={commissionValues[cardBrandCode].total}
-              isLoading={isLoading || !cardInfoByKushki}
-            />
-          )}
-          <span className="flex md:justify-self-center content-center items-center col-[1/-1] gap-2 max-w-lg">
-            <Lock className="w-[18px]" />
-            <p className="text-[#57537A] text-xs font-normal text-left flex-1 md:flex-none m-0">
-              Tus datos están seguros y encriptados con certificación PCI.
-            </p>
-          </span>
-          <Button
-            variant="contained"
-            fullWidth
-            type="submit"
-            disabled={
-              !formik.isValid ||
-              !formik.dirty ||
-              formik.isSubmitting ||
-              Object.values(formik.values).some((val) => val === '')
-            }
-            sx={{
-              height: 56,
-              borderRadius: 16,
-              gridColumn: '1/-1',
-            }}
-          >
-            {formik.isSubmitting ? (
-              <CircularProgress size={24} />
-            ) : (
-              <>
-                <LockOutlined className="w-[18px] mr-1.5" /> <Typography>Pagar</Typography>
-              </>
-            )}
-          </Button>
-
-          <Box gridColumn="1/-1" mt="0.625rem" px="0.5rem" display="flex" flexDirection="column" gap="1.5rem">
-            <PoweredByKushki />
-            <Divider orientation="horizontal" sx={{ width: '100%' }} />
-            <span className="flex content-between col-span-[1/-1] items-center gap-6">
-              <Image src="/images/pci-dss-compliant-logo.svg" alt="pci-dss-compliant-logo" height={50} width={130} />
-              <Typography color="textCopy.main" variant="caption" fontWeight={400} lineHeight="1rem">
-                Este pago es procesado de forma segura por Kushki, un proveedor de pagos PCI de nivel 1.
-              </Typography>
-            </span>
-          </Box>
-        </Box>
-        <StockErrorAlert stockError={stockError} setStockError={setStockError} resetSelection={clear} />
-      </Container>
+      <div className="mx-auto max-w-[600px]">{page}</div>
     </>
   );
-}
+};
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const { guardianHash } = context.query;
+  const session = await getSession(context);
   try {
+    const doesHasHighRiskProfile = session?.user.fraud_status === FraudStatusEnum.HighRisk;
+    if (doesHasHighRiskProfile) {
+      return {
+        redirect: {
+          permanent: false,
+          destination: appendUtmParameters(`/guardians/${guardianHash}/payments?card-now-allowed=true`, context.query),
+        },
+      };
+    }
+
     const commissionValues = await getCommissionValues(context, PreferenceTypeEnum.CARD);
 
     return {
@@ -472,11 +397,11 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     };
   } catch (err) {
     catchPaymentPage(err, context, 'GSSP Credit Card');
-    isStockError(err, guardianHash);
+    isStockError(err, guardianHash, context.query);
     return {
       redirect: {
         permanent: false,
-        destination: `/guardians/${guardianHash}`,
+        destination: appendUtmParameters(`/guardians/${guardianHash}`, context.query),
       },
     };
   }

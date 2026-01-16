@@ -2,20 +2,29 @@ import SidebarHeader from '../../../molecules/dashboard/SidebarHeader';
 import DashboardInput from '../../common/DashboardInput';
 import { useFormik } from 'formik';
 import ApiClient from '/src/services/ApiClient';
-import { useSession } from 'next-auth/react';
 import SidebarActions from '/src/components/atoms/SidebarActions';
 import DateInputsGroup from '../DateInputsGroup';
 import { useMutation } from '@tanstack/react-query';
 import useAlert from '/src/hooks/useAlert';
 import useSendTrackEventWithUserName from '/src/hooks/useSendTrackEventWithUserName';
-import PhoneField from '/src/components/atoms/PhoneField';
-import { TextField } from '@mui/material';
-import { isRequired, isValidBirthdate, isValidEmail } from '/src/utils/validations';
+import { Events } from '/src/constants/events';
+import { isRequired, isValidBirthdate, isValidEmail, isValidFullNumber } from '/src/utils/validations';
 import validator from '/src/utils/validator';
 import { AxiosError } from 'axios';
 import { changeMultipleErrors } from '/src/utils/errorsMessages';
 import { api } from '/src/utils/api';
 import { DashboardGuardian } from '@cometa/trpc/src/types';
+import { PhoneInput } from '@cometa/recreo';
+import { useSelectedSchool } from '/src/guards/AuthGuard';
+import { useIntegrationsBlockedFields } from '/src/hooks/useIntegrationsBlockedFields';
+
+const GUARDIAN_FIELDS = {
+  FIRST_NAME: 'guardian.first_name',
+  LAST_NAME: 'guardian.last_name',
+  EMAIL: 'guardian.email',
+  PHONE: 'guardian.phone',
+} as const;
+
 interface IGuardianEditProps {
   onClose: () => void;
   guardian: DashboardGuardian;
@@ -27,28 +36,38 @@ interface IGuardianFormValue {
   email: string;
   phone?: string;
   birthdate?: string;
+  occupation?: string;
+  workplace?: string;
+  workphone?: string;
+  school_id?: string;
 }
 
 export default function GuardianEdit({ guardian, onClose }: IGuardianEditProps) {
-  const { data: session } = useSession();
   const { setAlertState } = useAlert();
   const sendTrackEventWithUserName = useSendTrackEventWithUserName();
   const utils = api.useUtils();
+  const selectedSchool = useSelectedSchool();
+  const { isFieldBlocked, getTooltipMessage } = useIntegrationsBlockedFields();
 
   const initialValues: IGuardianFormValue = {
     first_name: guardian?.first_name || '',
     last_name: guardian?.last_name || '',
     email: guardian?.email || '',
-    phone: guardian?.phone || '+52',
+    phone: guardian?.phone || '',
     birthdate: guardian.birthdate || '',
+    occupation: guardian.occupation || '',
+    workplace: guardian.workplace || '',
+    workphone: guardian.workphone || '',
+    school_id: selectedSchool?.id,
   };
 
   const validationRules = {
     email: [isRequired, isValidEmail],
-    phone: [isRequired],
+    phone: [isRequired, isValidFullNumber],
     first_name: [isRequired],
     last_name: [isRequired],
     birthdate: [isValidBirthdate],
+    workphone: [isValidFullNumber],
   };
 
   const formik = useFormik<IGuardianFormValue>({
@@ -63,14 +82,12 @@ export default function GuardianEdit({ guardian, onClose }: IGuardianEditProps) 
       handleSubmit(values);
     },
   });
-  const queryEditGuardian = async (values: IGuardianFormValue) =>
-    await ApiClient.patchGuardianDetail(session?.token || '', guardian.id, values);
-
-  const mutation = useMutation(queryEditGuardian, {
+  const mutation = useMutation({
+    mutationFn: async (values: IGuardianFormValue) => await ApiClient.patchGuardianDetail(guardian.id, values),
     async onSuccess() {
       await utils.guardian.getDetails.invalidate();
       setAlertState({ open: true, severity: 'success', message: '¡Se guardaron los cambios de manera exitosa!' });
-      sendTrackEventWithUserName('dashboard: Guardian | Changed');
+      sendTrackEventWithUserName(Events.guardian_changed);
       onClose();
     },
     onError(error: AxiosError | Error | any) {
@@ -113,6 +130,8 @@ export default function GuardianEdit({ guardian, onClose }: IGuardianEditProps) 
               placeholder=""
               onChange={formik.handleChange}
               error={changeMultipleErrors(formik.errors.first_name as string)}
+              disabled={isFieldBlocked(GUARDIAN_FIELDS.FIRST_NAME)}
+              tooltip={getTooltipMessage(GUARDIAN_FIELDS.FIRST_NAME)}
             />
             <DashboardInput
               name="last_name"
@@ -121,6 +140,8 @@ export default function GuardianEdit({ guardian, onClose }: IGuardianEditProps) 
               placeholder=""
               onChange={formik.handleChange}
               error={changeMultipleErrors(formik.errors.last_name as string)}
+              disabled={isFieldBlocked(GUARDIAN_FIELDS.LAST_NAME)}
+              tooltip={getTooltipMessage(GUARDIAN_FIELDS.LAST_NAME)}
             />
             <DateInputsGroup
               date={formik.values.birthdate?.split('-') || []}
@@ -135,22 +156,56 @@ export default function GuardianEdit({ guardian, onClose }: IGuardianEditProps) 
               placeholder=""
               onChange={formik.handleChange}
               error={changeMultipleErrors(formik.errors.email as string)}
+              disabled={isFieldBlocked(GUARDIAN_FIELDS.EMAIL)}
+              tooltip={getTooltipMessage(GUARDIAN_FIELDS.EMAIL)}
             />
-            <PhoneField
-              value={formik.values.phone}
-              component={TextField}
-              country="mx"
+
+            <PhoneInput
+              ignoreValidation
+              initialValue={formik.values.phone}
               onChange={(value) => {
-                formik.setFieldValue('phone', value ? `+${value}` : '');
+                if (!isFieldBlocked(GUARDIAN_FIELDS.PHONE)) {
+                  formik.setFieldValue('phone', value.number);
+                  formik.setFieldError('phone', undefined);
+
+                  if (!value.isValid()) {
+                    formik.setFieldError('phone', 'Ingresa un número de teléfono válido');
+                  }
+                }
               }}
-              inputProps={{
-                label: 'Celular',
-                name: 'phone',
-                variant: 'outlined',
-                required: true,
-                error: 'phone' in formik.errors,
-                helperText: changeMultipleErrors(formik.errors.phone as string),
+              label="Celular*"
+              error={changeMultipleErrors(formik.errors.phone as string)}
+              disabled={isFieldBlocked(GUARDIAN_FIELDS.PHONE)}
+            />
+
+            <h3 className="text-lg font-bold mt-8 mb-5">Información laboral</h3>
+            <DashboardInput
+              name="occupation"
+              value={formik.values.occupation || ''}
+              label="Ocupación (opcional)"
+              onChange={formik.handleChange}
+              error={changeMultipleErrors(formik.errors.occupation as string)}
+            />
+            <DashboardInput
+              name="workplace"
+              value={formik.values.workplace || ''}
+              label="Lugar de trabajo (opcional)"
+              onChange={formik.handleChange}
+              error={changeMultipleErrors(formik.errors.workplace as string)}
+            />
+            <PhoneInput
+              ignoreValidation
+              initialValue={formik.values?.workphone ?? ''}
+              onChange={(value) => {
+                formik.setFieldValue('workphone', value.number);
+                formik.setFieldError('workphone', undefined);
+
+                if (!value.isValid()) {
+                  formik.setFieldError('workphone', 'Ingresa un número de teléfono válido');
+                }
               }}
+              label="Telf. de trabajo (opcional)"
+              error={changeMultipleErrors(formik.errors.workphone as string)}
             />
           </div>
         </form>
@@ -158,7 +213,7 @@ export default function GuardianEdit({ guardian, onClose }: IGuardianEditProps) 
       <SidebarActions className="z-10">
         <button
           className="bg-transparent px-20 py-3 text-green-400 hover:text-green-500 text-base font-bold disabled:text-[#919EABCC] rounded-lg"
-          disabled={mutation.isLoading}
+          disabled={mutation.isPending}
           onClick={() => {
             onClose();
           }}
@@ -170,10 +225,10 @@ export default function GuardianEdit({ guardian, onClose }: IGuardianEditProps) 
             onClick={() => {
               formik.submitForm();
             }}
-            disabled={mutation.isLoading || !formik.isValid}
+            disabled={mutation.isPending || !formik.isValid}
             className="text-white text-base font-bold px-20 py-3 rounded-lg bg-green hover:bg-green-800 disabled:bg-[#919EAB3D] disabled:text-[#919EABCC] whitespace-nowrap"
           >
-            {mutation.isLoading ? 'Guardando...' : 'Guardar'}
+            {mutation.isPending ? 'Guardando...' : 'Guardar'}
           </button>
         </span>
       </SidebarActions>

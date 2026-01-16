@@ -1,53 +1,76 @@
-import HeaderTable from './Header';
-import { useSession } from 'next-auth/react';
-import { useMemo, useRef, useState } from 'react';
-import ApiClient from '../../../../services/ApiClient';
-import useToggle from '../../../../hooks/useToggle';
-import { PageSize, renderPayoutStatus } from '../../../../utils/general';
-import { renderDate, renderMoney } from '../../../../utils/datagridHeaders';
-import { sendTrackEvent } from '../../../../utils/events';
+import type { DashboardSchoolPayouts } from '@cometa/trpc/src/types';
+import { SchoolCycleEntity } from '@cometa/trpc/src/students/types-mapping';
 import * as Sentry from '@sentry/nextjs';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { createColumnHelper, PaginationState } from '@tanstack/react-table';
-import { Table } from '/src/components/Table';
-import Price from '/src/components/atoms/Sum';
+import { useMutation } from '@tanstack/react-query';
+import { type PaginationState, ColumnDef, createColumnHelper } from '@tanstack/react-table';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { UseFormReturn } from 'react-hook-form';
+import useToggle from '../../../../hooks/useToggle';
+import ApiClient from '../../../../services/ApiClient';
+import { renderDate, renderMoney } from '../../../../utils/datagridHeaders';
+import { PageSize, renderPayoutStatus } from '../../../../utils/general';
+import useSendTrackEventWithUserName from '../../../../hooks/useSendTrackEventWithUserName';
+import { Events } from '../../../../constants/events';
+import { type FormFilterData, formFilterDataToParams, MultipleFiltersChips } from '../../../MultipleFilters';
+import PayoutDetail from '../PayoutSidebarDetail';
+import HeaderTable from './Header';
 import {
-  useSetIsWorking,
   useAddToQueue,
+  useSetIsWorking,
   useSetToError,
   useSetToIdle,
 } from '/src/components/BackgroundDownload/BackgroundDownload';
-import { useSelectedSchoolId } from '/src/guards/AuthGuard';
-import PayoutDetail from '../PayoutSidebarDetail';
-import { FormFilterData, formFilterDataToParams, MultipleFiltersChips } from '../../../MultipleFilters';
-import { UseFormReturn } from 'react-hook-form';
 import { transformDates } from '/src/components/DateRange';
+import { Table } from '/src/components/Table';
 import { GlobalSearch } from '/src/components/atoms/GlobalSearch';
-import useDebounce from '/src/hooks/useDebounce';
 import { HighlightMatch } from '/src/components/atoms/HighlightMatch';
+import Price from '/src/components/atoms/Sum';
+import { useSelectedSchoolId } from '/src/guards/AuthGuard';
+import useDebounce from '/src/hooks/useDebounce';
+import { api } from '/src/utils/api';
+import { useFixedColumnsCustomizer } from 'src/components/ColumnCustomizer/hooks';
+import { convertToOrdering } from '/src/components/Table';
+
+const PAYOUTS_FIXED_COLUMN_IDS = ['correlative_id', 'deposit_date', 'status', 'total_emitted'];
+const STORE_KEY_REPORT_CONFIG = 'payouts' as const;
 
 export default function OrderTableForPayouts() {
-  const { data: session } = useSession();
   const setIsError = useSetToError();
   const setToIdle = useSetToIdle();
-  const selectedSchool = useSelectedSchoolId();
+  const selectedSchoolId = useSelectedSchoolId();
+  const sendTrackEventWithUserName = useSendTrackEventWithUserName();
   const { toggle: openTo, onOpen: onOpenTo, onClose: onCloseTo } = useToggle();
   const [payoutDetailId, setPayoutDetailId] = useState('');
   const formRef = useRef() as React.MutableRefObject<UseFormReturn<FormFilterData>>;
   const [formFilterData, setFormFilterData] = useState<FormFilterData>({});
   const paramsFromForm = useMemo(() => formFilterDataToParams(formFilterData), [formFilterData]);
-  const handleOpen = (row: any) => {
+  const handleOpen = (row: DashboardSchoolPayouts) => {
     setPayoutDetailId(row.id);
     onOpenTo();
-    sendTrackEvent('dashboard: Deposits Detail Opened', {});
+    sendTrackEventWithUserName(Events.payouts_detail_opened, {});
   };
   const [search, setSearch] = useState('');
   const searchDebounced = useDebounce(search, 1200);
   const [itemsCount, setItemsCount] = useState<{ watchKey: string; count: number }[]>([]);
+  const [sorting, setSorting] = useState<string>();
+
+  const { data: schoolCycles } = api.schools.schoolsCycles.useQuery(
+    {
+      school_id: selectedSchoolId as string,
+    },
+    {
+      enabled: Boolean(selectedSchoolId),
+      staleTime: 60 * 1000 * 60,
+    }
+  );
+
+  const [schoolCycle, setSchoolCycle] = useState<SchoolCycleEntity | null>(null);
 
   const params = {
     ...paramsFromForm,
     multiple_search: searchDebounced,
+    school_cycles: schoolCycle?.id ? [schoolCycle.id] : undefined,
+    ordering: sorting ? [sorting] : undefined,
   };
 
   const [selectedDates, onDatesChange] = useState<Date[]>([]);
@@ -58,16 +81,6 @@ export default function OrderTableForPayouts() {
     pageIndex: 0,
     pageSize: PageSize,
   });
-
-  const fetchPayouts = async (pageIndex: number) =>
-    await ApiClient.getIncomesPayouts(
-      session?.token,
-      selectedSchool,
-      pageIndex === 0 ? 1 : pageIndex + 1,
-      startDatePayouts,
-      endDatePayouts,
-      params
-    );
 
   const pagination = useMemo(
     () => ({
@@ -80,31 +93,43 @@ export default function OrderTableForPayouts() {
   const {
     data: payoutResponse,
     isFetching,
-    isLoading,
-  } = useQuery(
-    ['schoolPayout', pageIndex, selectedSchool, startDatePayouts, endDatePayouts, params],
-    () => fetchPayouts(pageIndex),
+    isPending: isLoading,
+    error: payoutsError,
+  } = api.payouts.list.useQuery(
     {
-      enabled: !!selectedSchool,
-      retry: false,
-      onError: () => {
-        setPagination({ pageIndex: 0, pageSize: PageSize });
+      schoolId: selectedSchoolId as string,
+      query: {
+        end_date: endDatePayouts,
+        page: pageIndex === 0 ? 1 : pageIndex + 1,
+        page_size: pageSize,
+        start_date: startDatePayouts,
+        ...params,
       },
+    },
+    {
+      enabled: !!selectedSchoolId,
+      retry: false,
     }
   );
 
-  const columnHelper = createColumnHelper<any>();
+  useEffect(() => {
+    if (payoutsError) {
+      setPagination({ pageIndex: 0, pageSize: PageSize });
+    }
+  }, [payoutsError]);
+
+  const columnHelper = createColumnHelper<DashboardSchoolPayouts>();
 
   const orderingData = useMemo(() => {
     const data = payoutResponse?.results || [];
 
-    const scheduledOrders = data.filter((item: any) => item.transaction_started === null);
-    const sortedByDepositedDate = scheduledOrders.sort((a: any, b: any) => {
+    const scheduledOrders = data.filter((item) => item.transaction_started === null);
+    const sortedByDepositedDate = scheduledOrders.sort((a, b) => {
       const dateA = new Date(a.deposit_date);
       const dateB = new Date(b.deposit_date);
       return dateA > dateB ? -1 : dateA < dateB ? 1 : 0;
     });
-    return sortedByDepositedDate.concat(data.filter((item: any) => item.transaction_started !== null));
+    return sortedByDepositedDate.concat(data.filter((item) => item.transaction_started !== null));
   }, [payoutResponse]);
 
   const columns = [
@@ -119,6 +144,7 @@ export default function OrderTableForPayouts() {
       },
       header: () => <span className="whitespace-nowrap">ID de depósito</span>,
       size: 350,
+      enableSorting: true,
     }),
     columnHelper.accessor('deposit_date', {
       cell: (info) => {
@@ -127,23 +153,36 @@ export default function OrderTableForPayouts() {
       },
       header: () => <span className="whitespace-nowrap">Fecha de abono</span>,
       size: 350,
+      enableSorting: true,
     }),
     columnHelper.accessor('status', {
       cell: (info) => renderPayoutStatus(info.getValue()),
       header: () => <span className="whitespace-nowrap">Estado</span>,
+      enableSorting: true,
+    }),
+    columnHelper.accessor('discounts', {
+      cell: (info) => renderMoney(info.getValue()),
+      header: () => <span className="whitespace-nowrap">Descuentos</span>,
+      meta: {
+        numeric: true,
+      },
+    }),
+    columnHelper.accessor('surcharges', {
+      cell: (info) => renderMoney(info.getValue()),
+      header: () => <span className="whitespace-nowrap">Recargos</span>,
+      meta: {
+        numeric: true,
+      },
     }),
     columnHelper.accessor('total_emitted', {
       cell: (info) => renderMoney(info.getValue()),
       header: () => <span className="whitespace-nowrap">Monto</span>,
+      enableSorting: true,
       meta: {
         numeric: true,
       },
       footer: () => (
-        <>
-          {payoutResponse && payoutResponse?.total_emitted_amount !== 'None' && (
-            <Price amount={payoutResponse?.total_emitted_amount} />
-          )}
-        </>
+        <>{payoutResponse?.total_emitted_amount && <Price amount={payoutResponse.total_emitted_amount} />}</>
       ),
     }),
     columnHelper.accessor('bank_account', {
@@ -153,10 +192,11 @@ export default function OrderTableForPayouts() {
     columnHelper.accessor('orders_count', {
       cell: (info) => info.getValue(),
       header: () => <span className="whitespace-nowrap">Órdenes</span>,
+      enableSorting: true,
     }),
   ];
   const getPayoutsReport = async () =>
-    ApiClient.generatePayoutsReport(session?.token, selectedSchool, {
+    ApiClient.generatePayoutsReport(selectedSchoolId, {
       startDate: startDatePayouts,
       endDate: endDatePayouts,
       ids: null,
@@ -176,7 +216,7 @@ export default function OrderTableForPayouts() {
     },
   });
   const handleAdd = async () => {
-    sendTrackEvent('dashboard: Deposits Downloaded', { Type: 'Tabla' });
+    sendTrackEventWithUserName(Events.payouts_report_downloaded, { Type: 'Tabla' });
     await mutation.mutate();
     setIsWorking();
   };
@@ -188,10 +228,17 @@ export default function OrderTableForPayouts() {
     setFormFilterData(data);
     formRef.current.reset(data);
   };
+
+  const { tableColumns, visibleTableColumns, handleColumnsChange } = usePayoutsColumnCustomizer({
+    tableName: STORE_KEY_REPORT_CONFIG,
+    columns,
+  });
+
   return (
     <>
       <HeaderTable
-        filters={{ start_date: startDatePayouts, end_date: endDatePayouts }}
+        filters={{ start_date: startDatePayouts, end_date: endDatePayouts, ...params }}
+        formFilterData={formFilterData}
         title="Depósitos de Cometa al colegio"
         selectedDates={selectedDates}
         onDatesChange={onDatesChange}
@@ -203,6 +250,13 @@ export default function OrderTableForPayouts() {
         }
         itemsCount={itemsCount}
         setSelectedItemsCount={setItemsCount}
+        schoolCycle={schoolCycle}
+        setSchoolCycle={setSchoolCycle}
+        schoolCycles={schoolCycles ?? []}
+        tableColumns={tableColumns}
+        onColumnsChange={handleColumnsChange}
+        tableName={STORE_KEY_REPORT_CONFIG}
+        fixedColumnIds={PAYOUTS_FIXED_COLUMN_IDS}
       />
       <MultipleFiltersChips
         onChange={handleChangeChipFilter}
@@ -213,13 +267,17 @@ export default function OrderTableForPayouts() {
 
       <Table
         data={orderingData}
-        columns={columns}
+        columns={visibleTableColumns as ColumnDef<DashboardSchoolPayouts>[]}
         onRowClick={handleOpen}
         totalCount={payoutResponse?.count || 0}
         pagination={pagination}
         setPagination={setPagination}
         isLoading={isLoading}
         isFetching={isFetching}
+        onSortingChange={(sorting) => {
+          const text = convertToOrdering(sorting);
+          setSorting(text);
+        }}
         emptyStateText={`${
           search.length > 0 ? 'No hemos encontrado órdenes con esos criterios de búsqueda' : 'No tenemos resultados'
         }`}
@@ -229,3 +287,10 @@ export default function OrderTableForPayouts() {
     </>
   );
 }
+
+const usePayoutsColumnCustomizer = ({ tableName, columns }: { tableName: string; columns: ColumnDef<any, any>[] }) =>
+  useFixedColumnsCustomizer({
+    tableName,
+    columns,
+    fixedColumnIds: PAYOUTS_FIXED_COLUMN_IDS,
+  });

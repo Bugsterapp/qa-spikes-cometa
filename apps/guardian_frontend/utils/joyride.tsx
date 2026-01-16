@@ -24,18 +24,12 @@ export const FIRST_PAYMENT_JOYRIDE = [
   },
 ];
 
-export const MENU_JOYRIDE = [
-  {
-    target: '.menu-icon',
-    content: 'En el menú podrás gestionar tus RFCs, ver tus datos de perfil, tus estudiantes y tu historial de pagos.',
-    disableBeacon: true,
-  },
-];
-
 export const CHANGE_RFC_JOYRIDE = [
   {
     target: '.change-rfc',
-    content: <div className="w-48">Aquí podrás elegir el RFC al que quieras facturar las órdenes de este alumno</div>,
+    content: (
+      <div className="w-48">Aquí podrás elegir el RFC al que quieras facturar las órdenes de este estudiante</div>
+    ),
     disableBeacon: true,
   },
 ];

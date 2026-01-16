@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useSelectedSchoolId } from '~/components/molecules/common/AuthGlobal';
+import { useSelectedSchoolId } from '~/stores/globalStore';
 import { useIsPolling, useSetPolling } from '~/pages/guardians/[guardianHash]/onboarding';
 import { api } from '~/utils/api';
 

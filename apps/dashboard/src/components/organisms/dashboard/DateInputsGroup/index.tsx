@@ -45,7 +45,7 @@ const DateInputsGroup = ({
           <label
             htmlFor="day"
             className={twMerge(
-              'absolute top-4 left-4 text-[#919EAB] peer-focus:text-secondary peer-placeholder-shown:text-[#637381] peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:left-4  group-focus-within:text-green peer-placeholder-shown:transition-all peer-placeholder-shown:ease-out peer-placeholder-shown:ease-[cubic-bezier(4, 1, 8, 3)] peer-focus:top-2.5 peer-focus:bottom-auto peer-focus:transition-all peer-focus:ease-out peer-focus:text-xs peer-focus:ease-[cubic-bezier(4, 1, 8, 3)]',
+              'absolute top-4 left-4 text-[#919EAB] peer-focus:text-foreground peer-placeholder-shown:text-[#637381] peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:left-4  group-focus-within:text-green peer-placeholder-shown:transition-all peer-placeholder-shown:ease-out peer-placeholder-shown:ease-[cubic-bezier(4, 1, 8, 3)] peer-focus:top-2.5 peer-focus:bottom-auto peer-focus:transition-all peer-focus:ease-out peer-focus:text-xs peer-focus:ease-[cubic-bezier(4, 1, 8, 3)]',
               renderLabelStyles(date[2]),
               cx({
                 'text-red-500 group-focus-within:text-red-500': errors || helperTextError,
@@ -66,7 +66,7 @@ const DateInputsGroup = ({
           >
             <input
               className={`py-4 peer outline-none border-none text-base peer focus-within:ring-0 ${
-                disabled ? 'text-[#637381]' : 'text-secondary'
+                disabled ? 'text-[#637381]' : 'text-foreground'
               } w-full`}
             />
           </ReactInputMask>
@@ -84,7 +84,7 @@ const DateInputsGroup = ({
           <label
             htmlFor="month"
             className={twMerge(
-              'absolute top-4 left-4 text-[#919EAB] peer-focus:text-secondary peer-placeholder-shown:text-[#637381] peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:left-4  group-focus-within:text-green peer-placeholder-shown:transition-all peer-placeholder-shown:ease-out peer-placeholder-shown:ease-[cubic-bezier(4, 1, 8, 3)] peer-focus:top-2.5 peer-focus:bottom-auto peer-focus:transition-all peer-focus:ease-out peer-focus:text-xs peer-focus:ease-[cubic-bezier(4, 1, 8, 3)]',
+              'absolute top-4 left-4 text-[#919EAB] peer-focus:text-foreground peer-placeholder-shown:text-[#637381] peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:left-4  group-focus-within:text-green peer-placeholder-shown:transition-all peer-placeholder-shown:ease-out peer-placeholder-shown:ease-[cubic-bezier(4, 1, 8, 3)] peer-focus:top-2.5 peer-focus:bottom-auto peer-focus:transition-all peer-focus:ease-out peer-focus:text-xs peer-focus:ease-[cubic-bezier(4, 1, 8, 3)]',
               renderLabelStyles(date[1]),
               cx({
                 'text-red-500 group-focus-within:text-red-500': errors || helperTextError,
@@ -105,7 +105,7 @@ const DateInputsGroup = ({
           >
             <input
               className={`py-4 peer outline-none border-none text-base group focus-within:ring-0 ${
-                disabled ? 'text-[#637381] group-focus-within:text-red-500' : 'text-secondary'
+                disabled ? 'text-[#637381] group-focus-within:text-red-500' : 'text-foreground'
               } w-full`}
             />
           </ReactInputMask>
@@ -123,7 +123,7 @@ const DateInputsGroup = ({
           <label
             htmlFor="year"
             className={twMerge(
-              'absolute top-4 left-4 text-[#919EAB] peer-focus:text-secondary peer-placeholder-shown:text-[#637381] peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:left-4  group-focus-within:text-green peer-placeholder-shown:transition-all peer-placeholder-shown:ease-out peer-placeholder-shown:ease-[cubic-bezier(4, 1, 8, 3)] peer-focus:top-2.5 peer-focus:bottom-auto peer-focus:transition-all peer-focus:ease-out peer-focus:text-xs peer-focus:ease-[cubic-bezier(4, 1, 8, 3)]',
+              'absolute top-4 left-4 text-[#919EAB] peer-focus:text-foreground peer-placeholder-shown:text-[#637381] peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:left-4  group-focus-within:text-green peer-placeholder-shown:transition-all peer-placeholder-shown:ease-out peer-placeholder-shown:ease-[cubic-bezier(4, 1, 8, 3)] peer-focus:top-2.5 peer-focus:bottom-auto peer-focus:transition-all peer-focus:ease-out peer-focus:text-xs peer-focus:ease-[cubic-bezier(4, 1, 8, 3)]',
               renderLabelStyles(date[0]),
               cx({
                 'text-red-500 group-focus-within:text-red-500': errors || helperTextError,
@@ -145,7 +145,7 @@ const DateInputsGroup = ({
           >
             <input
               className={`py-4 peer outline-none border-none text-base peer focus-within:ring-0 ${
-                disabled ? 'text-[#637381] group-focus-within:text-red-500' : 'text-secondary'
+                disabled ? 'text-[#637381] group-focus-within:text-red-500' : 'text-foreground'
               } w-full`}
             />
           </ReactInputMask>

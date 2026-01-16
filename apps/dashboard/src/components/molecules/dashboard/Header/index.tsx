@@ -1,4 +1,5 @@
 import InvoiceChip from '/src/components/atoms/Chip';
+import { Button } from '@getcometa/recreo/v2';
 
 interface IHeaderProps {
   title: string;
@@ -6,9 +7,11 @@ interface IHeaderProps {
   clickOnButton?: () => void;
   subtitle?: string;
   label?: string;
+  disabled?: boolean;
+  buttonTooltipMessage?: string;
 }
 
-const Header = ({ title, button, clickOnButton, subtitle, label }: IHeaderProps) => (
+const Header = ({ title, button, clickOnButton, subtitle, label, disabled, buttonTooltipMessage }: IHeaderProps) => (
   <div className="flex justify-between items-center">
     <div className="flex flex-col py-6 gap-2">
       <span className="text-2xl font-bold">{title}</span>
@@ -19,13 +22,16 @@ const Header = ({ title, button, clickOnButton, subtitle, label }: IHeaderProps)
         <InvoiceChip intent="darkInfo">{label}</InvoiceChip>
       </div>
     )}
-    {clickOnButton && (
-      <button
-        className="inline-flex select-none items-center justify-center rounded-lg py-1.5 px-4 text-sm font-medium border text-white bg-green hover:bg-green-800 focus:outline-none focus-visible:ring focus-visible:ring-green-700 focus-visible:ring-opacity-75 h-12 "
+    {button && (
+      <Button
+        variant="legacy"
         onClick={clickOnButton}
+        disabled={disabled}
+        tooltipMessage={buttonTooltipMessage}
+        tooltipSide="top"
       >
         <span className="font-bold">{button}</span>
-      </button>
+      </Button>
     )}
   </div>
 );

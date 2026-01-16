@@ -1,5 +1,4 @@
 import { useContext, useState } from 'react';
-import { Avatar } from '@mui/material';
 import { Listbox } from '@headlessui/react';
 import { useGetSchools, useSelectedSchool, useSetSelectedSchool } from '/src/guards/AuthGuard';
 import ArrowDownward from 'dashboard/public/assets/icons/ic_arrow_downward.svg';
@@ -8,6 +7,7 @@ import { cn } from '/src/utils/cn';
 import { DashboardSchool } from '@cometa/trpc/src/types';
 import { useRouter } from 'next/router';
 import { SchoolSwitcherContext } from '/src/contexts/SchoolSwitcherProvider';
+import { useSchoolSync } from '/src/hooks/useSchoolSync';
 
 interface NavbarSelectSchoolProps {
   isCollapse: boolean;
@@ -20,6 +20,7 @@ const NavbarSelectSchool = ({ isCollapse }: NavbarSelectSchoolProps) => {
   const setSelectedSchool = useSetSelectedSchool();
   const { selectedCounter, setSelectedCounter } = useContext(SchoolSwitcherContext);
   const router = useRouter();
+  const { broadcastSchoolChange } = useSchoolSync();
 
   const boxStyle = cn({
     'h-[90px] text-[#212B36] flex pl-4 items-center text-[14px] gap-1 py-[30px] bg-[#F4F6F8] rounded-xl text-[#212B36] font-semibold outline-none whitespace-nowrap transition-all duration-300 ease-in-out cursor-pointer':
@@ -32,16 +33,12 @@ const NavbarSelectSchool = ({ isCollapse }: NavbarSelectSchoolProps) => {
   const selectItem = (school: DashboardSchool) => {
     setSelectedSchool(school.id);
     setSelectedCounter(selectedCounter + 1);
+    broadcastSchoolChange(school.id);
     setOpen(false);
-    router.pathname.includes('charge')
-      ? router.push('/charge')
-      : router.pathname.includes('payments')
-      ? router.push('payments')
-      : router.pathname.includes('student')
-      ? router.push('/student')
-      : router.push('/income');
+    const basePath = router.pathname.split('/')[1];
+    router.push(`/${basePath}`);
   };
-
+  if (schools.length === 0) return null;
   return (
     <>
       {schools.length ? (
@@ -50,7 +47,9 @@ const NavbarSelectSchool = ({ isCollapse }: NavbarSelectSchoolProps) => {
             className={cn(boxStyle, { 'gap-4 cursor-default': schools.length <= 1 && !isCollapse })}
             onClick={() => setOpen(!open)}
           >
-            <Avatar alt={selectedSchool?.name}>{selectedSchool?.name.substring(0, 1)}</Avatar>
+            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-sm font-medium text-gray-700">
+              {selectedSchool?.name.substring(0, 1)}
+            </div>
             {!isCollapse && (
               <p className="overflow-hidden truncate" data-testid="schoolname-Collapsable">
                 {selectedSchool?.name}
@@ -60,7 +59,7 @@ const NavbarSelectSchool = ({ isCollapse }: NavbarSelectSchoolProps) => {
               (schools.length > 1 &&
                 (open ? <ArrowUpward className="w-4 h-4 mt-2" /> : <ArrowDownward className="w-4 h-4 mt-2" />))}
           </Listbox.Button>
-          <div className={cn('relative w-full z-20 min-w-[300px]')}>
+          <div className={cn('relative w-full z-40 min-w-[300px]')}>
             {!isCollapse && schools.length > 1 && (
               <Listbox.Options
                 className={cn(
@@ -79,9 +78,9 @@ const NavbarSelectSchool = ({ isCollapse }: NavbarSelectSchoolProps) => {
                           'justify-start gap-2 h-[40px] hover:bg-[#00AB553D] hover:text-[#00AB55] p-3 rounded-md tex'
                         )}
                       >
-                        <Avatar alt={school.name} sx={{ width: 30, height: 30, backgroundColor: '#fff' }}>
+                        <div className="w-[30px] h-[30px] bg-white rounded-full flex items-center justify-center text-xs font-medium text-gray-700">
                           {school.name.substring(0, 1)}
-                        </Avatar>
+                        </div>
                         {!isCollapse && (
                           <p
                             title={school.name}

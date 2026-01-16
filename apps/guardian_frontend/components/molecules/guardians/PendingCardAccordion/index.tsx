@@ -1,15 +1,16 @@
 import dayjs from '~/lib/dayjs';
+import { useSession } from 'next-auth/react';
 import { formatPrice, getFinalPricePending } from '~/utils/orders';
 import StepsToPay from '../StepsToPay';
 import { TRANSFER_IN_KUSHKI } from '~/utils/stepsToPay';
 import TransferDetails from '~/components/atoms/guardians/TransferDetails';
 import Trash from '../../../../public/icons/trash.svg';
 import _currency from 'currency.js';
-import { Order } from '~/types/OrdersApi';
-import { GuardianDependentPayin, GuardianStudent, Type787Enum } from '@cometa/trpc';
-import { Color } from '~/utils/colors';
+import type { Order } from '~/types/OrdersApi';
+import type { GuardianDependentPayin, GuardianStudent, Type11EEnum } from '@cometa/trpc';
+import type { Color } from '~/utils/colors';
 import BoxColorText from '~/components/Tag';
-import { Button } from '~/components/atoms/Button';
+import { Button } from '~/components/ui/Button';
 import {
   Accordion as AccordionPrimitive,
   AccordionContent,
@@ -18,9 +19,12 @@ import {
 } from '~/components/Accordion';
 import { useState } from 'react';
 import ExpandMore from '/public/icons/ic_expand_more.svg';
-import { useSelectedSchoolId } from '../../common/AuthGlobal';
-import { api } from '~/utils/api';
+import { api, ServiceClient } from '~/utils/api';
 import { useAlert } from '~/hooks';
+import { TrackEvents } from '~/constants/events';
+import { useSendEvent } from '~/hooks/useSendEvent';
+import UploadProofOfPayment from '~/components/Payments/UploadProofOfPayment';
+import { useSelectedSchoolId } from '~/stores/globalStore';
 
 interface PendingCardAccordionProps {
   method: string;
@@ -31,7 +35,7 @@ interface PendingCardAccordionProps {
   guardianName: string;
   created: string;
   onSelected: () => void;
-  type: Type787Enum | null;
+  type: Type11EEnum | null;
   transactionDetails: any;
   commission: string;
   payinExpirationDate: string;
@@ -40,11 +44,11 @@ interface PendingCardAccordionProps {
 }
 
 interface AccordionStyledProps {
-  tittle: React.ReactNode;
+  title: React.ReactNode;
   children: React.ReactNode;
   defaultExpanded?: boolean;
 }
-const Accordion = ({ tittle, children, defaultExpanded = false }: AccordionStyledProps) => {
+const Accordion = ({ title, children, defaultExpanded = false }: AccordionStyledProps) => {
   const [openAccordion, setOpenAccordion] = useState(defaultExpanded);
   return (
     <AccordionPrimitive type="single" value={openAccordion ? 'detail' : ''} className="self-stretch">
@@ -56,7 +60,7 @@ const Accordion = ({ tittle, children, defaultExpanded = false }: AccordionStyle
           }}
         >
           <div className="inline-flex items-center self-stretch justify-between">
-            {tittle}
+            {title}
             <ExpandMore className="group-data-[state=open]:rotate-180 transition-transform ease-[cubic-bezier(0.87,_0,_0.13,_1)] text-gray-300" />
           </div>
         </AccordionTrigger>
@@ -82,6 +86,7 @@ const PendingCardAccordion = ({
   disabled,
   payment,
 }: PendingCardAccordionProps) => {
+  const { data: session } = useSession();
   const urlDetails = transactionDetails?.external_resource_url;
   const referenceId = transactionDetails?.payment_method_reference_id;
   const paymentExpiry = payinExpirationDate;
@@ -94,96 +99,33 @@ const PendingCardAccordion = ({
   const selectedSchoolId = useSelectedSchoolId();
   const { setAlert } = useAlert();
   const utils = api.useUtils();
+  const sendEvent = useSendEvent();
 
-  const { mutateAsync, isLoading: isLoadingReportAsPaid } = api.payin.reportAsPaid.useMutation({
+  const { mutateAsync, isPending: isLoadingReportAsPaid } = api.payin.reportAsPaid.useMutation({
     async onSuccess() {
       await utils.payin.getGuardianPayins.invalidate({ schoolId: selectedSchoolId ?? '' });
     },
   });
   const title = isKushkiTransfer ? `Transferencia ${paymentCreatedFormatted}` : method;
 
-  const getDetails = () => {
-    if (isKushkiTransfer)
-      return (
-        <TransferDetails
-          duration={duration}
-          clabe={transactionDetails?.clabe}
-          referenceId={referenceId}
-          guardianName={guardianName}
-          bankName={bankName}
-          beneficiaryName={beneficiaryName}
-          paymentExpiryFormatted={paymentExpiryFormatted}
-        />
-      );
-    return null;
-  };
-
   const stepsToPay = method === 'kushki' || method === 'KUSHKI' ? TRANSFER_IN_KUSHKI : undefined;
 
-  const getHowToPay = () => {
-    if (urlDetails)
-      return (
-        <div className="px-[26px]">
-          <a href={urlDetails} target="_blank" rel="noreferrer">
-            <Button className="w-full bg-transparent rounded-lg shadow-none hover:bg-gray-50/10 active:bg-gray-50/20 ">
-              <span className="my-5 text-sm font-semibold text-gray-300">¿Cómo pagar?</span>
-            </Button>
-          </a>
-        </div>
-      );
-    if (isKushkiTransfer)
-      return (
-        <div className="px-[26px]">
-          <Accordion tittle={<span className="my-2 text-sm font-semibold text-gray-300">¿Cómo pagar?</span>}>
-            <StepsToPay className="pt-5" steps={stepsToPay} />
-          </Accordion>
-        </div>
-      );
-    return null;
-  };
-
-  const getOrdersItemByStudent = () =>
-    dependents.map((dependent) => {
-      const listOrders = orders
-        .filter((order) => Boolean(order?.dependent.id === dependent.id))
-        .map((order) => {
-          const finalPrice = getFinalPricePending(order);
-          return (
-            <div key={order.id} className="inline-flex justify-between w-full my-2">
-              <span className="text-sm tracking-tight text-gray-300">{order.name}</span>
-              <span className="text-sm text-right text-blue-700">{formatPrice(finalPrice, currency)}</span>
-            </div>
-          );
-        });
-      if (!listOrders.length) return null;
-
-      const tittle = (
-        <div className="flex w-full my-2">
-          <span className="mr-3 text-sm font-semibold tracking-tight text-gray-300">Órdenes por pagar</span>
-          <div className="flex items-center justify-center">
-            <BoxColorText
-              text={dependent.first_name}
-              bgcolor={dependent.color?.background}
-              color={dependent.color?.text}
-            />
-          </div>
-        </div>
-      );
-
-      return (
-        <div className="px-6" key={dependent.id}>
-          <Accordion tittle={tittle}>
-            <div className="flex flex-col pt-5">{listOrders}</div>
-          </Accordion>
-        </div>
-      );
-    });
-
-  const details = getDetails();
-  const howToPay = getHowToPay();
-  const ordersItemByStudent = getOrdersItemByStudent();
   const priceFormatted = formatPrice(totalAmount, currency);
-  const reportAsPaid = (payment?.user_reports_as_paid as any)?.is_paid ?? false;
+  const reportedAsPaid = (payment?.user_reports_as_paid as any)?.is_paid ?? false;
+
+  const handleFileUpload = async (file: File) => {
+    if (file && session?.token) {
+      await ServiceClient.apiV1SchoolsPayinsUploadProofOfPaymentUpdate(
+        payment.id,
+        selectedSchoolId ?? '',
+        { proof_of_payment: file as unknown as string },
+        {
+          headers: { token: session?.token },
+        }
+      );
+      utils.payin.getGuardianPayins.invalidate({ schoolId: selectedSchoolId ?? '' });
+    }
+  };
 
   return (
     <div className="inline-flex flex-col items-center justify-start bg-white rounded-2xl">
@@ -202,11 +144,45 @@ const PendingCardAccordion = ({
             </Button>
           </div>
         </div>
-        {ordersItemByStudent}
+        {dependents.map((dependent) => {
+          const listOrders = orders
+            .filter((order) => Boolean(order?.dependent.id === dependent.id))
+            .map((order) => {
+              const finalPrice = getFinalPricePending(order);
+              return (
+                <div key={order.id} className="inline-flex justify-between w-full my-2">
+                  <span className="text-sm tracking-tight text-gray-300">{order.name}</span>
+                  <span className="text-sm text-right text-blue-700">{formatPrice(finalPrice, currency)}</span>
+                </div>
+              );
+            });
+          if (!listOrders.length) return null;
+
+          const tittle = (
+            <div className="flex w-full my-2">
+              <span className="mr-3 text-sm font-semibold tracking-tight text-gray-300">Órdenes por pagar</span>
+              <div className="flex items-center justify-center">
+                <BoxColorText
+                  text={dependent.first_name}
+                  bgcolor={dependent.color?.background}
+                  color={dependent.color?.text}
+                />
+              </div>
+            </div>
+          );
+
+          return (
+            <div className="px-6" key={dependent.id}>
+              <Accordion title={tittle}>
+                <div className="flex flex-col pt-5">{listOrders}</div>
+              </Accordion>
+            </div>
+          );
+        })}
 
         {/* Don't judge me for this, we need to tweak Frontend & Backend contracts 👇 */}
         <div className="flex flex-col items-start px-[26px] space-y-2">
-          {commission && !!parseInt(commission) && (
+          {commission && !!Number.parseInt(commission) && (
             <>
               <span className="flex justify-between w-full text-sm">
                 <p className="m-0 font-bold text-gray">Subtotal:</p>
@@ -226,20 +202,46 @@ const PendingCardAccordion = ({
           </span>
         </div>
 
-        {details ? (
+        {isKushkiTransfer ? (
           <div className="px-[26px]">
-            <Accordion tittle={<span className="text-sm font-semibold text-gray-300">Detalles:</span>}>
-              <div className="pt-5">{details}</div>
+            <Accordion title={<span className="text-sm font-semibold text-gray-300">Detalles:</span>}>
+              <div className="pt-5">
+                {' '}
+                <TransferDetails
+                  duration={duration}
+                  clabe={transactionDetails?.clabe}
+                  referenceId={referenceId}
+                  guardianName={guardianName}
+                  bankName={bankName}
+                  beneficiaryName={beneficiaryName}
+                  paymentExpiryFormatted={paymentExpiryFormatted}
+                />
+              </div>
             </Accordion>
           </div>
         ) : null}
-        {howToPay}
+        {urlDetails ? (
+          <div className="px-[26px]">
+            <a href={urlDetails} target="_blank" rel="noreferrer">
+              <Button className="w-full bg-transparent rounded-lg shadow-none hover:bg-gray-50/10 active:bg-gray-50/20 ">
+                <span className="my-5 text-sm font-semibold text-gray-300">¿Cómo pagar?</span>
+              </Button>
+            </a>
+          </div>
+        ) : isKushkiTransfer ? (
+          <div className="px-[26px]">
+            <Accordion title={<span className="my-2 text-sm font-semibold text-gray-300">¿Cómo pagar?</span>}>
+              <StepsToPay className="pt-5" steps={stepsToPay} />
+            </Accordion>
+          </div>
+        ) : null}
         <div className="flex flex-col justify-center items-center py-5 px-[26px] gap-y-1.5">
-          {reportAsPaid ? (
+          {reportedAsPaid ? (
             <>
               <div className="self-stretch justify-start items-center gap-x-2.5 inline-flex">
                 <div className="flex items-center justify-center w-5 h-5 rounded-full shadow bg-[#00D685]">
                   <svg xmlns="http://www.w3.org/2000/svg" width="9" height="8" viewBox="0 0 9 8" fill="none">
+                    <title>Payment confirmed icon</title>
                     <path
                       fillRule="evenodd"
                       clipRule="evenodd"
@@ -255,12 +257,20 @@ const PendingCardAccordion = ({
                   Recibirás un correo de confirmación una vez se acredite la transferencia.
                 </span>
               </div>
+              <div className="self-stretch justify-start items-center gap-x-2.5 mt-6 inline-flex">
+                <UploadProofOfPayment
+                  payment={payment}
+                  disabled={isLoadingReportAsPaid || (disabled ?? false)}
+                  onUploadFile={handleFileUpload}
+                />
+              </div>
             </>
           ) : (
             <Button
               className="w-full px-8 py-3 text-sm font-medium"
               disabled={isLoadingReportAsPaid || disabled}
               onClick={() => {
+                sendEvent(TrackEvents.pending.alreadyPaidClicked);
                 mutateAsync({
                   payinId: payment.id,
                   schoolId: selectedSchoolId ?? '',

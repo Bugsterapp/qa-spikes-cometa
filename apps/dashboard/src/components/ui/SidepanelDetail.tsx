@@ -1,0 +1,53 @@
+import { MouseEventHandler } from 'react';
+import { Tooltip } from 'src/components/atoms/Tooltip';
+import { Skeleton as SkeletonText } from 'src/components/ui/Skeleton';
+import { cn } from 'src/utils/cn';
+
+const SidePanelDetail = ({
+  text,
+  message,
+  loading,
+  loaderWidth,
+  className,
+  textClass,
+  setOnClick,
+}: {
+  text: string;
+  message?: string;
+  loading?: boolean;
+  loaderWidth?: number;
+  className?: string;
+  textClass?: string;
+  setOnClick: MouseEventHandler<HTMLDivElement>;
+}) => (
+  <Tooltip message={message} disableClick={false}>
+    <div onClick={setOnClick} role="button">
+      {loading ? (
+        <SkeletonText loaderWidth={loaderWidth} />
+      ) : (
+        <div
+          className={cn(
+            'flex flex-row p-2 border rounded cursor-pointer border-blue-secondary hover:bg-info/8 gap-2 items-center group',
+            className
+          )}
+        >
+          <span className={cn('text-sm', textClass)}>{text}</span>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              className="group-hover:[transform:translate(2px,-2px)] transition-all duration-100 ease-in-out"
+              d="M16.6663 4.16683C16.6663 3.70659 16.2932 3.3335 15.833 3.3335H11.6663C11.2061 3.3335 10.833 3.70659 10.833 4.16683C10.833 4.62707 11.2061 5.00016 11.6663 5.00016H13.808L11.0746 7.74183C10.9169 7.8983 10.8281 8.1113 10.8281 8.3335C10.8281 8.55569 10.9169 8.76869 11.0746 8.92516C11.2311 9.08292 11.4441 9.17166 11.6663 9.17166C11.8885 9.17166 12.1015 9.08292 12.258 8.92516L14.9996 6.1835V8.3335C14.9996 8.79373 15.3727 9.16683 15.833 9.16683C16.2932 9.16683 16.6663 8.79373 16.6663 8.3335V4.16683Z"
+              fill="#3366FF"
+            />
+            <path
+              className="group-hover:[transform:translate(-2px,2px)] transition-all duration-100 ease-in-out"
+              d="M8.92467 11.0751C8.7682 10.9174 8.55521 10.8286 8.33301 10.8286C8.11081 10.8286 7.89781 10.9174 7.74134 11.0751L4.99967 13.8084V11.6668C4.99967 11.2065 4.62658 10.8334 4.16634 10.8334C3.7061 10.8334 3.33301 11.2065 3.33301 11.6668V15.8334C3.33301 16.2937 3.7061 16.6668 4.16634 16.6668H8.33301C8.79324 16.6668 9.16634 16.2937 9.16634 15.8334C9.16634 15.3732 8.79324 15.0001 8.33301 15.0001H6.18301L8.92467 12.2584C9.08243 12.102 9.17117 11.889 9.17117 11.6668C9.17117 11.4446 9.08243 11.2316 8.92467 11.0751V11.0751Z"
+              fill="#3366FF"
+            />
+          </svg>
+        </div>
+      )}
+    </div>
+  </Tooltip>
+);
+
+export default SidePanelDetail;

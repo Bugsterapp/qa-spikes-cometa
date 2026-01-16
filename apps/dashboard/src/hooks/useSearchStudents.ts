@@ -1,19 +1,20 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import ApiClient from '../services/ApiClient';
 
-const useSearchStudents = (token: string | undefined, selectedSchool: string | undefined, studentSearch?: string) => {
+const useSearchStudents = (selectedSchool: string | undefined, studentSearch?: string) => {
   const getStudentsOnSchool = async () => {
     const studentsOnSchool = await ApiClient.getStudentsOnSchool(
-      token,
       selectedSchool,
       studentSearch ? studentSearch : undefined
     );
-    const results = studentsOnSchool?.data?.results;
-    return results;
+    const results = studentsOnSchool?.results;
+    return results || [];
   };
-  return useQuery(['studentsOnSchool', selectedSchool, studentSearch], () => getStudentsOnSchool(), {
+  return useQuery({
+    queryKey: ['studentsOnSchool', selectedSchool, studentSearch],
+    queryFn: () => getStudentsOnSchool(),
     enabled: !!selectedSchool,
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
     staleTime: 5000,
   });
 };

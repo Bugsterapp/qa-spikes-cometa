@@ -2,14 +2,12 @@ import PropTypes from 'prop-types';
 import { forwardRef } from 'react';
 // next
 import NextLink from 'next/link';
-// @mui
-import { Box } from '@mui/material';
 
 // ----------------------------------------------------------------------
 
-const LogoCollapse = forwardRef(({ disabledLink = false, sx }, ref) => {
+const LogoCollapse = forwardRef(({ disabledLink = false }, ref) => {
   const logo = (
-    <Box ref={ref} sx={{ width: 31, height: 30, cursor: 'pointer', ...sx }}>
+    <div ref={ref} className="w-[31px] h-[30px] cursor-pointer">
       <svg width="31" height="30" viewBox="0 0 41 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="13.8333" width="26.6667" height="26.6667" fill="url(#paint0_radial_1675_118163)" />
         <rect x="0.5" y="26.6667" width="13.3333" height="13.3333" fill="url(#paint1_linear_1675_118163)" />
@@ -41,7 +39,7 @@ const LogoCollapse = forwardRef(({ disabledLink = false, sx }, ref) => {
           </linearGradient>
         </defs>
       </svg>
-    </Box>
+    </div>
   );
 
   if (disabledLink) {
@@ -55,7 +53,6 @@ LogoCollapse.displayName = 'LogoCollapse';
 
 LogoCollapse.propTypes = {
   disabledLink: PropTypes.bool,
-  sx: PropTypes.object,
 };
 
 export default LogoCollapse;

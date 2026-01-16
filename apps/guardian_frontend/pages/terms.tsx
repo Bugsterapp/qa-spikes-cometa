@@ -1,6 +1,4 @@
-// ui components
 import Head from 'next/head';
-import { EMAIL_LINK } from '~/utils/linksEmail';
 
 export default function Terms() {
   const inaiWeb = 'www.inai.org.mx';
@@ -13,169 +11,109 @@ export default function Terms() {
       <div className="min-h-screen px-6 py-4 mx-auto text-justify max-w-7xl">
         <h5 className="text-[#14208c] mb-5 text-center text-2xl">AVISO DE PRIVACIDAD INTEGRAL</h5>
         <p>
-          SERVICIOS ESTRATEGICOS CMH SAPI DE CV, (en adelante COMETA) quien tiene su domicilio en Oso 127, Col del Valle
-          Sur, Benito Juárez, 03100 Ciudad de México, CDMX, mismo que señala para oír y recibir cualquier tipo de
-          notificación relacionada con el tratamiento de los datos personales que usted proporcione (en lo sucesivo
-          datos), será el responsable de su tratamiento y se encuentra comprometido con la protección de estos, de
-          conformidad con lo señalado en la Ley Federal de Protección de Datos Personales en Posesión de los
-          Particulares, así como el marco normativo correspondiente (en lo sucesivo la Ley). Por lo anterior se le
-          informa que:
+          SERVICIOS ESTRATÉGICOS CMH, S.A.P.I. DE C.V. (en adelante "COMETA"), con domicilio en Plaza Villa de Madrid 1,
+          colonia Roma Norte, Cuauhtémoc, Ciudad de México, México, 06700, es responsable del tratamiento de los datos
+          personales que recaba, conforme a lo dispuesto en la Ley Federal de Protección de Datos Personales en Posesión
+          de los Particulares (la "Ley"), su Reglamento y demás normatividad aplicable.
         </p>
-        <p className="font-bold">1. Datos que son recabados.</p>
+        <p className="font-bold">1. Datos que se recaban</p>
         <p>
-          COMETA podrá solicitarle los datos que son necesarios para realizar un adecuado cumplimiento de las
-          obligaciones derivadas de la relación legal con usted o la persona moral a la cual represente, mismos que
-          podrán ser:
+          COMETA podrá recabar los siguientes datos personales, de manera directa o indirecta, necesarios para el
+          cumplimiento de las obligaciones legales y contractuales con usted o con la persona moral que usted
+          represente:
         </p>
         <ol type="a">
-          <li>Datos Identificativos.</li>
-          <li>Datos de Contacto y Electrónicos.</li>
+          <li>Datos identificativos;</li>
+          <li>Datos de contacto y electrónicos;</li>
+          <li>Datos fiscales; y</li>
           <li>Datos bancarios.</li>
-          <li>Datos Fiscales.</li>
         </ol>
         <p>
-          Derivado de las características de los servicios brindados por COMETA para el cobro de las obligaciones que
-          usted estableció con terceros a fin de garantizar el pago de servicios educativos, le informamos que
-          recabaremos lo siguiente:
-        </p>
-        <ol type="a">
-          <li>Datos de identificación de su hijo, hija o menor sobre el cual sea tutor.</li>
-          <li>Datos de la institución académica donde recibe los servicios educativos.</li>
-        </ol>
-        <p>
-          Le informamos que dichos datos únicamente serán utilizados para identificar el vínculo académico y
-          obligaciones de pago correspondientes.
-        </p>
-        <p>
-          Así mismo, se hace de su conocimiento que COMETA en ningún caso solicitará datos considerados como sensibles
-          por la Ley.
-        </p>
-        <p className="font-bold">2. Finalidades.</p>
-        <p>
-          Los datos recabados serán utilizados para la existencia, mantenimiento y cumplimiento de las relaciones
-          jurídicas y obligaciones entre usted y COMETA, mismas cuales tendrán el fin de dar cumplimiento y continuidad
-          al pago de obligaciones económicas pactadas derivado de la prestación de servicios educativos de algún
-          tercero, consideradas como finalidades primarias, lo que incluye:
+          Adicionalmente, debido a la naturaleza de nuestros servicios de gestión de pagos para instituciones
+          educativas, podremos recabar:
         </p>
         <ol type="a">
           <li>
-            Generar un registro con los datos recabados a fin de generar un propio link de acceso para la generación
-            mensual de comprobantes de pago.
+            Datos de identificación de su hijo, hija o persona menor de edad sobre la cual tenga la patria potestad o
+            tutela.
           </li>
-          <li>Realizar el cobro de las obligaciones mediante el portal de pagos de nuestro sitio web.</li>
-          <li>
-            Establecer comunicación mediante el envío de correos electrónicos, mensajes SMS o llamadas telefónicas para
-            requerir el pago de las obligaciones correspondientes.
-          </li>
-          <li>
-            Crear expedientes virtuales para la identificación de clientes, así como bases de datos para el
-            requerimiento de pago de obligaciones.
-          </li>
-          <li>Emitir y enviar las facturas correspondientes.</li>
-          <li>Informar y cumplir con los requisitos establecidos por la Ley.</li>
-          <li>
-            Ejercer las acciones legales que se consideren pertinentes para garantizar el pago de las obligaciones
-            pactadas.
-          </li>
+          <li>Datos de la institución educativa en la que recibe los servicios académicos.</li>
         </ol>
         <p>
-          Adicionalmente, como finalidades secundarias las cuales no se consideran obligatorias para el establecimiento
-          de la relación jurídica, los datos serán utilizados para:
+          Estos datos serán utilizados exclusivamente para identificar el vínculo académico y las obligaciones de pago
+          correspondientes. COMETA no recabará datos personales sensibles, en términos de la Ley.
         </p>
+        <p className="font-bold">2. Finalidades del tratamiento</p>
+        <p>Finalidades primarias:</p>
+        <p>
+          Los datos personales serán tratados para las siguientes finalidades que son necesarias para el cumplimiento de
+          la relación jurídica entre usted y COMETA:
+        </p>
+        <ol type="a">
+          <li>Generar registros y crear enlaces personalizados para la emisión de comprobantes de pago.</li>
+          <li>Gestionar el cobro de obligaciones mediante el portal de pagos en nuestro sitio web.</li>
+          <li>
+            Establecer contacto por medios electrónicos, telefónicos o digitales (correo electrónico, SMS, WhatsApp,
+            llamadas) para notificar sobre adeudos o enviar recordatorios de pago.
+          </li>
+          <li>Emitir y enviar comprobantes fiscales digitales.</li>
+          <li>Crear expedientes virtuales y bases de datos relacionadas con la gestión de pagos.</li>
+          <li>Cumplir con requerimientos legales aplicables.</li>
+          <li>Ejecutar acciones legales tendientes a garantizar el cumplimiento de obligaciones de pago.</li>
+        </ol>
+        <p>
+          En caso de que COMETA identifique indicios razonables o evidencias de una posible operación fraudulenta por
+          parte del tutor, representante o usuario del portal, se procederá a la suspensión o cancelación del acceso a
+          la plataforma, y se notificará de manera inmediata a la institución educativa correspondiente.
+        </p>
+        <p>Finalidades secundarias:</p>
         <ol type="i">
-          <li>
-            Llevar a cabo fines publicitarios y de prospección comercial, crear bases de datos para fines de
-            investigación, estadísticos o de mercado.
-          </li>
-          <li>Generación de evaluación de los productos y servicios.</li>
+          <li>Actividades de mercadotecnia, publicidad y prospección comercial.</li>
+          <li>Elaboración de estudios estadísticos o de mercado.</li>
+          <li>Evaluación de nuestros productos y servicios.</li>
         </ol>
         <p>
-          Usted se podrá negar al tratamiento de sus Datos Personales para las finalidades secundarias mencionadas
-          enviando un correo electrónico al área responsable, cuya dirección de correo electrónico se encuentra señalada
-          en el apartado de “Contacto” del presente aviso de privacidad.
+          Usted podrá manifestar su negativa a estas finalidades siguiendo el procedimiento indicado en el apartado
+          correspondiente.
         </p>
-        <p className="font-bold">3. Seguridad.</p>
+        <p className="font-bold">3. Medidas de seguridad</p>
         <p>
-          COMETA se compromete a que independientemente que sus datos sean recabados por cualquier medio físico,
-          electrónico, sonoro o virtual serán resguardados bajo los más altos estándares de seguridad, a través de
-          medidas administrativas, físicas y técnicas establecidas por la Ley, tomando las acciones preventivas
-          necesarias a fin de evitar su daño, pérdida, destrucción, robo, extravío, alteración o tratamiento no
-          autorizado.
+          COMETA protege sus datos personales mediante medidas de seguridad físicas, técnicas y administrativas conforme
+          a lo establecido en la Ley, con el objetivo de evitar el acceso no autorizado, pérdida, alteración,
+          destrucción o uso indebido de los mismos.
         </p>
-        <p className="font-bold">4. Limitaciones.</p>
+        <p className="font-bold">4. Limitación del uso o divulgación de los datos personales</p>
         <p>
-          Usted tiene derecho de limitar el uso o divulgación de sus datos para las finalidades que no son necesarias
-          para la relación jurídica establecida con COMETA, por lo que, si usted ya no desea recibir comunicaciones
-          diversas al cumplimiento de las obligaciones establecidas o promociones, podrá enviar su solicitud conforme a
-          lo señalado en el apartado de “Medios para limitar el uso o divulgación de los datos personales” del presente
-          aviso de privacidad. Asimismo, usted podrá en cualquier momento revocar su consentimiento para el tratamiento
-          de sus datos, sin embargo, es importante señalar que no en todos los casos podremos atender su solicitud o
-          concluir su uso de manera inmediata, ya que es posible que subsista alguna obligación legal entre usted y
-          COMETA, siendo necesario seguir realizando el tratamiento de los mismos datos. Al utilizar los servicios,
-          COMETA dará por entendido que usted ha leído, entendido y acordado cada uno de los términos señalados en el
-          presente aviso de privacidad.
-        </p>
-        <p className="font-bold">5. Transferencias.</p>
-        <p>
-          Le informamos que COMETA podrá obtener sus datos mediante las transferencias realizados por terceros a los
-          cuales usted haya dado su consentimiento previamente con la intención de dar cumplimiento a alguna obligación
-          conforme a lo estipulado en el marco normativo correspondiente.
-        </p>
-        <p>
-          COMETA dará tratamiento a sus datos personales bajo los principios y deberes estipulados en la Ley, dando en
-          todo momento cumplimiento a lo señalado en el presente Aviso de Privacidad.
-        </p>
-        <p className="font-bold">6. Uso de tecnologías de rastreo.</p>
-        <p>
-          Le informamos que COMETA no utiliza dentro de su sitio web cookies, web beacons o cualquier otra tecnología de
-          rastreo.
-        </p>
-        <p className="font-bold">7. Medios para limitar el uso o divulgación de los datos personales.</p>
-        <p>
-          Usted podrá limitar el uso o divulgación de sus datos personales mediante su inscripción al “Listado de
-          Exclusión de COMETA”, para lo cual, deberá enviar un correo electrónico a la siguiente dirección{' '}
-          <a href={EMAIL_LINK} target="_blank" rel="noopener noreferrer" className="text-[#4a5cff] underline">
-            {`${process.env.NEXT_PUBLIC_EMAIL_CONTACT}`}
-          </a>
-          , en donde se le proporcionará más información respecto a las finalidades del tratamiento que podrán excluirse
-          y los alcances de estar inscrito en dicho listado.
-        </p>
-        <p className="font-bold">8. Contacto.</p>
-        <p>
-          Para cualquier duda o comentario en relación con los datos recabados y tratados por COMETA, así como,
-          cualquier información relacionada con el presente Aviso de Privacidad o el ejercicio de cualquiera de sus
-          derechos relacionados con el tratamiento de los mismos, usted podrá comunicarse con nosotros a través del área
-          responsable mediante el envío de un correo electrónico a la siguiente dirección{' '}
-          <a href={EMAIL_LINK} target="_blank" rel="noopener noreferrer" className="text-[#4a5cff] underline">
-            {`${process.env.NEXT_PUBLIC_EMAIL_CONTACT}`}
+          Usted podrá limitar el uso o divulgación de sus datos personales, especialmente en lo relativo a las
+          finalidades secundarias, enviando un correo a{' '}
+          <a href="mailto:support@getcometa.com" className="text-[#4a5cff] underline">
+            support@getcometa.com
           </a>{' '}
-          con el asunto datos personales y una descripción de su solicitud.
+          solicitando su inscripción al Listado de Exclusión de COMETA.
         </p>
-        <p className="font-bold">9. Ejercicio de Derechos Arco.</p>
+        <p className="font-bold">5. Transferencias</p>
         <p>
-          De conformidad con lo señalado en la Ley, como titular de los datos que usted nos proporcione, tendrá el
-          derecho de Acceder a los datos que poseemos y a los detalles del tratamiento de los mismos; Rectificar en caso
-          de que estén incompletos o sean inexactos; Cancelarlos en caso que considere que no se requieren para alguna
-          de las finalidades señaladas en el presente Aviso de Privacidad, estén siendo utilizados para finalidades que
-          no hayan sido consentidos, o bien, Oponerse al tratamiento de los datos personales que nos haya proporcionado
-          para fines específicos. Para efecto de lo anterior, usted podrá solicitar el ejercicio de cualquiera de los{' '}
-          <strong>“Derechos ARCO”</strong> antes señalados (Acceso, Rectificación, Cancelación Oposición, o Revocación
-          al tratamiento de sus datos) ante COMETA, enviando un correo a la siguiente dirección:{' '}
-          <a href={EMAIL_LINK} target="_blank" rel="noopener noreferrer" className="text-[#4a5cff] underline">
-            {`${process.env.NEXT_PUBLIC_EMAIL_CONTACT}`}
+          COMETA podrá recibir datos personales mediante transferencias por parte de terceros (como instituciones
+          educativas) con los que usted haya tenido una relación previa y haya consentido expresamente dicha
+          transferencia. COMETA tratará los datos conforme a los principios y deberes establecidos en la Ley.
+        </p>
+        <p className="font-bold">6. Uso de tecnologías de rastreo</p>
+        <p>COMETA no utiliza cookies, web beacons u otras tecnologías de rastreo dentro de su sitio web.</p>
+        <p className="font-bold">7. Derechos ARCO</p>
+        <p>
+          Usted podrá ejercer en cualquier momento sus derechos de Acceso, Rectificación, Cancelación y Oposición
+          (ARCO), así como revocar su consentimiento para el tratamiento de sus datos personales, enviando una solicitud
+          al correo{' '}
+          <a href="mailto:support@getcometa.com" className="text-[#4a5cff] underline">
+            support@getcometa.com
           </a>{' '}
-          COMETA responderá cualquier solicitud completa en un plazo máximo de 20 días hábiles o el máximo permitido por
-          la Ley. La respuesta de COMETA indicará si la solicitud de acceso, rectificación, cancelación u oposición es
-          procedente y, en su caso, COMETA hará efectiva la determinación dentro de los 15 días hábiles siguientes a la
-          fecha en que comunique la respuesta al titular de los datos y en su caso a su representante legal. Es preciso
-          señalar que dichos plazos podrán ser ampliados en los términos que señale la Ley.
+          con el asunto "Datos Personales". COMETA responderá en un plazo no mayor a 20 días hábiles, y de ser
+          procedente, se hará efectiva la acción solicitada dentro de los 15 días hábiles siguientes.
         </p>
-        <p className="font-bold">10. Modificaciones del Aviso de Privacidad.</p>
+        <p className="font-bold">8. Modificaciones al aviso de privacidad</p>
         <p>
-          El presente aviso de privacidad puede sufrir modificaciones, cambios o actualizaciones derivado de los
-          productos y servicios que COMETA ofrezca, así como de nuevos requerimientos legales, necesidades propias,
-          cambios en las políticas de privacidad y en el modelo de negocio, por lo que cualquier cambio al presente
-          aviso de privacidad se podrá realizar a través del sitio web{' '}
+          COMETA podrá actualizar este Aviso de Privacidad en cualquier momento. Las actualizaciones serán publicadas en
+          el sitio web{' '}
           <a
             href={`https://${cometaWeb}`}
             target="_blank"
@@ -183,24 +121,19 @@ export default function Terms() {
             className="text-[#4a5cff] underline"
           >
             {`${cometaWeb}`}
-          </a>
-          , o bien, enviando un correo electrónico a la siguiente dirección{' '}
-          <a href={EMAIL_LINK} target="_blank" rel="noopener noreferrer" className="text-[#4a5cff] underline">
-            {`${process.env.NEXT_PUBLIC_EMAIL_CONTACT}`}
-          </a>
-          , o los medios que COMETA considere idóneos para tales efectos.
+          </a>{' '}
+          o enviadas por medios electrónicos.
         </p>
-        <p className="font-bold">11. Derechos.</p>
+        <p className="font-bold">9. Autoridad en materia de protección de datos</p>
         <p>
-          Si usted considera que su derecho de Protección de Datos ha sido lesionado y existe alguna violación a las
-          disposiciones señaladas en la Ley, usted podrá interponer la queja o denuncia correspondiente ante el
-          Instituto Nacional de Transparencia, Acceso a la Información y Protección de Datos Personales, para más
-          información visite{' '}
+          Si considera que su derecho a la protección de datos personales ha sido vulnerado, podrá acudir al Instituto
+          Nacional de Transparencia, Acceso a la Información y Protección de Datos Personales (INAI). Más información
+          en:{' '}
           <a href={`https://${inaiWeb}`} target="_blank" rel="noopener noreferrer" className="text-[#4a5cff] underline">
             {`${inaiWeb}`}
           </a>
         </p>
-        <span className="mb-5 italic font-bold text-center">ÚLTIMA ACTUALIZACIÓN: JUNIO 2022.</span>
+        <span className="mb-5 italic font-bold text-center">ÚLTIMA ACTUALIZACIÓN: MAYO 2025.</span>
       </div>
     </>
   );
