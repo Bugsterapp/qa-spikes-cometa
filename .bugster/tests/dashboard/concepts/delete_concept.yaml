@@ -1,0 +1,34 @@
+name: User deletes concept from concepts list
+page: /conceptos
+page_path: apps/e2e/pages/dashboard/conceptsPage.ts
+
+hooks:
+  before:
+    - helper: getSchoolIdByName
+      args: ["Instituto Internacional Carlos"]
+      as: schoolId
+    - helper: getBankAccountBySchoolName
+      args: ["Instituto Internacional Carlos"]
+      as: bankAccount
+    - helper: getFiscalEntityBySchoolId
+      args: ["{{schoolId}}"]
+      as: fiscalEntity
+    - helper: getActiveSchoolCycleBySchoolId
+      args: ["{{schoolId}}"]
+      as: cycle
+    - helper: createConcept
+      args: ["Test Concept to Delete", "1000", "{{fiscalEntity}}", "{{cycle[0].id}}", "{{bankAccount.id}}", "{{schoolId}}"]
+      as: conceptId
+
+task: Verify user can delete a concept that has no assigned students
+steps:
+  - Login as automata@getcome.com with password barriletecosmico
+  - Select school Instituto Internacional Carlos
+  - Navigate to Conceptos section
+  - Locate the created test concept in the table
+  - Click on the concept row
+  - Click three-dot menu button
+  - Click "Eliminar concepto" option
+  - Click confirm delete button in dialog
+expected_result: Success message "Se ha eliminado el concepto" displays, concept no longer visible in table
+

@@ -1,0 +1,38 @@
+name: User creates optional concept without attributes
+page: /conceptos
+page_path: apps/e2e/pages/dashboard/conceptsPage.ts
+
+hooks:
+  before:
+    - helper: getSchoolIdByName
+      args: ["Instituto Internacional Carlos"]
+      as: schoolId
+    - helper: getBankAccountBySchoolName
+      args: ["Instituto Internacional Carlos"]
+      as: bankAccount
+  after:
+    - helper: deleteConceptByApi
+      args: ["{{conceptId}}", "{{schoolId}}"]
+
+task: Verify user can create optional concept with IVA billing
+steps:
+  - Login as automata@getcome.com with password barriletecosmico
+  - Select school Instituto Internacional Carlos
+  - Navigate to Conceptos section
+  - Click new concept button
+  - Select concept type Cafetería
+  - Select school cycle Ciclo 2023/2024
+  - Enter concept name
+  - Select optional concept radio button
+  - Select bank account for deposits
+  - Click next
+  - Select no attributes option
+  - Enter concept price
+  - Click next
+  - Enable IVA tax
+  - Select tax code 10152007
+  - Select unit type E48
+  - Enable RVOE and enter number
+  - Click create concept button
+expected_result: Success message displays, concept visible in concepts table
+

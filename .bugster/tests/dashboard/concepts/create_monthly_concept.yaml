@@ -1,0 +1,43 @@
+name: User creates monthly payment concept with periodic restrictions
+page: /conceptos
+page_path: apps/e2e/pages/dashboard/conceptsPage.ts
+
+hooks:
+  before:
+    - helper: getSchoolIdByName
+      args: ["Instituto Internacional Carlos"]
+      as: schoolId
+    - helper: getBankAccountBySchoolName
+      args: ["Instituto Internacional Carlos"]
+      as: bankAccount
+  after:
+    - helper: deleteConceptByApi
+      args: ["{{conceptId}}", "{{schoolId}}"]
+
+task: Verify user can create recurring monthly payment concept with IVA billing
+steps:
+  - Login as automata@getcome.com with password barriletecosmico
+  - Select school Instituto Internacional Carlos
+  - Navigate to Conceptos section
+  - Click new concept button
+  - Select fiscal entity KERNEL INDUSTRIA JUGUETERA
+  - Select concept type Colegiatura mensual
+  - Select current school cycle
+  - Enter concept name and price
+  - Select bank account for deposits
+  - Click next to configure payment schedule
+  - Select payment months (Agosto through Noviembre)
+  - Set due date to 4th of each month
+  - Enable periodic payment restrictions
+  - Click next to configure late fees
+  - Enable late fee charges
+  - Configure percentage-based late fee
+  - Click next to configure early payment discounts
+  - Add early payment discount
+  - Click next to configure tax settings
+  - Enable IVA billing
+  - Select tax code and unit
+  - Enable RVOE and enter number
+  - Click create concept button
+expected_result: Success message "El concepto ha sido creado satisfactoriamente" displays, concept visible in concepts table with correct name and price
+

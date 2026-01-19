@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "timestamp": 1768425884504,
+    "git": {
+      "branch": "bugster",
+      "commit": "e5dbdce16362b5a8e8f0bab55a5c5005749acc67"
+    }
+  },
+  "data": {
+    "frameworks": [
+      {
+        "id": "unknown",
+        "name": "Unknown",
+        "dir_path": "/Users/facundolopezscala/coding-repos/cometa-e2e/qa-spikes-cometa"
+      }
+    ]
+  }
+}

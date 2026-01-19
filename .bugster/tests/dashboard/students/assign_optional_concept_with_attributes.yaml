@@ -1,0 +1,54 @@
+name: School assigns optional concept with attributes to student
+page: /estudiantes
+page_path: apps/e2e/pages/dashboard/studentsPage.ts
+
+hooks:
+  before:
+    - helper: getSchoolIdByName
+      args: ["Instituto Internacional Carlos"]
+      as: schoolId
+    - helper: getFiscalEntityBySchoolId
+      args: ["{{schoolId}}"]
+      as: fiscalEntity
+    - helper: getBankAccountBySchoolName
+      args: ["Instituto Internacional Carlos"]
+      as: bankAccount
+    - helper: getLevelIdBySchoolId
+      args: ["{{schoolId}}", "Primaria"]
+      as: levelId
+    - helper: getSectionIdBySchoolId
+      args: ["{{schoolId}}", "{{levelId}}"]
+      as: sectionId
+    - helper: getActiveSchoolCycleBySchoolId
+      args: ["{{schoolId}}"]
+      as: cycle
+    - helper: createOtherConceptByApi
+      args: ["{{conceptName}}", "{{fiscalEntity}}", "{{bankAccount.id}}", "{{cycle[0].id}}", "{{schoolId}}", true]
+      as: conceptId
+    - helper: createStudentWithParams
+      args: ["{{firstName}}", "{{lastName}}", "{{matricula}}", "{{levelId}}", "{{sectionId}}", "{{schoolId}}", "{{curp}}", null, null, "{{cycle[0].id}}"]
+      as: studentId
+  after:
+    - helper: destroyOptionalAssignmentByApi
+      args: ["{{studentId}}", "{{assignmentId}}"]
+    - helper: deleteConceptByApi
+      args: ["{{conceptId}}", "{{schoolId}}"]
+
+task: Verify school can assign optional concept with attributes to existing student
+steps:
+  - Login as automata@getcome.com with password barriletecosmico
+  - Select school Instituto Internacional Carlos
+  - Navigate to Estudiantes section
+  - Select all cycles from cycle dropdown
+  - Search for the created student by name
+  - Click on student row to open details
+  - Click on Conceptos tab
+  - Click Asignar concepto button
+  - Select school cycle from dropdown
+  - Search and select the created concept
+  - Select first two attribute checkboxes
+  - Click Asignar button
+  - Navigate to Vigentes tab then Opcionales tab
+  - Click on assigned concept row
+expected_result: Concept appears in optional concepts list, checkboxes for selected attributes are checked
+
