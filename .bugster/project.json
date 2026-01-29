@@ -13,6 +13,11 @@
         "name": "Unknown",
         "dir_path": "/Users/facundolopezscala/coding-repos/cometa-e2e/qa-spikes-cometa"
       }
-    ]
+    ],
+    "commands": {
+      "test": {
+        "firstExecuted": true
+      }
+    }
   }
 }

@@ -5,7 +5,8 @@
   "workspaces": [
     "apps/*",
     "packages/*",
-    "packages/utils/*"
+    "packages/utils/*",
+    "packages/@cometa/*"
   ],
   "scripts": {
     "auth": "if test \"$VERCEL\" != \"1\"; then bash ./scripts/vercel-auth.sh ; fi",
@@ -45,6 +46,7 @@
     "@manypkg/cli": "^0.21.0",
     "@optimizely/optimizely-sdk": "^5.3.4",
     "axios": "^1.13.2",
+    "curp": "^1.3.1",
     "jsonwebtoken": "^9.0.2",
     "preinstall": "^0.0.1-security",
     "usehooks-ts": "^2.15.1",

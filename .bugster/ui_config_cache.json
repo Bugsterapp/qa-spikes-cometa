@@ -1,0 +1,21 @@
+{
+  "qa-spikes-cometa-1768922281": {
+    "config": {
+      "project_id": "qa-spikes-cometa-1768922281",
+      "x_vercel_protection_bypass": null,
+      "preferences": {
+        "tests": {
+          "always_run": null,
+          "limit": null,
+          "headless": null,
+          "silent": null,
+          "verbose": null,
+          "only_affected": null,
+          "parallel": null,
+          "output": null
+        }
+      }
+    },
+    "timestamp": 1769702341.4078872
+  }
+}

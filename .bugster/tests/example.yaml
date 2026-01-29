@@ -1,0 +1,97 @@
+name: Usuario aplica filtro por nombre de pagador sin pagos asociados y verifica empty state
+page: /payments
+page_path: dashboard/src/pages/payments/index.tsx
+hooks:
+  before:
+    # Obtener datos de la escuela
+    - helper: getSchoolIdByName
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["Instituto Internacional Carlos"]
+      as: schoolId
+
+    # Obtener nivel y sección
+    - helper: getLevelIdBySchoolId
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{schoolId}}", "Primaria"]
+      as: levelId
+
+    - helper: getSectionIdBySchoolId
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{schoolId}}", "{{levelId}}"]
+      as: sectionId
+
+    # Obtener ciclo escolar activo
+    - helper: getActiveSchoolCycleBySchoolId
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{schoolId}}"]
+      as: cycle
+
+    # Generar datos del estudiante
+    - helper: generateFirstName
+      file_path: apps/e2e/helpers/students.ts
+      as: firstName
+
+    - helper: generateLastName
+      file_path: apps/e2e/helpers/students.ts
+      as: lastName
+
+    - helper: generateLastName
+      file_path: apps/e2e/helpers/students.ts
+      as: studentMotherLastName
+
+    - helper: generateMatricula
+      file_path: apps/e2e/helpers/students.ts
+      as: matricula
+
+    - helper: generarCURP
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{lastName}}", "{{studentMotherLastName}}", "{{firstName}}"]
+      as: curp
+
+    # Generar datos del tutor
+    - helper: generateFirstName
+      file_path: apps/e2e/helpers/students.ts
+      as: guardianFirstName
+
+    - helper: generateLastName
+      file_path: apps/e2e/helpers/students.ts
+      as: guardianLastName
+
+    # Crear estudiante
+    - helper: createStudentWithParams
+      file_path: apps/e2e/helpers/students.ts
+      args:
+        [
+          "{{firstName}}",
+          "{{lastName}}",
+          "{{matricula}}",
+          "{{levelId}}",
+          "{{sectionId}}",
+          "{{schoolId}}",
+          "{{curp}}",
+          null,
+          null,
+          "{{cycle[0].id}}",
+        ]
+      as: studentId
+
+    # Asignar tutor al estudiante (el helper genera el email automáticamente)
+    - helper: assignGuardianAPI
+      file_path: apps/e2e/helpers/students.ts
+      args:
+        [
+          "{{studentId}}",
+          "{{schoolId}}",
+          "{{guardianFirstName}}",
+          "{{guardianLastName}}",
+        ]
+      as: guardianName
+
+task: Verificar que al filtrar por nombre de pagador sin pagos asociados se muestra empty state
+steps:
+  - Login as automata@getcome.com with password barriletecosmico
+  - Select school Instituto Internacional Carlos
+  - Navigate to payments and invoices section
+  - Enter guardian name {{data.guardianFirstName}} {{data.guardianLastName}} in payer search field
+  - Select the guardian option from dropdown
+expected_result: Empty state message "No hay pagos recibidos" is displayed in the payments table
