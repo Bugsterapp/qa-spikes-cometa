@@ -1,0 +1,29 @@
+name: Usuario filtra por tipo de concepto Inscripcion la tabla morosidad exitosamente
+page: /delinquency
+page_path: apps/dashboard/src/pages/delinquency.tsx
+hooks:
+  before:
+    - helper: getSchoolIdByName
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["Instituto Internacional Carlos"]
+      as: schoolId
+
+    - helper: getActiveSchoolCycleBySchoolId
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{schoolId}}", true]
+      as: cycle
+
+task: Verificar que el usuario puede filtrar la tabla de morosidad por tipo de concepto Inscripcion y visualizar los estudiantes morosos correspondientes
+steps:
+  - Login as automata@getcome.com with password barriletecosmico
+  - Select school "Instituto Internacional Carlos"
+  - Wait for the dashboard to load
+  - Navigate to "Morosidad" section from the sidebar
+  - Wait for the delinquency table to load with initial data
+  - Click on the concept filter to open filter options
+  - Select "Inscripcion" as the concept type filter
+  - Apply the filter
+  - Click on the collapsible list button to expand the delinquent students list
+  - Verify the delinquent students count is displayed
+  - Verify at least one delinquent student name is visible in the list
+expected_result: La tabla de morosidad muestra solo estudiantes morosos filtrados por concepto tipo Inscripcion con el conteo correcto

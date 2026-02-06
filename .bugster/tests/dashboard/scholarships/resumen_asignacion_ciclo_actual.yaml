@@ -1,0 +1,15 @@
+name: Usuario visualiza resumen de asignacion de becas agrupado por beca con filtro del ciclo actual
+page: /scholarships
+page_path: apps/dashboard/src/pages/scholarships/index.tsx
+task: Verificar que el usuario puede ver el resumen de asignacion de becas con filtro por defecto del ciclo actual y el listado agrupado por beca
+steps:
+  - Login as automata@getcome.com with password barriletecosmico
+  - Select school "School CAN"
+  - Navigate to "Becas" section from the sidebar
+  - Click on "Resumen" tab
+  - Wait for the scholarships summary list to load
+  - Click on the collapsible icon to collapse all scholarship groups
+  - Wait for the list to render
+  - Verify that each scholarship name from the list is visible in the grouped view
+  - Verify the number of visible scholarship groups matches the expected count from the data
+expected_result: El resumen de asignacion muestra todas las becas agrupadas por nombre con el filtro del ciclo actual aplicado por defecto

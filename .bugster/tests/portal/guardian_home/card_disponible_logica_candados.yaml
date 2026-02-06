@@ -1,0 +1,168 @@
+name: Se dibuja card disponible y se selecciona la siguiente siguiendo logica de candados
+page: /guardians
+page_path: apps/guardian_frontend/pages/guardians/[guardianHash]/index.tsx
+starting_url: https://api-demo.dev.getcometa.com/cometa_admin/students/guardian/
+hooks:
+  before:
+    # Obtener datos de la escuela
+    - helper: getSchoolIdByName
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["Instituto Internacional Carlos"]
+      as: schoolId
+
+    - helper: getFiscalEntityBySchoolId
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{schoolId}}"]
+      as: fiscalEntity
+
+    - helper: getBankAccountBySchoolName
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["Instituto Internacional Carlos"]
+      as: bankAccount
+
+    - helper: getActiveSchoolCycleBySchoolId
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{schoolId}}", true]
+      as: cycle
+
+    - helper: getLevelIdBySchoolId
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{schoolId}}", "Primaria"]
+      as: levelId
+
+    - helper: getSectionIdBySchoolId
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{schoolId}}", "{{levelId}}"]
+      as: sectionId
+
+    # Generar datos del estudiante
+    - helper: generateFirstName
+      file_path: apps/e2e/helpers/students.ts
+      as: firstName
+
+    - helper: generateLastName
+      file_path: apps/e2e/helpers/students.ts
+      as: lastName
+
+    - helper: generateLastName
+      file_path: apps/e2e/helpers/students.ts
+      as: studentMotherLastName
+
+    - helper: generateMatricula
+      file_path: apps/e2e/helpers/students.ts
+      as: matricula
+
+    - helper: generarCURP
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{lastName}}", "{{studentMotherLastName}}", "{{firstName}}"]
+      as: curp
+
+    # Generar datos del tutor
+    - helper: generateFirstName
+      file_path: apps/e2e/helpers/students.ts
+      as: guardianFirstName
+
+    - helper: generateLastName
+      file_path: apps/e2e/helpers/students.ts
+      as: guardianLastName
+
+    # Crear concepto de colegiatura con restriccion (candados)
+    - helper: createMandatoryConceptByApi
+      file_path: apps/e2e/helpers/concepts.ts
+      args:
+        [
+          "Concepto Candados Test",
+          "1000",
+          "{{fiscalEntity}}",
+          "{{cycle[0].id}}",
+          "{{bankAccount.id}}",
+          "{{schoolId}}",
+          true,
+        ]
+      as: concept
+
+    # Crear estudiante
+    - helper: createStudentWithParams
+      file_path: apps/e2e/helpers/students.ts
+      args:
+        [
+          "{{firstName}}",
+          "{{lastName}}",
+          "{{matricula}}",
+          "{{levelId}}",
+          "{{sectionId}}",
+          "{{schoolId}}",
+          "{{curp}}",
+          null,
+          null,
+          "{{cycle[0].id}}",
+        ]
+      as: studentId
+
+    - helper: generateEmail
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{guardianFirstName}}", "{{guardianLastName}}"]
+      as: guardianEmail
+
+    - helper: assignGuardianAPI
+      file_path: apps/e2e/helpers/students.ts
+      args:
+        [
+          "{{studentId}}",
+          "{{schoolId}}",
+          "{{guardianFirstName}}",
+          "{{guardianLastName}}",
+          "{{guardianEmail}}",
+        ]
+      as: guardianName
+
+    - helper: addOrdersToStudent
+      file_path: apps/e2e/helpers/concepts.ts
+      args: ["{{studentId}}", "{{concept.id}}"]
+      as: assignment
+
+task: Verificar que el tutor ve la card del primer mes habilitada y la siguiente bloqueada por candados, y al seleccionar la primera se desbloquea la siguiente
+steps:
+  # Step 1: Login to Django Admin
+  - Enter email automationadmin@getcometa.com in the "Email address" field
+  - Enter password barriletecosmico in the "Password" field
+  - Click "Log in" button
+
+  # Step 2: Search and select the guardian
+  - Enter "{{data.guardianFirstName}} {{data.guardianLastName}}" in the search box
+  - Click "Search" button
+  - Select the checkbox next to the guardian {{data.guardianEmail}} in the results table
+
+  # Step 3: Generate Auth URL
+  - Select "Generate Auth URL" from the "Action" dropdown
+  - Click "Go" button
+  - Wait for the auth URL to be generated and displayed
+  - Copy the guardian portal URL from the "Auth url for..." message
+
+  # Step 4: Navigate to Guardian Portal
+  - Extract the token from the "Auth url for..." message
+  - Construct the portal URL by concatenating https://portal.demo.getcometa.com with the extracted token
+  - Navigate to the constructed guardian portal URL
+
+  # Step 5: Complete Onboarding
+  - Accept terms and conditions checkbox
+  - Click "Comenzar" button to start onboarding
+  - Click "Continuar" to skip guardian data section
+  - Click "Continuar" to skip student data section
+  - Click "Por ahora no" to skip billing information
+  - Click "Iniciar" to complete onboarding and go to home
+
+  # Step 6: Close any tour messages
+  - Close any tour or helper messages if displayed
+
+  # Step 7: Verify lock logic
+  - Wait for the page to fully load
+  - Locate the card for "Concepto Candados Test - Agosto, 2023"
+  - Verify the "SELECCIONAR" button on the first card (Agosto) is enabled
+  - Verify the "SELECCIONAR" button on the second card (Septiembre) is disabled
+  - Click "SELECCIONAR" on the first card (Agosto)
+  - Verify the "SELECCIONAR" button on the second card (Septiembre) is now enabled
+  - Click "SELECCIONAR" on the second card (Septiembre)
+  - Verify the "Pagar" button container is visible
+  - Click "Pagar" button
+expected_result: La card del primer mes esta habilitada, la del segundo mes bloqueada por candados. Al seleccionar la primera se desbloquea la segunda y se puede proceder al pago

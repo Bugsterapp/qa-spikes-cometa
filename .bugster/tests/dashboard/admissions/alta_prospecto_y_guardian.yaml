@@ -1,0 +1,79 @@
+name: Alta nuevo prospecto y guardian con admision y verificacion en lista de estudiantes
+page: /admissions
+page_path: apps/dashboard/src/pages/admissions/index.tsx
+hooks:
+  before:
+    # Generar datos del guardian
+    - helper: generateFirstName
+      file_path: apps/e2e/helpers/students.ts
+      as: guardianFirstName
+
+    - helper: generateLastName
+      file_path: apps/e2e/helpers/students.ts
+      as: guardianLastName
+
+    - helper: generateCellPhoneForFront
+      file_path: apps/e2e/helpers/students.ts
+      as: guardianPhone
+
+    - helper: generateEmail
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{guardianFirstName}}", "{{guardianLastName}}"]
+      as: guardianEmail
+
+    # Generar datos del prospecto
+    - helper: generateFirstName
+      file_path: apps/e2e/helpers/students.ts
+      as: prospectFirstName
+
+    - helper: generateLastName
+      file_path: apps/e2e/helpers/students.ts
+      as: prospectLastName
+
+task: Verificar que el usuario puede crear un nuevo prospecto con guardian, admitirlo y verificar que aparece en la lista de estudiantes
+steps:
+  - Login as automata@getcome.com with password barriletecosmico
+  - Select school "Instituto Internacional Carlos"
+  - Navigate to "Admisiones" section from the sidebar
+  - Wait for the admissions page to load
+  - Click "Nuevo prospecto" button
+  - Enter {{data.guardianFirstName}} in the guardian first name field
+  - Enter {{data.guardianLastName}} in the guardian last name field
+  - Enter {{data.guardianEmail}} in the guardian email field
+  - Enter {{data.guardianPhone}} in the guardian phone field
+  - Click on the relationship selector and select "Padre"
+  - Enter {{data.prospectFirstName}} in the prospect first name field
+  - Scroll down and enter {{data.prospectLastName}} in the prospect last name field
+  - Enter "01/01/2000" in the birthdate field
+  - Select gender "Masculino"
+  - Click on the grade combobox and select "1 - Pre escolar"
+  - Click on the school cycle combobox and select "Ciclo 2024-2025"
+  - Enter "School Test Admisiones" in the origin school field
+  - Click on the change reason selector and select "Cambio de domicilio"
+  - Enter "comentarioooo" in the comments field
+  - Click "Continuar" button
+  - Verify the success message "El prospecto se ha creado exitosamente" is displayed
+  - Click on the prospect "{{data.prospectFirstName}} {{data.prospectLastName}}" row in the table
+  - Verify "Admitir prospecto" button is visible
+  - Click on "Conceptos" tab
+  - Select the first concept option available
+  - Click on the first checkbox
+  - Click "Asignar" button
+  - Verify success message "Se asigno el concepto de manera exitosa!" is displayed
+  - Click "Admitir prospecto" button
+  - Enter "XEXX010101HNEXXXA4" in the CURP field
+  - Enter a 10-digit enrollment code in the matricula field
+  - Click on the group combobox and select "A"
+  - Click the confirm admit prospect button
+  - Verify "Admitido" status is displayed
+  - Click back button
+  - Navigate to "Estudiantes" section from the sidebar
+  - Scroll down to the student count footer
+  - If "Limpiar todo" button is visible, click it to clear filters
+  - Search for "{{data.prospectFirstName}} {{data.prospectLastName}}" in the student filter
+  - Click on the student in the search results
+  - Click on the student row in the table
+  - Verify the guardian "{{data.guardianFirstName}} {{data.guardianLastName}}" is displayed
+  - Verify the guardian email {{data.guardianEmail}} is visible
+  - Verify the student status shows "Activo"
+expected_result: El prospecto se crea con guardian, se admite exitosamente y aparece como estudiante activo en la lista de estudiantes con el guardian asignado

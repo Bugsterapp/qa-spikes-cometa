@@ -1,0 +1,20 @@
+name: Usuario filtra estudiantes por seccion y solo se muestran estudiantes de la seccion seleccionada
+page: /estudiantes
+page_path: apps/dashboard/src/pages/student/index.tsx
+task: Verificar que al filtrar por seccion 1 A Primaria solo se muestran estudiantes de esa seccion
+steps:
+  - Login as automata@getcome.com with password barriletecosmico
+  - Select school "Instituto Internacional Carlos"
+  - Click on "Estudiantes" from the sidebar menu
+  - Wait for the students list to load
+  - Scroll down to the filter button
+  - If "Limpiar todo" filter button is visible, click it to clear existing filters
+  - Click "Filtrar" button
+  - Click on the "Seccion" filter selector
+  - Type "1 A" in the section filter search box
+  - Select "1 A Primaria" from the filtered options
+  - Click "Aplicar" button to apply the filter
+  - Wait for the filtered student list to load
+  - Verify the student count footer updates with the filtered count
+  - Verify all visible rows in the table show "1 A" and "Primaria" in the section column
+expected_result: Solo se muestran estudiantes de la seccion 1 A Primaria y el contador coincide con la cantidad de estudiantes filtrados

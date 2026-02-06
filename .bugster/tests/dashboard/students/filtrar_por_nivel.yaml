@@ -1,0 +1,22 @@
+name: Usuario filtra estudiantes por nivel y solo se muestran estudiantes del nivel seleccionado
+page: /estudiantes
+page_path: apps/dashboard/src/pages/student/index.tsx
+task: Verificar que al filtrar por nivel Primaria solo se muestran estudiantes de ese nivel
+steps:
+  - Login as automata@getcome.com with password barriletecosmico
+  - Select school "Instituto Internacional Carlos"
+  - Navigate to "Estudiantes" section from the sidebar
+  - Wait for the students list to load
+  - Click on the school cycle selector and select "Todos"
+  - Scroll down to the filter button
+  - If "Limpiar todo" filter button is visible, click it to clear existing filters
+  - Click "Filtrar" button
+  - Wait for filter options to load
+  - Click on the "Nivel" filter selector
+  - Select "Primaria" from the level options
+  - Click "Aplicar" button to apply the filter
+  - Wait for the filtered student list to load
+  - Verify the student count footer updates with the filtered count
+  - Verify all visible rows in the table show "Primaria" in the section column
+  - Verify no rows show "Secundaria", "Preparatoria", or "Kinder" in the section column
+expected_result: Solo se muestran estudiantes del nivel Primaria en la tabla y el contador refleja la cantidad correcta de estudiantes filtrados
