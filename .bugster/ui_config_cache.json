@@ -1,0 +1,21 @@
+{
+  "apps-1769698002": {
+    "config": {
+      "project_id": "apps-1769698002",
+      "x_vercel_protection_bypass": null,
+      "preferences": {
+        "tests": {
+          "always_run": null,
+          "limit": null,
+          "headless": null,
+          "silent": null,
+          "verbose": null,
+          "only_affected": null,
+          "parallel": null,
+          "output": null
+        }
+      }
+    },
+    "timestamp": 1770213020.819647
+  }
+}

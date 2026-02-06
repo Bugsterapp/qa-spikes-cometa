@@ -1,0 +1,23 @@
+{
+  "metadata": {
+    "timestamp": 1769698387907,
+    "git": {
+      "branch": "bugster",
+      "commit": "7303ff46690387708c0e259194593840397759bf"
+    }
+  },
+  "data": {
+    "frameworks": [
+      {
+        "id": "next",
+        "name": "Next.js",
+        "dir_path": "/Users/naquiaos/bugster/customers/cometa/qa-spikes-cometa/apps/dashboard"
+      }
+    ],
+    "commands": {
+      "test": {
+        "firstExecuted": true
+      }
+    }
+  }
+}

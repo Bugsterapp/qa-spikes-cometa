@@ -1,0 +1,204 @@
+name: Usuario paga exitosamente una variante con stock disponible
+page: /guardians
+page_path: apps/guardian_frontend/pages/guardians/[guardianHash]/index.tsx
+starting_url: https://api-demo.dev.getcometa.com/cometa_admin/students/guardian/
+hooks:
+  before:
+    # Obtener datos de la escuela
+    - helper: getSchoolIdByName
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["Instituto Internacional Carlos"]
+      as: schoolId
+
+    # Obtener entidad fiscal y cuenta bancaria
+    - helper: getFiscalEntityBySchoolId
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{schoolId}}"]
+      as: fiscalEntity
+
+    - helper: getBankAccountBySchoolName
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["Instituto Internacional Carlos"]
+      as: bankAccount
+
+    # Obtener ciclo escolar activo
+    - helper: getActiveSchoolCycleBySchoolId
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{schoolId}}", true]
+      as: cycle
+
+    # Obtener nivel y sección
+    - helper: getLevelIdBySchoolId
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{schoolId}}", "Primaria"]
+      as: levelId
+
+    - helper: getSectionIdBySchoolId
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{schoolId}}", "{{levelId}}"]
+      as: sectionId
+
+    # Generar datos del estudiante
+    - helper: generateFirstName
+      file_path: apps/e2e/helpers/students.ts
+      as: firstName
+
+    - helper: generateLastName
+      file_path: apps/e2e/helpers/students.ts
+      as: lastName
+
+    - helper: generateLastName
+      file_path: apps/e2e/helpers/students.ts
+      as: studentMotherLastName
+
+    - helper: generateMatricula
+      file_path: apps/e2e/helpers/students.ts
+      as: matricula
+
+    - helper: generarCURP
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{lastName}}", "{{studentMotherLastName}}", "{{firstName}}"]
+      as: curp
+
+    # Generar datos del tutor
+    - helper: generateFirstName
+      file_path: apps/e2e/helpers/students.ts
+      as: guardianFirstName
+
+    - helper: generateLastName
+      file_path: apps/e2e/helpers/students.ts
+      as: guardianLastName
+
+    # Crear concepto opcional con atributos (variantes con stock)
+    - helper: createOtherConceptByApi
+      file_path: apps/e2e/helpers/concepts.ts
+      args:
+        [
+          "Concepto ConStock Test",
+          "{{fiscalEntity}}",
+          "{{bankAccount.id}}",
+          "{{cycle[0].id}}",
+          "{{schoolId}}",
+          true,
+        ]
+      as: concept
+
+    # Crear estudiante
+    - helper: createStudentWithParams
+      file_path: apps/e2e/helpers/students.ts
+      args:
+        [
+          "{{firstName}}",
+          "{{lastName}}",
+          "{{matricula}}",
+          "{{levelId}}",
+          "{{sectionId}}",
+          "{{schoolId}}",
+          "{{curp}}",
+          null,
+          null,
+          "{{cycle[0].id}}",
+        ]
+      as: studentId
+
+    # Generar email del tutor
+    - helper: generateEmail
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{guardianFirstName}}", "{{guardianLastName}}"]
+      as: guardianEmail
+
+    # Asignar tutor al estudiante
+    - helper: assignGuardianAPI
+      file_path: apps/e2e/helpers/students.ts
+      args:
+        [
+          "{{studentId}}",
+          "{{schoolId}}",
+          "{{guardianFirstName}}",
+          "{{guardianLastName}}",
+          "{{guardianEmail}}",
+        ]
+      as: guardianName
+
+    # Asignar órdenes opcionales al estudiante
+    - helper: addOptionalOrdersToStudent
+      file_path: apps/e2e/helpers/concepts.ts
+      args: ["{{studentId}}", "{{concept.id}}"]
+      as: assignmentId
+
+    # Obtener órdenes opcionales para manipular stock
+    - helper: apiGetSchoolsOptionalConceptsOrdersList
+      file_path: apps/e2e/helpers/concepts.ts
+      args: ["{{concept.id}}", "{{schoolId}}"]
+      as: optionalOrders
+
+    # Configurar stock limitado para la variante "x" (índice 1)
+    - helper: apiSchoolsStockChangeLimitPartialUpdate
+      file_path: apps/e2e/helpers/concepts.ts
+      args: ["{{optionalOrders[1].stock.id}}", "{{schoolId}}", true]
+      as: stockLimitSet
+
+    # Agregar 1 unidad al stock de la variante "x"
+    - helper: apiSchoolsStockUpdateQuantityPartialUpdate
+      file_path: apps/e2e/helpers/concepts.ts
+      args: ["{{optionalOrders[1].stock.id}}", "{{schoolId}}", 1, "SUM"]
+      as: stockQuantityUpdated
+
+task: Verificar que un tutor puede pagar una variante de concepto opcional que tiene stock disponible (limitado pero con unidades)
+steps:
+  # Step 1: Login to Django Admin
+  - Enter email automationadmin@getcometa.com in the "Email address" field
+  - Enter password barriletecosmico in the "Password" field
+  - Click "Log in" button
+
+  # Step 2: Search and select the guardian
+  - Enter "{{data.guardianFirstName}} {{data.guardianLastName}}" in the search box
+  - Click "Search" button
+  - Select the checkbox next to the guardian {{data.guardianEmail}} in the results table
+
+  # Step 3: Generate Auth URL
+  - Select "Generate Auth URL" from the "Action" dropdown
+  - Click "Go" button
+  - Wait for the auth URL to be generated and displayed
+  - Copy the guardian portal URL from the "Auth url for..." message
+  # Step 4: Navigate to Guardian Portal with the generated URL
+  - Extract the token from the "Auth url for..." message by taking everything after the colon ":"
+  - Construct the portal URL by concatenating the portal base URL (https://portal.demo.getcometa.com) with the extracted token
+  - Navigate to the constructed guardian portal URL
+
+  # Step 5: Complete Onboarding
+  - Accept terms and conditions checkbox
+  - Click "Comenzar" button to start onboarding
+  - Click "Continuar" to skip guardian data section
+  - Click "Continuar" to skip student data section
+  - Click "Por ahora no" to skip billing information
+  - Click "Iniciar" to complete onboarding and go to home
+
+  # Step 6: Close any tour messages
+  - Close any tour or helper messages if displayed
+
+  # Step 7: Select variant with available stock and proceed to payment
+  - Locate the concept card for "Concepto ConStock Test - x"
+  - Click "SELECCIONAR" button on the concept card
+  - Click "Pagar" button to proceed to checkout
+
+  # Step 8: Confirm payment intent
+  - Click "PAGAR" button to initiate payment
+  - Click "Si, continuar" to confirm payment intent
+
+  # Step 9: Select payment method
+  - Select "Tarjeta de débito o crédito" as payment method
+  - Click "Continuar" to proceed to card entry
+
+  # Step 10: Enter Kushki card details (test card)
+  - Enter card number 4456540000000063 in the card number field
+  - Enter "prueba pago" as cardholder name
+  - Enter 12/26 as expiration date
+  - Enter 123 as CVV security code
+  - Click "Confirmar" button
+
+  # Step 11: Complete payment
+  - Click "Omitir" to skip additional options
+  - Wait for payment confirmation
+
+expected_result: Se muestra mensaje de "¡Felicitaciones!" indicando que el pago fue exitoso y el tutor puede volver al inicio

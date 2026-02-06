@@ -1,0 +1,144 @@
+name: Colegio registra el pago de 2 ordenes de concepto opcional
+page: /income
+page_path: apps/dashboard/src/pages/income/index.tsx
+hooks:
+  before:
+    # Obtener datos de la escuela
+    - helper: getSchoolIdByName
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["Instituto Internacional Carlos"]
+      as: schoolId
+
+    - helper: getFiscalEntityBySchoolId
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{schoolId}}"]
+      as: fiscalEntity
+
+    - helper: getBankAccountBySchoolName
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["Instituto Internacional Carlos"]
+      as: bankAccount
+
+    # Obtener nivel, sección y ciclo escolar
+    - helper: getLevelIdBySchoolId
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{schoolId}}", "Primaria"]
+      as: levelId
+
+    - helper: getSectionIdBySchoolId
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{schoolId}}", "{{levelId}}"]
+      as: sectionId
+
+    - helper: getActiveSchoolCycleBySchoolId
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{schoolId}}", true]
+      as: cycle
+
+    # Generar datos del estudiante
+    - helper: generateFirstName
+      file_path: apps/e2e/helpers/students.ts
+      as: firstName
+
+    - helper: generateLastName
+      file_path: apps/e2e/helpers/students.ts
+      as: lastName
+
+    - helper: generateLastName
+      file_path: apps/e2e/helpers/students.ts
+      as: studentMotherLastName
+
+    - helper: generateMatricula
+      file_path: apps/e2e/helpers/students.ts
+      as: matricula
+
+    - helper: generarCURP
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{lastName}}", "{{studentMotherLastName}}", "{{firstName}}"]
+      as: curp
+
+    # Generar datos del tutor
+    - helper: generateFirstName
+      file_path: apps/e2e/helpers/students.ts
+      as: guardianFirstName
+
+    - helper: generateLastName
+      file_path: apps/e2e/helpers/students.ts
+      as: guardianLastName
+
+    # Crear concepto opcional con atributos
+    - helper: createOtherConceptByApi
+      file_path: apps/e2e/helpers/concepts.ts
+      args:
+        [
+          "Concepto Opcional Test",
+          "{{fiscalEntity}}",
+          "{{bankAccount.id}}",
+          "{{cycle[0].id}}",
+          "{{schoolId}}",
+          true,
+        ]
+      as: optionalConcept
+
+    # Crear estudiante
+    - helper: createStudentWithParams
+      file_path: apps/e2e/helpers/students.ts
+      args:
+        [
+          "{{firstName}}",
+          "{{lastName}}",
+          "{{matricula}}",
+          "{{levelId}}",
+          "{{sectionId}}",
+          "{{schoolId}}",
+          "{{curp}}",
+          null,
+          null,
+          "{{cycle[0].id}}",
+        ]
+      as: studentId
+
+    # Generar email del tutor
+    - helper: generateEmail
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{guardianFirstName}}", "{{guardianLastName}}"]
+      as: guardianEmail
+
+    # Asignar tutor al estudiante
+    - helper: assignGuardianAPI
+      file_path: apps/e2e/helpers/students.ts
+      args:
+        [
+          "{{studentId}}",
+          "{{schoolId}}",
+          "{{guardianFirstName}}",
+          "{{guardianLastName}}",
+          "{{guardianEmail}}",
+        ]
+      as: guardianName
+
+    # Asignar órdenes opcionales al estudiante
+    - helper: addOptionalOrdersToStudent
+      file_path: apps/e2e/helpers/concepts.ts
+      args: ["{{studentId}}", "{{optionalConcept.id}}"]
+      as: assignmentId
+
+task: Verificar que el colegio puede registrar el pago de dos ordenes de un concepto opcional
+steps:
+  - Login as automata@getcome.com with password barriletecosmico
+  - Select school Instituto Internacional Carlos
+  - Navigate to income section
+  - Click "Registrar pago" to start a new payment
+  - Search student by name {{data.firstName}} {{data.lastName}}
+  - Select the student from the search results
+  - Select payer {{data.guardianFirstName}} {{data.guardianLastName}} from the payer list
+  - Select the student chip to filter orders
+  - Open the "Conceptos opcionales" tab
+  - Select the first pending optional order
+  - Select the second pending optional order
+  - Choose the payment account {{data.bankAccount.publicSummary}}
+  - Choose a payment channel option
+  - Click "Registrar pago" to confirm
+  - Verify success message "¡Pago registrado!" is displayed
+  - Click "Ver comprobante" to open the payment receipt
+expected_result: El pago de las dos ordenes opcionales queda registrado y se muestra el comprobante

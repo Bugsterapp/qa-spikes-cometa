@@ -1,0 +1,129 @@
+name: Usuario crea estudiante con tutor, asigna concepto y beca
+page: /estudiantes
+page_path: apps/dashboard/src/pages/dashboard/[schoolSlug]/students/index.tsx
+hooks:
+  before:
+    # Generar datos del estudiante
+    - helper: generateFirstName
+      file_path: apps/e2e/helpers/students.ts
+      as: studentFirstName
+
+    - helper: generateLastName
+      file_path: apps/e2e/helpers/students.ts
+      as: studentLastName
+
+    - helper: generateLastName
+      file_path: apps/e2e/helpers/students.ts
+      as: studentMotherLastName
+
+    - helper: generateMatricula
+      file_path: apps/e2e/helpers/students.ts
+      as: matricula
+
+    # Generar CURP del estudiante
+    - helper: generarCURP
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{studentLastName}}", "{{studentMotherLastName}}", "{{studentFirstName}}"]
+      as: curp
+
+    # Generar datos del tutor
+    - helper: generateFirstName
+      file_path: apps/e2e/helpers/students.ts
+      as: guardianFirstName
+
+    - helper: generateLastName
+      file_path: apps/e2e/helpers/students.ts
+      as: guardianLastName
+
+    - helper: generateCellPhoneForFront
+      file_path: apps/e2e/helpers/students.ts
+      as: guardianCellPhone
+
+task: Verificar que un colegio puede dar de alta un estudiante con tutor, asignarle un concepto de colegiatura y una beca
+
+steps:
+  # Step 1: Login al Dashboard
+  - Ingresar al dashboard de cometa
+  - Ingresar email automata@getcome.com en el campo de correo electrónico
+  - Ingresar contraseña barriletecosmico en el campo de contraseña
+  - Presionar Enter para iniciar sesión
+  - Esperar a que cargue el dashboard
+
+  # Step 2: Seleccionar escuela y navegar a estudiantes
+  - Verificar que se muestra el selector de escuelas
+  - Si la escuela actual no es "Instituto Internacional Carlos", hacer clic en el selector de escuelas
+  - Seleccionar "Instituto Internacional Carlos" de la lista
+  - Hacer clic en la opción "Estudiantes" del menú lateral
+
+  # Step 3: Crear nuevo estudiante - Datos personales
+  - Esperar a que se muestre la sección de estudiantes
+  - Hacer clic en el botón "Nuevo estudiante"
+  - Ingresar {{data.studentFirstName}} en el campo "Nombre(s)"
+  - Ingresar {{data.studentLastName}} en el campo "Apellido(s)"
+  - Ingresar {{data.curp}} en el campo "CURP"
+  - Ingresar 02/02/2009 en el campo "Fecha de nacimiento"
+  - Seleccionar género "Masculino"
+  - Hacer clic en el botón "Siguiente"
+
+  # Step 4: Crear nuevo estudiante - Datos de inscripción
+  - Ingresar {{data.matricula}} en el campo "Matrícula"
+  - Hacer clic en el selector "Ciclo de ingreso"
+  - Seleccionar "Ciclo actual" de la lista
+  - Hacer clic en el selector de nivel
+  - Seleccionar "Primaria" de la lista
+  - Hacer clic en el selector de grado
+  - Seleccionar "1" o "1ero" de la lista
+  - Hacer clic en el selector de grupo
+  - Seleccionar "A" de la lista
+  - Hacer clic en el botón "Siguiente"
+
+  # Step 5: Registrar nuevo tutor
+  - Seleccionar la opción "Registrar tutor nuevo"
+  - Ingresar {{data.guardianFirstName}} en el campo de nombre del tutor
+  - Ingresar {{data.guardianLastName}} en el campo de apellido del tutor
+  - Ingresar {{data.guardianLastName}}{{data.guardianFirstName}}@getcometa.com en el campo de email del tutor
+  - Ingresar {{data.guardianCellPhone}} en el campo de teléfono del tutor
+  - Seleccionar género "Masculino"
+  - Hacer clic en el selector de parentesco
+  - Seleccionar "Madre" de la lista
+  - Hacer clic en el botón "Asignar"
+
+  # Step 6: Verificar creación del estudiante
+  - Esperar a que se muestre el detalle del estudiante
+  - Verificar que se muestra el nombre {{data.studentFirstName}} {{data.studentLastName}} en la cabecera
+  - Verificar que el tutor {{data.guardianFirstName}} {{data.guardianLastName}} aparece asignado
+
+  # Step 7: Asignar concepto de colegiatura
+  - Hacer clic en la pestaña "Conceptos"
+  - Hacer scroll hacia abajo hasta ver el botón "Asignar concepto"
+  - Hacer clic en el botón "Asignar concepto"
+  - Hacer clic en el selector de ciclo escolar
+  - Seleccionar "Ciclo actual" de la lista
+  - Ingresar "Colegiatura" en el campo de tipo de concepto
+  - Seleccionar "Colegiatura / Mensualidad" de las opciones
+  - Ingresar "Colegiatura Primaria X12 - 2024-2025" en el campo de nombre del concepto
+  - Seleccionar el concepto de la lista de opciones
+  - Marcar todos los checkbox de los meses disponibles
+  - Hacer clic en el botón "Asignar"
+  - Verificar que aparece el mensaje de éxito "¡Se asignó el concepto de manera exitosa!"
+
+  # Step 8: Asignar beca al estudiante
+  - Hacer scroll hacia arriba hasta ver la sección de becas
+  - Hacer clic en el botón "Asignar" de la sección de becas
+  - Hacer clic en el selector de beca
+  - Ingresar "Apoyo 50%" en el campo de búsqueda
+  - Seleccionar "Apoyo 50%" de la lista
+  - Hacer clic en el selector de ciclo escolar
+  - Seleccionar "Ciclo actual" de la lista
+  - Hacer clic en el botón "Continuar"
+  - Hacer clic en el botón "Asignar"
+  - Verificar que aparece el mensaje de éxito de asignación de beca
+
+  # Step 9: Verificar concepto asignado con órdenes
+  - Hacer scroll hacia abajo hasta ver "Conceptos asignados"
+  - Verificar que aparece el concepto "Colegiatura Primaria X12 - 2024-2025" en la tabla
+  - Hacer clic en la celda del concepto "Colegiatura Primaria X12 - 2024-2025"
+  - Verificar que se muestran los checkbox de los meses
+  - Verificar que todos los checkbox de órdenes están marcados
+
+expected_result: El estudiante se crea correctamente con tutor asignado, el concepto de colegiatura se asigna exitosamente con todas las órdenes seleccionadas, y la beca se aplica correctamente mostrando el mensaje de éxito

@@ -1,0 +1,31 @@
+name: Usuario filtra resumen de becas por nivel Primaria y beca "Beca 10%"
+page: /scholarships
+page_path: apps/dashboard/src/pages/scholarships/index.tsx
+hooks:
+  before:
+    # Obtener ID de la escuela
+    - helper: getSchoolIdByName
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["School CAN"]
+      as: schoolId
+
+    # Obtener ciclo escolar activo
+    - helper: getActiveSchoolCycleBySchoolId
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{schoolId}}", true]
+      as: cycle
+task: Verificar que el usuario puede filtrar el resumen de becas asignadas por nivel y tipo de beca
+steps:
+  - Login as automata@getcome.com with password barriletecosmico
+  - Select school "School CAN"
+  - Navigate to "Becas" section from the sidebar
+  - Click on "Resumen" tab
+  - Wait for the scholarships list to load
+  - Click on "Filtrar" button to open filters panel
+  - Select "Nivel" filter option
+  - Select "Primaria" from the level options
+  - Select "Beca / Descuento" filter option
+  - Select "Beca 10%" from the scholarship options
+  - Click "Aplicar" to apply the filters
+  - Verify the filtered results show students count matching the applied filters
+expected_result: The scholarships summary shows only scholarships filtered by level "Primaria" and scholarship "Beca 10%" with the correct student count displayed
