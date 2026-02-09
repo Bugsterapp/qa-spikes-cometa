@@ -1,15 +1,15 @@
 name: Usuario visualiza en lista de becas una beca porcentual con impacto en colegiatura
 page: /scholarships
 page_path: apps/dashboard/src/pages/scholarships/index.tsx
-task: Verificar que el usuario visualiza correctamente los datos de la Beca 10% en la tabla de becas
+task: Verificar que el usuario visualiza correctamente los datos de la Apoyo 10% en la tabla de becas
 steps:
   - Login as automata@getcome.com with password barriletecosmico
   - Select school "School CAN"
   - Navigate to "Becas" section from the sidebar
   - Wait for the scholarships list to load
-  - Type "Beca 10%" in the search field
-  - Verify "Beca 10%" is visible in the table
-  - Verify the first row of the table shows the name "Beca 10%"
+  - Type "Apoyo 10%" in the search field
+  - Verify "Apoyo 10%" is visible in the table
+  - Verify the first row of the table shows the name "Apoyo 10%"
   - Verify the discount value column shows "10%"
   - Verify the concepts column shows "Colegiatura / Mensualidad"
-expected_result: La beca "Beca 10%" se muestra en la tabla con valor de descuento 10% y concepto asociado "Colegiatura / Mensualidad"
+expected_result: La beca "Apoyo 10%" se muestra en la tabla con valor de descuento 10% y concepto asociado "Colegiatura / Mensualidad"
