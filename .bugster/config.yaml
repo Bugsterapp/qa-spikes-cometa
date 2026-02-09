@@ -3,13 +3,13 @@
 # Important: Commit this file to your repository for CI/CD integration to work properly.
 
 # Project Information
-project_name: apps
-project_id: apps-1769698002
+project_name: qa-spikes-cometa
+project_id: qa-spikes-cometa-1770666406
 base_url: "https://dashboard.demo.getcometa.com/"
 
 # Project Authentication
 credentials:
-  - id: admin
+  - id: demo
     username: ${BUGSTER_USERNAME}
     password: ${BUGSTER_PASSWORD}
 

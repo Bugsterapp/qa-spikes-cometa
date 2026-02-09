@@ -1,4 +1,4 @@
-name: Usuario filtra resumen de becas por nivel Primaria y beca "Apoyo 10%"
+name: Usuario filtra resumen de becas por nivel Primaria y beca "Beca 10%"
 page: /scholarships
 page_path: apps/dashboard/src/pages/scholarships/index.tsx
 hooks:
@@ -25,7 +25,7 @@ steps:
   - Select "Nivel" filter option
   - Select "Primaria" from the level options
   - Select "Beca / Descuento" filter option
-  - Select "Apoyo 10%" from the scholarship options
+  - Select "Beca 10%" from the scholarship options
   - Click "Aplicar" to apply the filters
   - Verify the filtered results show students count matching the applied filters
-expected_result: The scholarships summary shows only scholarships filtered by level "Primaria" and scholarship "Apoyo 10%" with the correct student count displayed
+expected_result: The scholarships summary shows only scholarships filtered by level "Primaria" and scholarship "Beca 10%" with the correct student count displayed

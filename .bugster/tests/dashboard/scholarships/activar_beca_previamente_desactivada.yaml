@@ -20,9 +20,9 @@ steps:
   - Navigate to "Becas" section from the sidebar
   - Click on "Resumen" tab and wait for the scholarships list to load
   - Click on "Tabla" tab
-  - Click on the "Apoyo 10%" row in the table
+  - Click on the "Beca 10%" row in the table
   - Click on "Estudiantes asignados" tab
-  - Search for a student with the Apoyo 10% in status "Desactivado"
+  - Search for a student with the Beca 10% in status "Desactivado"
   - Click on the student row to open the assignment details
   - Verify the scholarship status shows "Desactivado" for the current cycle
   - Click "Editar" button
