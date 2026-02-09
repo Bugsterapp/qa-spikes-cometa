@@ -1,0 +1,36 @@
+name: Usuario activa beca previamente desactivada a un estudiante con impacto en colegiatura
+page: /scholarships
+page_path: apps/dashboard/src/pages/scholarships/index.tsx
+hooks:
+  before:
+    - helper: getSchoolIdByName
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["School CAN"]
+      as: schoolId
+
+    - helper: getActiveSchoolCycleBySchoolId
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{schoolId}}", true]
+      as: cycle
+
+task: Verificar que el usuario puede reactivar una beca previamente desactivada a un estudiante
+steps:
+  - Login as automata@getcome.com with password barriletecosmico
+  - Select school "School CAN"
+  - Navigate to "Becas" section from the sidebar
+  - Click on "Resumen" tab and wait for the scholarships list to load
+  - Click on "Tabla" tab
+  - Click on the "Apoyo 10%" row in the table
+  - Click on "Estudiantes asignados" tab
+  - Search for a student with the Apoyo 10% in status "Desactivado"
+  - Click on the student row to open the assignment details
+  - Verify the scholarship status shows "Desactivado" for the current cycle
+  - Click "Editar" button
+  - Click "Reactivar" button to reactivate the scholarship
+  - Click "Guardar" button
+  - Wait for the changes to be saved
+  - Close the side panel
+  - Click on "Informacion" tab then back to "Estudiantes asignados" tab
+  - Search for the same student again
+  - Click on the student to verify the reactivated status
+expected_result: La beca se reactiva exitosamente y el estudiante aparece con la beca activa nuevamente

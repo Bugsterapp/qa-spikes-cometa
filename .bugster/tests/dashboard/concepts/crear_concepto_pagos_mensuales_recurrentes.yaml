@@ -1,0 +1,36 @@
+name: Usuario crea concepto con pagos mensuales recurrentes con restriccion y complemento educativo
+page: /conceptos
+page_path: apps/dashboard/src/pages/concepts/index.tsx
+hooks:
+  before:
+    - helper: getSchoolIdByName
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["Instituto Internacional Carlos"]
+      as: schoolId
+
+    - helper: getBankAccountBySchoolName
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["Instituto Internacional Carlos"]
+      as: bankAccount
+
+task: Verificar que el usuario puede crear un concepto con pagos mensuales recurrentes, restriccion periodica, complemento educativo que factura IVA y visualizarlo en la seccion conceptos
+steps:
+  - Login as automata@getcome.com with password barriletecosmico
+  - Select school "Instituto Internacional Carlos"
+  - Wait for the sidebar to load
+  - Click on "Conceptos" from the sidebar menu
+  - Wait for the concepts page to load
+  - Click "Nuevo concepto" button
+  - Select concept type "Colegiatura / Mensualidad" (pagos mensuales)
+  - Enter a concept name
+  - Enter a price amount
+  - Select the bank account {{data.bankAccount.publicSummary}} for the concept
+  - Enable the periodic restriction option
+  - Select complemento educativo category
+  - Enable IVA billing
+  - Click "Siguiente" to proceed through each step of the wizard
+  - Complete all required steps and click "Crear" to finish
+  - Verify the success message "El concepto ha sido creado satisfactoriamente" is displayed
+  - Verify the concept name appears in the concepts table
+  - Verify the concept price is displayed correctly in the table
+expected_result: El concepto se crea exitosamente con pagos mensuales recurrentes, restriccion periodica activa, y se visualiza en la tabla de conceptos con el nombre y precio correctos

@@ -1,0 +1,59 @@
+name: Usuario edita precio de una orden de concepto tipo colegiatura y se actualizan los precios
+page: /conceptos
+page_path: apps/dashboard/src/pages/concepts/[conceptId].tsx
+hooks:
+  before:
+    # Obtener datos de la escuela
+    - helper: getSchoolIdByName
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["Instituto Internacional Carlos"]
+      as: schoolId
+
+    - helper: getFiscalEntityBySchoolId
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{schoolId}}"]
+      as: fiscalEntity
+
+    - helper: getBankAccountBySchoolName
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["Instituto Internacional Carlos"]
+      as: bankAccount
+
+    - helper: getActiveSchoolCycleBySchoolId
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{schoolId}}", true]
+      as: cycle
+
+    # Crear concepto de colegiatura
+    - helper: createMandatoryConceptByApi
+      file_path: apps/e2e/helpers/concepts.ts
+      args:
+        [
+          "Concepto Colegiatura Edit Test",
+          "1000",
+          "{{fiscalEntity}}",
+          "{{cycle[0].id}}",
+          "{{bankAccount.id}}",
+          "{{schoolId}}",
+        ]
+      as: concept
+
+task: Verificar que el usuario puede editar el precio de una orden de un concepto tipo colegiatura y los precios se actualizan correctamente
+steps:
+  - Login as automata@getcome.com with password barriletecosmico
+  - Select school "Instituto Internacional Carlos"
+  - Navigate to "Conceptos" section from the sidebar
+  - Search for "Concepto Colegiatura Edit Test" in the search box
+  - Click on the concept "Concepto Colegiatura Edit Test" in the table
+  - Click on the "Ordenes" tab
+  - Verify the concept orders are displayed in the table
+  - Verify "Cobranzas" column shows "0 de 0 alumnos" for each order
+  - Select the checkbox of the second order
+  - Click "Editar precios" button
+  - Verify the modal with text "Ingresa el nuevo precio que" is displayed
+  - Enter "234" in the price input field
+  - Click "Guardar" button
+  - Verify the new price "$234.00" is displayed in the orders tab
+  - Click on the "Informacion" tab
+  - Verify the price "$234.00" is also displayed in the information tab
+expected_result: El precio de la orden se actualiza a $234.00 y se refleja tanto en la pestaña de ordenes como en la de informacion

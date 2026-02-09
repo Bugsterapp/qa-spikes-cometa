@@ -1,0 +1,11 @@
+{
+  "name": "@cometa/trpc",
+  "version": "0.0.0",
+  "private": true,
+  "main": "src/types.ts",
+  "types": "src/types.ts",
+  "exports": {
+    "./src/types": "./src/types.ts",
+    "./src/types.js": "./src/types.ts"
+  }
+}

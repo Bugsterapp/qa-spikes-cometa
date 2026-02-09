@@ -1,0 +1,38 @@
+name: Usuario desactiva beca asignada a un estudiante con impacto en colegiatura
+page: /scholarships
+page_path: apps/dashboard/src/pages/scholarships/index.tsx
+hooks:
+  before:
+    - helper: getSchoolIdByName
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["School CAN"]
+      as: schoolId
+
+    - helper: getActiveSchoolCycleBySchoolId
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{schoolId}}", true]
+      as: cycle
+
+task: Verificar que el usuario puede desactivar una beca asignada a un estudiante y el estado cambia a Desactivado
+steps:
+  - Login as automata@getcome.com with password barriletecosmico
+  - Select school "School CAN"
+  - Navigate to "Becas" section from the sidebar
+  - Click on "Resumen" tab and wait for the scholarships list to load
+  - Click on "Tabla" tab
+  - Click on the "Beca 10%" row in the table
+  - Click on "Estudiantes asignados" tab
+  - Search for an active student with the Beca 10% assigned
+  - Click on the student row to open the assignment details
+  - Wait for the side panel to load
+  - Click "Editar" button
+  - Click "Activar/Desactivar" toggle button
+  - Verify the confirmation dialog "Quieres Desactivar la beca" is displayed
+  - Click "Desactivar" button in the confirmation popup
+  - Click "Guardar" button
+  - Verify the scholarship status changes to "Desactivado" for the current cycle
+  - Close the side panel
+  - Click on "Informacion" tab then back to "Estudiantes asignados" tab
+  - Search for the same student again
+  - Click on the student to verify the deactivated status persists
+expected_result: La beca se desactiva exitosamente mostrando estado "Desactivado" para el ciclo actual del estudiante

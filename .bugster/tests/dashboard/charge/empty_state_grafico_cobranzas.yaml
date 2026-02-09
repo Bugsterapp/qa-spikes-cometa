@@ -1,0 +1,28 @@
+name: Empty state grafico de cobranzas para un concepto sin alumnos asignados
+page: /charge
+page_path: apps/dashboard/src/pages/charge/index.tsx
+hooks:
+  before:
+    - helper: getSchoolIdByName
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["Instituto Internacional Carlos"]
+      as: schoolId
+
+    - helper: getActiveSchoolCycleBySchoolId
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{schoolId}}", true]
+      as: cycle
+
+task: Verificar que el grafico de cobranzas muestra el estado correcto cuando se selecciona un concepto sin alumnos asignados
+steps:
+  - Login as automata@getcome.com with password barriletecosmico
+  - Select school "Instituto Internacional Carlos"
+  - Navigate to "Cobranzas" section from the sidebar
+  - Wait for the charge page to load with the heading "Cobranzas" visible
+  - Click on the concept multiple selector button
+  - Click "Seleccionar todo" to deselect all concepts
+  - Note the name of the first concept in the list
+  - Click on the first concept in the list to select only that one
+  - Click on the multiple selector button again to close the dropdown
+  - Verify the chart displays progress bars matching the number of orders for the selected concept
+expected_result: El grafico de cobranzas muestra las barras de progreso correspondientes a las ordenes del concepto seleccionado

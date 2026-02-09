@@ -1,0 +1,66 @@
+name: Cancelar la accion de finalizar proceso del prospecto
+page: /admissions
+page_path: apps/dashboard/src/pages/admissions/index.tsx
+hooks:
+  before:
+    - helper: generateFirstName
+      file_path: apps/e2e/helpers/students.ts
+      as: guardianFirstName
+
+    - helper: generateLastName
+      file_path: apps/e2e/helpers/students.ts
+      as: guardianLastName
+
+    - helper: generateCellPhoneForFront
+      file_path: apps/e2e/helpers/students.ts
+      as: guardianPhone
+
+    - helper: generateEmail
+      file_path: apps/e2e/helpers/commons.ts
+      args: ["{{guardianFirstName}}", "{{guardianLastName}}"]
+      as: guardianEmail
+
+    - helper: generateFirstName
+      file_path: apps/e2e/helpers/students.ts
+      as: prospectFirstName
+
+    - helper: generateLastName
+      file_path: apps/e2e/helpers/students.ts
+      as: prospectLastName
+
+task: Verificar que el usuario puede cancelar la accion de finalizar proceso y el prospecto mantiene su estado original
+steps:
+  - Login as automata@getcome.com with password barriletecosmico
+  - Select school "Instituto Internacional Carlos"
+  - Navigate to "Admisiones" section from the sidebar
+  - Wait for the admissions page to load
+  - Click "Nuevo prospecto" button
+  - Enter {{data.guardianFirstName}} in the guardian first name field
+  - Enter {{data.guardianLastName}} in the guardian last name field
+  - Enter {{data.guardianEmail}} in the guardian email field
+  - Enter {{data.guardianPhone}} in the guardian phone field
+  - Click on the relationship selector and select "Padre"
+  - Enter {{data.prospectFirstName}} in the prospect first name field
+  - Scroll down and enter {{data.prospectLastName}} in the prospect last name field
+  - Enter "01/01/2000" in the birthdate field
+  - Select gender "Masculino"
+  - Click on the grade combobox and select "1 - Pre escolar"
+  - Click on the school cycle combobox and select "Ciclo 2024-2025"
+  - Enter "School Test Admisiones" in the origin school field
+  - Click on the change reason selector and select "Cambio de domicilio"
+  - Enter "comentarioooo" in the comments field
+  - Click "Continuar" button
+  - Verify the success message "El prospecto se ha creado exitosamente" is displayed
+  - Click on the prospect "{{data.prospectFirstName}} {{data.prospectLastName}}" in the table
+  - Click on "Conceptos" tab
+  - Select the first concept option available
+  - Click on the first checkbox
+  - Click "Asignar" button
+  - Verify success message is displayed
+  - Click on the admission menu button (three dots)
+  - Click "Finalizar proceso" button
+  - Select "Abandono" radio option
+  - Enter "Motivo de abandono" in the reason text field
+  - Click "Cancelar" button instead of confirming
+  - Verify "Admitir prospecto" button is still visible, confirming the process was not finalized
+expected_result: La accion de finalizar proceso se cancela exitosamente y el boton "Admitir prospecto" sigue visible indicando que el prospecto mantiene su estado original
