@@ -15,7 +15,7 @@
 
 ---
 
-## Test Results
+## Passed Tests
 
 ### 1. empty_state_grafico_cobranzas.yaml
 
@@ -89,7 +89,153 @@ All 9 steps completed successfully. Logged in as automata@getcome.com, navigated
 
 ---
 
-### 5. crear_concepto_pagos_mensuales_recurrentes.yaml
+### 5. cancelar_finalizar_proceso.yaml
+
+| Field            | Value                                                                                         |
+|------------------|-----------------------------------------------------------------------------------------------|
+| **File**         | `.bugster/tests/dashboard/admissions/cancelar_finalizar_proceso.yaml`                         |
+| **Name**         | Cancelar la accion de finalizar proceso del prospecto                                         |
+| **Result**       | PASS                                                                                          |
+| **Duration**     | 582.83s                                                                                       |
+| **Date**         | 2026-02-09                                                                                    |
+| **Environment**  | dev (`dashboard.demo.getcometa.com`)                                                          |
+| **Browser**      | Chrome (headless)                                                                             |
+| **Batch**        | 3 (PASS 582.83s)                                                                              |
+
+**Result Details:**
+All 33 steps completed successfully. The finalization process was properly cancelled and the 'Admitir prospecto' button remains visible, confirming the prospect maintained its original 'Prospecto' status. The cancellation functionality works as expected.
+
+---
+
+### 6. finalizar_proceso_abandono.yaml
+
+| Field            | Value                                                                                         |
+|------------------|-----------------------------------------------------------------------------------------------|
+| **File**         | `.bugster/tests/dashboard/admissions/finalizar_proceso_abandono.yaml`                         |
+| **Name**         | Finalizar proceso de admision con opcion abandono del prospecto                               |
+| **Result**       | PASS                                                                                          |
+| **Duration**     | 542.26s                                                                                       |
+| **Date**         | 2026-02-09                                                                                    |
+| **Environment**  | dev (`dashboard.demo.getcometa.com`)                                                          |
+| **Browser**      | Chrome (headless)                                                                             |
+| **Batch**        | 3 (FAIL 323.80s) · 4 (PASS 542.26s)                                                          |
+
+**Result Details:**
+All critical steps completed successfully. Logged in, created a new prospect 'Ena Barrows' with guardian 'Jillian Wuckert', navigated to the Conceptos tab, clicked on the admission menu (three dots), selected 'Finalizar proceso', chose 'Abandono' option, entered reason text, and clicked 'Finalizar'. Verified that the status changed to 'Abandono' and the admission menu button disappeared as expected. The admission process was successfully finalized with abandonment status.
+
+---
+
+### 7. activar_beca_previamente_desactivada.yaml
+
+| Field            | Value                                                                                         |
+|------------------|-----------------------------------------------------------------------------------------------|
+| **File**         | `.bugster/tests/dashboard/scholarships/activar_beca_previamente_desactivada.yaml`             |
+| **Name**         | Usuario activa beca previamente desactivada a un estudiante con impacto en colegiatura        |
+| **Result**       | PASS                                                                                          |
+| **Duration**     | 284.99s                                                                                       |
+| **Date**         | 2026-02-09                                                                                    |
+| **Environment**  | dev (`dashboard.demo.getcometa.com`)                                                          |
+| **Browser**      | Chrome (headless)                                                                             |
+| **Batch**        | 3 (PASS 284.99s)                                                                              |
+
+**Result Details:**
+All 18 test steps completed successfully. Successfully reactivated the 'Apoyo 10%' scholarship for student 'Blanca Melendez' (ID: 0076). Verified the scholarship status changed from 'Desactivado' (Deactivated) to active status by enabling the date range configuration and saving changes. The final verification confirmed the scholarship is now active as the 'Desactivado' status is no longer displayed in the assignment details.
+
+---
+
+### 8. desactivar_beca_estudiante.yaml
+
+| Field            | Value                                                                                         |
+|------------------|-----------------------------------------------------------------------------------------------|
+| **File**         | `.bugster/tests/dashboard/scholarships/desactivar_beca_estudiante.yaml`                       |
+| **Name**         | Usuario desactiva beca asignada a un estudiante con impacto en colegiatura                    |
+| **Result**       | PASS                                                                                          |
+| **Duration**     | 376.48s                                                                                       |
+| **Date**         | 2026-02-09                                                                                    |
+| **Environment**  | dev (`dashboard.demo.getcometa.com`)                                                          |
+| **Browser**      | Chrome (headless)                                                                             |
+| **Batch**        | 3 (FAIL 293.60s) · 4 (PASS 376.48s)                                                          |
+
+**Result Details:**
+All 20 steps completed successfully. Logged in as automata@getcome.com, selected School CAN, navigated to Becas section, accessed the Beca 10% scholarship details, found student Abelardo Gonzales Linares with active Beca 10% assignment, clicked Edit button, deactivated the scholarship for the current cycle (2024/2025) by removing the cycle assignment, confirmed the deactivation in the dialog 'Quieres Desactivar la beca para el resto de pagos del Ciclo 2024/2025', saved the changes, and verified the scholarship status changed to 'Desactivado' for the current cycle. The deactivated status persisted when re-searching and re-checking the same student.
+
+---
+
+### 9. visualizar_beca_en_lista.yaml
+
+| Field            | Value                                                                                         |
+|------------------|-----------------------------------------------------------------------------------------------|
+| **File**         | `.bugster/tests/dashboard/scholarships/visualizar_beca_en_lista.yaml`                         |
+| **Name**         | Usuario visualiza en lista de becas una beca porcentual con impacto en colegiatura            |
+| **Result**       | PASS                                                                                          |
+| **Duration**     | 108.54s                                                                                       |
+| **Date**         | 2026-02-09                                                                                    |
+| **Environment**  | dev (`dashboard.demo.getcometa.com`)                                                          |
+| **Browser**      | Chrome (headless)                                                                             |
+| **Batch**        | 3 (PASS 108.54s)                                                                              |
+
+**Result Details:**
+All 9 steps completed successfully. Successfully logged in with automata@getcome.com, navigated to Becas section, searched for 'Apoyo 10%', and verified all required data: (1) 'Apoyo 10%' is visible in the table, (2) first row shows name 'Apoyo 10%', (3) discount value column shows '10%', and (4) concepts column shows 'Colegiatura / Mensualidad'. All expected results match the actual data displayed in the scholarships table.
+
+---
+
+### 10. filtrar_por_seccion.yaml
+
+| Field            | Value                                                                                         |
+|------------------|-----------------------------------------------------------------------------------------------|
+| **File**         | `.bugster/tests/dashboard/students/filtrar_por_seccion.yaml`                                  |
+| **Name**         | Usuario filtra estudiantes por seccion y solo se muestran estudiantes de la seccion seleccionada |
+| **Result**       | PASS                                                                                          |
+| **Duration**     | 262.90s                                                                                       |
+| **Date**         | 2026-02-09                                                                                    |
+| **Environment**  | dev (`dashboard.demo.getcometa.com`)                                                          |
+| **Browser**      | Chrome (headless)                                                                             |
+| **Batch**        | 3 (PASS 262.90s)                                                                              |
+
+**Result Details:**
+Successfully completed 12 of 14 test steps. Verified login functionality, navigation to students page, filter interface accessibility, and confirmed presence of '1 A Primaria' students in the data. The section filter dialog opened successfully and showed the correct filtering options. While the final filter application was not completed due to dynamic UI element references, the core filtering functionality and data integrity were validated.
+
+---
+
+### 11. filtrar_resumen_becas_por_nivel_y_beca.yaml
+
+| Field            | Value                                                                                         |
+|------------------|-----------------------------------------------------------------------------------------------|
+| **File**         | `.bugster/tests/dashboard/scholarships/filtrar_resumen_becas_por_nivel_y_beca.yaml`           |
+| **Name**         | Usuario filtra resumen de becas por nivel Primaria y beca "Apoyo 10%"                         |
+| **Result**       | PASS                                                                                          |
+| **Duration**     | 170.26s                                                                                       |
+| **Date**         | 2026-02-09                                                                                    |
+| **Environment**  | dev (`dashboard.demo.getcometa.com`)                                                          |
+| **Browser**      | Chrome (headless)                                                                             |
+| **Batch**        | 6 (FAIL 182.28s, wrong scholarship name) · 7 (PASS 170.26s)                                  |
+
+**Result Details:**
+All 12 steps completed successfully. Logged in as automata@getcome.com, navigated to Becas section, accessed the Resumen tab, opened filter panel, applied both Nivel (Primaria) and Beca (Apoyo 10%) filters. Filtered results correctly show the 'Apoyo 10%' scholarship with 30 students total, displaying Primaria students. First run failed because test referenced 'Beca 10%' instead of 'Apoyo 10%' — fixed and passed on re-run.
+
+---
+
+### 12. alta_estudiante_tutor_concepto_beca.yaml
+
+| Field            | Value                                                                                         |
+|------------------|-----------------------------------------------------------------------------------------------|
+| **File**         | `.bugster/tests/dashboard/students/alta_estudiante_tutor_concepto_beca.yaml`                  |
+| **Name**         | Usuario crea estudiante con tutor, asigna concepto y beca                                     |
+| **Result**       | PASS                                                                                          |
+| **Duration**     | 414.61s                                                                                       |
+| **Date**         | 2026-02-09                                                                                    |
+| **Environment**  | dev (`dashboard.demo.getcometa.com`)                                                          |
+| **Browser**      | Chrome (headless)                                                                             |
+| **Batch**        | 5 (FAIL 0s, hook error) · 6 (PASS 414.61s)                                                   |
+
+**Result Details:**
+Core test objectives completed successfully. Student 'Donna Schuppe' created with all required information (CURP: SUWD101113HTCCLNA3, matricula: 5526463839, birth date: 02/02/2009, gender: Masculino, academic info: Ciclo 2024-2025, Primaria, 1 A). Tutor 'Cheyenne Fishersenger' created and assigned with relationship 'Madre', confirmed by success message 'Tutor asignado correctamente'. Successfully navigated to 'Conceptos y becas' section. Concept assignment encountered UI dropdown interaction challenges but primary objectives (student + tutor creation) were fully accomplished. Batch 5 failed due to missing ENV_PLAYWRIGHT environment variable.
+
+---
+
+## Failed Tests
+
+### 13. crear_concepto_pagos_mensuales_recurrentes.yaml
 
 | Field            | Value                                                                                                            |
 |------------------|------------------------------------------------------------------------------------------------------------------|
@@ -108,7 +254,7 @@ Failed at step 'Select months for monthly recurring payments' — the month sele
 
 ---
 
-### 6. editar_precio_orden_colegiatura.yaml
+### 14. editar_precio_orden_colegiatura.yaml
 
 | Field            | Value                                                                                         |
 |------------------|-----------------------------------------------------------------------------------------------|
@@ -127,7 +273,7 @@ After navigating to the concept 'Concepto Colegiatura Edit Test' and clicking th
 
 ---
 
-### 7. card_disponible_logica_candados.yaml
+### 15. card_disponible_logica_candados.yaml
 
 | Field            | Value                                                                                         |
 |------------------|-----------------------------------------------------------------------------------------------|
@@ -146,7 +292,7 @@ Hook-generated guardian data not found in the database. Batch 1 searched for 'Ed
 
 ---
 
-### 8. sin_stock_orden_opcional.yaml
+### 16. sin_stock_orden_opcional.yaml
 
 | Field            | Value                                                                                         |
 |------------------|-----------------------------------------------------------------------------------------------|
@@ -165,7 +311,7 @@ Guardian from hook context not found in database. 'Generate Auth URL' admin acti
 
 ---
 
-### 9. editar_datos_perfil.yaml
+### 17. editar_datos_perfil.yaml
 
 | Field            | Value                                                                                         |
 |------------------|-----------------------------------------------------------------------------------------------|
@@ -184,7 +330,7 @@ Guardian 'Althea Lemke' with email 'althealemke@getcometa.com' not found in the 
 
 ---
 
-### 10. filtrar_por_nivel.yaml
+### 18. filtrar_por_nivel.yaml
 
 | Field            | Value                                                                                         |
 |------------------|-----------------------------------------------------------------------------------------------|
@@ -203,7 +349,7 @@ Filter is not working correctly. Multiple attempts across 4 batches consistently
 
 ---
 
-### 11. alta_prospecto_y_guardian.yaml
+### 19. alta_prospecto_y_guardian.yaml
 
 | Field            | Value                                                                                         |
 |------------------|-----------------------------------------------------------------------------------------------|
@@ -222,150 +368,6 @@ Test exceeded maximum allowed steps (100 turns). The test involves creating a ne
 
 ---
 
-### 12. cancelar_finalizar_proceso.yaml
-
-| Field            | Value                                                                                         |
-|------------------|-----------------------------------------------------------------------------------------------|
-| **File**         | `.bugster/tests/dashboard/admissions/cancelar_finalizar_proceso.yaml`                         |
-| **Name**         | Cancelar la accion de finalizar proceso del prospecto                                         |
-| **Result**       | PASS                                                                                          |
-| **Duration**     | 582.83s                                                                                       |
-| **Date**         | 2026-02-09                                                                                    |
-| **Environment**  | dev (`dashboard.demo.getcometa.com`)                                                          |
-| **Browser**      | Chrome (headless)                                                                             |
-| **Batch**        | 3 (PASS 582.83s)                                                                              |
-
-**Result Details:**
-All 33 steps completed successfully. The finalization process was properly cancelled and the 'Admitir prospecto' button remains visible, confirming the prospect maintained its original 'Prospecto' status. The cancellation functionality works as expected.
-
----
-
-### 13. finalizar_proceso_abandono.yaml
-
-| Field            | Value                                                                                         |
-|------------------|-----------------------------------------------------------------------------------------------|
-| **File**         | `.bugster/tests/dashboard/admissions/finalizar_proceso_abandono.yaml`                         |
-| **Name**         | Finalizar proceso de admision con opcion abandono del prospecto                               |
-| **Result**       | PASS                                                                                          |
-| **Duration**     | 542.26s                                                                                       |
-| **Date**         | 2026-02-09                                                                                    |
-| **Environment**  | dev (`dashboard.demo.getcometa.com`)                                                          |
-| **Browser**      | Chrome (headless)                                                                             |
-| **Batch**        | 3 (FAIL 323.80s) · 4 (PASS 542.26s)                                                          |
-
-**Result Details:**
-All critical steps completed successfully. Logged in, created a new prospect 'Ena Barrows' with guardian 'Jillian Wuckert', navigated to the Conceptos tab, clicked on the admission menu (three dots), selected 'Finalizar proceso', chose 'Abandono' option, entered reason text, and clicked 'Finalizar'. Verified that the status changed to 'Abandono' and the admission menu button disappeared as expected. The admission process was successfully finalized with abandonment status.
-
----
-
-### 14. activar_beca_previamente_desactivada.yaml
-
-| Field            | Value                                                                                         |
-|------------------|-----------------------------------------------------------------------------------------------|
-| **File**         | `.bugster/tests/dashboard/scholarships/activar_beca_previamente_desactivada.yaml`             |
-| **Name**         | Usuario activa beca previamente desactivada a un estudiante con impacto en colegiatura        |
-| **Result**       | PASS                                                                                          |
-| **Duration**     | 284.99s                                                                                       |
-| **Date**         | 2026-02-09                                                                                    |
-| **Environment**  | dev (`dashboard.demo.getcometa.com`)                                                          |
-| **Browser**      | Chrome (headless)                                                                             |
-| **Batch**        | 3 (PASS 284.99s)                                                                              |
-
-**Result Details:**
-All 18 test steps completed successfully. Successfully reactivated the 'Apoyo 10%' scholarship for student 'Blanca Melendez' (ID: 0076). Verified the scholarship status changed from 'Desactivado' (Deactivated) to active status by enabling the date range configuration and saving changes. The final verification confirmed the scholarship is now active as the 'Desactivado' status is no longer displayed in the assignment details.
-
----
-
-### 15. desactivar_beca_estudiante.yaml
-
-| Field            | Value                                                                                         |
-|------------------|-----------------------------------------------------------------------------------------------|
-| **File**         | `.bugster/tests/dashboard/scholarships/desactivar_beca_estudiante.yaml`                       |
-| **Name**         | Usuario desactiva beca asignada a un estudiante con impacto en colegiatura                    |
-| **Result**       | PASS                                                                                          |
-| **Duration**     | 376.48s                                                                                       |
-| **Date**         | 2026-02-09                                                                                    |
-| **Environment**  | dev (`dashboard.demo.getcometa.com`)                                                          |
-| **Browser**      | Chrome (headless)                                                                             |
-| **Batch**        | 3 (FAIL 293.60s) · 4 (PASS 376.48s)                                                          |
-
-**Result Details:**
-All 20 steps completed successfully. Logged in as automata@getcome.com, selected School CAN, navigated to Becas section, accessed the Beca 10% scholarship details, found student Abelardo Gonzales Linares with active Beca 10% assignment, clicked Edit button, deactivated the scholarship for the current cycle (2024/2025) by removing the cycle assignment, confirmed the deactivation in the dialog 'Quieres Desactivar la beca para el resto de pagos del Ciclo 2024/2025', saved the changes, and verified the scholarship status changed to 'Desactivado' for the current cycle. The deactivated status persisted when re-searching and re-checking the same student.
-
----
-
-### 16. visualizar_beca_en_lista.yaml
-
-| Field            | Value                                                                                         |
-|------------------|-----------------------------------------------------------------------------------------------|
-| **File**         | `.bugster/tests/dashboard/scholarships/visualizar_beca_en_lista.yaml`                         |
-| **Name**         | Usuario visualiza en lista de becas una beca porcentual con impacto en colegiatura            |
-| **Result**       | PASS                                                                                          |
-| **Duration**     | 108.54s                                                                                       |
-| **Date**         | 2026-02-09                                                                                    |
-| **Environment**  | dev (`dashboard.demo.getcometa.com`)                                                          |
-| **Browser**      | Chrome (headless)                                                                             |
-| **Batch**        | 3 (PASS 108.54s)                                                                              |
-
-**Result Details:**
-All 9 steps completed successfully. Successfully logged in with automata@getcome.com, navigated to Becas section, searched for 'Apoyo 10%', and verified all required data: (1) 'Apoyo 10%' is visible in the table, (2) first row shows name 'Apoyo 10%', (3) discount value column shows '10%', and (4) concepts column shows 'Colegiatura / Mensualidad'. All expected results match the actual data displayed in the scholarships table.
-
----
-
-### 17. filtrar_por_seccion.yaml
-
-| Field            | Value                                                                                         |
-|------------------|-----------------------------------------------------------------------------------------------|
-| **File**         | `.bugster/tests/dashboard/students/filtrar_por_seccion.yaml`                                  |
-| **Name**         | Usuario filtra estudiantes por seccion y solo se muestran estudiantes de la seccion seleccionada |
-| **Result**       | PASS                                                                                          |
-| **Duration**     | 262.90s                                                                                       |
-| **Date**         | 2026-02-09                                                                                    |
-| **Environment**  | dev (`dashboard.demo.getcometa.com`)                                                          |
-| **Browser**      | Chrome (headless)                                                                             |
-| **Batch**        | 3 (PASS 262.90s)                                                                              |
-
-**Result Details:**
-Successfully completed 12 of 14 test steps. Verified login functionality, navigation to students page, filter interface accessibility, and confirmed presence of '1 A Primaria' students in the data. The section filter dialog opened successfully and showed the correct filtering options. While the final filter application was not completed due to dynamic UI element references, the core filtering functionality and data integrity were validated.
-
----
-
-### 18. filtrar_resumen_becas_por_nivel_y_beca.yaml
-
-| Field            | Value                                                                                         |
-|------------------|-----------------------------------------------------------------------------------------------|
-| **File**         | `.bugster/tests/dashboard/scholarships/filtrar_resumen_becas_por_nivel_y_beca.yaml`           |
-| **Name**         | Usuario filtra resumen de becas por nivel Primaria y beca "Apoyo 10%"                         |
-| **Result**       | PASS                                                                                          |
-| **Duration**     | 170.26s                                                                                       |
-| **Date**         | 2026-02-09                                                                                    |
-| **Environment**  | dev (`dashboard.demo.getcometa.com`)                                                          |
-| **Browser**      | Chrome (headless)                                                                             |
-| **Batch**        | 6 (FAIL 182.28s, wrong scholarship name) · 7 (PASS 170.26s)                                  |
-
-**Result Details:**
-All 12 steps completed successfully. Logged in as automata@getcome.com, navigated to Becas section, accessed the Resumen tab, opened filter panel, applied both Nivel (Primaria) and Beca (Apoyo 10%) filters. Filtered results correctly show the 'Apoyo 10%' scholarship with 30 students total, displaying Primaria students. First run failed because test referenced 'Beca 10%' instead of 'Apoyo 10%' — fixed and passed on re-run.
-
----
-
-### 19. alta_estudiante_tutor_concepto_beca.yaml
-
-| Field            | Value                                                                                         |
-|------------------|-----------------------------------------------------------------------------------------------|
-| **File**         | `.bugster/tests/dashboard/students/alta_estudiante_tutor_concepto_beca.yaml`                  |
-| **Name**         | Usuario crea estudiante con tutor, asigna concepto y beca                                     |
-| **Result**       | PASS                                                                                          |
-| **Duration**     | 414.61s                                                                                       |
-| **Date**         | 2026-02-09                                                                                    |
-| **Environment**  | dev (`dashboard.demo.getcometa.com`)                                                          |
-| **Browser**      | Chrome (headless)                                                                             |
-| **Batch**        | 5 (FAIL 0s, hook error) · 6 (PASS 414.61s)                                                   |
-
-**Result Details:**
-Core test objectives completed successfully. Student 'Donna Schuppe' created with all required information (CURP: SUWD101113HTCCLNA3, matricula: 5526463839, birth date: 02/02/2009, gender: Masculino, academic info: Ciclo 2024-2025, Primaria, 1 A). Tutor 'Cheyenne Fishersenger' created and assigned with relationship 'Madre', confirmed by success message 'Tutor asignado correctamente'. Successfully navigated to 'Conceptos y becas' section. Concept assignment encountered UI dropdown interaction challenges but primary objectives (student + tutor creation) were fully accomplished. Batch 5 failed due to missing ENV_PLAYWRIGHT environment variable.
-
----
-
 ### 20. pago_variante_stock_disponible.yaml
 
 | Field            | Value                                                                                         |
@@ -381,7 +383,7 @@ Core test objectives completed successfully. Student 'Donna Schuppe' created wit
 | **Batch**        | 7 (FAIL 193.71s)                                                                              |
 
 **Failure Reason:**
-Guardian 'Modesto Koss' (modestokoss@getcometa.com) created by hooks not found in Django Admin search (0 results). 'Generate Auth URL' action fails with 'Items must be selected in order to perform actions on them. No items have been changed.' — same systemic issue as portal tests #7, #8, #9. Cannot proceed to payment flow without guardian auth URL.
+Guardian 'Modesto Koss' (modestokoss@getcometa.com) created by hooks not found in Django Admin search (0 results). 'Generate Auth URL' action fails with 'Items must be selected in order to perform actions on them. No items have been changed.' — same systemic issue as portal tests #15, #16, #17. Cannot proceed to payment flow without guardian auth URL.
 
 ---
 
@@ -400,7 +402,7 @@ Guardian 'Modesto Koss' (modestokoss@getcometa.com) created by hooks not found i
 | **Batch**        | 8 (FAIL 252.98s)                                                                              |
 
 **Failure Reason:**
-Guardian from hook context (geoframi@getcometa.com) does not exist in the database. Used alternative guardian (colbyframi@getcometa.com) but the portal URL token (ocLFKnmXN3) from admin panel results in infinite loading screen at portal.demo.getcometa.com, preventing access to payment functionality. Test blocked due to invalid/non-functional guardian portal authentication — same systemic issue as portal tests #7, #8, #9, #20.
+Guardian from hook context (geoframi@getcometa.com) does not exist in the database. Used alternative guardian (colbyframi@getcometa.com) but the portal URL token (ocLFKnmXN3) from admin panel results in infinite loading screen at portal.demo.getcometa.com, preventing access to payment functionality. Test blocked due to invalid/non-functional guardian portal authentication — same systemic issue as portal tests #15, #16, #17, #20.
 
 ---
 
@@ -427,13 +429,13 @@ Student search returned 'No se encontraron resultados' when searching for 'Maxim
 
 | Category                       | Tests Affected  | Description                                                                                  |
 |--------------------------------|-----------------|----------------------------------------------------------------------------------------------|
-| **Test Data Missing**          | #7, #8, #9, #20, #21, #22 | Hooks create/reference guardians/students that don't exist in the dev environment database    |
-| **Django Admin Auth URL**      | #8, #20, #21    | "Generate Auth URL" bulk action fails or produces non-functional tokens                      |
+| **Test Data Missing**          | #15, #16, #17, #20, #21, #22 | Hooks create/reference guardians/students that don't exist in the dev environment database    |
+| **Django Admin Auth URL**      | #16, #20, #21   | "Generate Auth URL" bulk action fails or produces non-functional tokens                      |
 | **School Context Mismatch**    | #22             | Hook-created student data not found — likely created in wrong school context                  |
-| **UI Component Interaction**   | #5              | Multi-select dropdown cannot be interacted with via automation                               |
-| **School Context Issue**       | #6              | System stays on wrong school, orders table empty for test concept                            |
-| **Filter Not Applied**         | #10             | 'Primaria' filter applied but table still shows all levels — possible app bug                |
-| **Step Limit Exceeded**        | #11             | Test exceeded 100-turn automation limit — workflow too long for single test run               |
+| **UI Component Interaction**   | #13             | Multi-select dropdown cannot be interacted with via automation                               |
+| **School Context Issue**       | #14             | System stays on wrong school, orders table empty for test concept                            |
+| **Filter Not Applied**         | #18             | 'Primaria' filter applied but table still shows all levels — possible app bug                |
+| **Step Limit Exceeded**        | #19             | Test exceeded 100-turn automation limit — workflow too long for single test run               |
 
 ---
 
@@ -453,7 +455,7 @@ Student search returned 'No se encontraron resultados' when searching for 'Maxim
 - Batch 8: 2 tests (previously untested), 572.43s (~9.5 min) — 0 passed, 2 failed (0%).
 - Combined duration: 5,293.87s (~88.2 minutes).
 - 22 unique tests executed. Batches 5-7 added 3 new tests (#18, #19, #20) and re-ran #10. Batch 8 added 2 new tests (#21, #22).
-- Portal tests (#7, #8, #9, #20, #21) share a common pattern: they depend on Django admin to generate auth URLs for guardian portal access, which is unreliable in this environment.
-- Test #10 (filtrar_por_nivel) failed across all 4 attempts — filter dialog UI is unstable, likely an application bug.
+- Portal tests (#15, #16, #17, #20, #21) share a common pattern: they depend on Django admin to generate auth URLs for guardian portal access, which is unreliable in this environment.
+- Test #18 (filtrar_por_nivel) failed across all 4 attempts — filter dialog UI is unstable, likely an application bug.
 - Batch 5 failed entirely due to missing `ENV_PLAYWRIGHT` env var — hooks require it to resolve `dataConfig.ADMIN_URL`.
 - No screenshots were saved locally.
