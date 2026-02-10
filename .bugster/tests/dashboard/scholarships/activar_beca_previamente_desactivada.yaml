@@ -13,6 +13,10 @@ hooks:
       args: ["{{schoolId}}", true]
       as: cycle
 
+execution:
+  concurrency:
+    serial_group: "scholarship:school-can:beca-10"
+
 task: Verificar que el usuario puede reactivar una beca previamente desactivada a un estudiante
 steps:
   - Login as automata@getcome.com with password barriletecosmico
