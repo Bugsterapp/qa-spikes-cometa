@@ -118,3 +118,6 @@ In `.env.development` file you can browse all variables related with the envirom
 ENV=local npx playwright test
 
 To more detailed explanation of how we code and run our tests, visit this wiki https://www.notion.so/cometa/Como-automatizamos-con-playwright-pruebas-de-integraci-n-regresi-n-78d2dcf3f16a4fa4a07375a4661bac41
+
+
+ENV_PLAYWRIGHT=demo  bugster run --path .bugster/tests/portal/payments/pago_colegiatura_kushki_tarjeta_credito.yaml
